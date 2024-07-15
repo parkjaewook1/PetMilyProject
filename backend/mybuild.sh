@@ -29,3 +29,7 @@ ssh -i src/main/resources/secret/key0527.pem ubuntu@3.36.64.206 'docker rm petmi
 ssh -i src/main/resources/secret/key0527.pem ubuntu@3.36.64.206 'docker pull park5050/petmily'
 # 컨테이너 실행
 ssh -i src/main/resources/secret/key0527.pem ubuntu@3.36.64.206 'docker run -d -p 8080:8080 --restart always --name petmily park5050/petmily'
+
+# 필요없는 이미지 삭제
+ssh -i src/main/resources/secret/key0527.pem ubuntu@3.36.64.206 'docker image prune -f'
+
