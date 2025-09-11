@@ -21,95 +21,112 @@ public class CustomLogoutFilter extends GenericFilterBean {
     private final LoginCheckMapper loginCheckMapper;
 
     public CustomLogoutFilter(JWTUtil jwtUtil, RefreshMapper refreshMapper, LoginCheckMapper loginCheckMapper) {
+
         this.jwtUtil = jwtUtil;
         this.refreshMapper = refreshMapper;
         this.loginCheckMapper = loginCheckMapper;
+        System.out.println("=== CustomLogoutFilter Bean 생성됨 ===");
     }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        doFilter((HttpServletRequest) request, (HttpServletResponse) response, chain);
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+
+        HttpServletRequest req = (HttpServletRequest) request;
+        HttpServletResponse res = (HttpServletResponse) response;
+
+        String uri = req.getRequestURI();
+        String method = req.getMethod();
+
+        // ✅ 로그아웃 요청이 아닌 경우 → 바로 다음 필터로 넘김
+        if (!"/api/member/logout".equals(uri) || !"POST".equalsIgnoreCase(method)) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // 여기까지 왔다는 건 /api/member/logout + POST 요청이라는 뜻
+        System.out.println("=== CustomLogoutFilter 실행됨 ===");
+        System.out.println("URI: " + uri + ", Method: " + method);
+
+        // 로그아웃 처리
+        processLogout(req, res);
+
+        // processLogout()에서 응답을 끝내므로 chain.doFilter() 호출 안 함
     }
 
-    private void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+    // ✅ 수정 3: FilterChain 파라미터 제거
+    //    → 로그아웃 로직만 처리하고 절대 filterChain.doFilter() 호출 안 함
+    private void processLogout(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
-        System.out.println("request.getRequestURI() = " + request.getRequestURI());
-
-        // Path and method verify
-        String requestUri = request.getRequestURI();
-        if (!"/api/member/logout".equals(requestUri)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        String requestMethod = request.getMethod();
-        if (!"POST".equalsIgnoreCase(requestMethod)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // Get refresh token
+        // 1) refresh 쿠키 추출
         String refresh = null;
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("refresh".equals(cookie.getName())) {
-                    refresh = cookie.getValue();
-                    break;
+            System.out.println("[DEBUG] 요청에 포함된 쿠키 목록:");
+            for (Cookie c : cookies) {
+                System.out.println(" - " + c.getName() + "=" + c.getValue());
+                if ("refresh".equals(c.getName())) {
+                    refresh = c.getValue();
                 }
             }
+        } else {
+            System.out.println("[DEBUG] 요청에 쿠키가 전혀 없음");
         }
 
-        // Refresh null check
+        // 2) refresh 토큰 존재 여부 확인
         if (refresh == null) {
+            System.out.println("[DEBUG] refresh 쿠키 없음 → 400 반환");
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        // Expired check
+        // 3) refresh 토큰 만료 여부 확인
         try {
             jwtUtil.isExpired(refresh);
         } catch (ExpiredJwtException e) {
+            System.out.println("[DEBUG] refresh 토큰 만료됨 → 400 반환");
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        // Check if token is refresh
+        // 4) refresh 토큰 카테고리 확인
         String category = jwtUtil.getCategory(refresh);
+        System.out.println("[DEBUG] refresh 토큰 category=" + category);
         if (!"refresh".equals(category)) {
+            System.out.println("[DEBUG] category 불일치 → 400 반환");
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        // DB에 저장되어 있는지 확인
-        Boolean isExist = refreshMapper.existsByRefresh(refresh);
-        if (!isExist) {
+        // 5) DB에 refresh 토큰 존재 여부 확인
+        boolean exists = refreshMapper.existsByRefresh(refresh);
+        System.out.println("[DEBUG] DB에 refresh 존재 여부=" + exists);
+        if (!exists) {
+            System.out.println("[DEBUG] DB에 refresh 없음 → 400 반환");
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-
-        System.out.println("refresh = " + refresh);
-        // 로그아웃 진행
-        // Refresh 토큰 DB에서 제거
+        // 6) refresh 토큰 DB에서 삭제
         int result = refreshMapper.deleteByRefresh(refresh);
-        System.out.println("result = " + result);
-        // LoginCheck
-        loginCheckMapper.updatedLoginCheck(request.getParameter("nickname"));
+        System.out.println("[DEBUG] refresh 토큰 삭제 결과=" + result);
 
-        // Refresh 토큰 Cookie 값 0으로 설정하고 제거
+        // 7) 로그인 상태 업데이트
+        String nickname = request.getParameter("nickname");
+        System.out.println("[DEBUG] nickname=" + nickname + " → 로그인 상태 false로 업데이트");
+        loginCheckMapper.updatedLoginCheck(nickname);
+
+        // 8) refresh 쿠키 제거
         Cookie cookie = new Cookie("refresh", null);
         cookie.setMaxAge(0);
         cookie.setPath("/");
-        cookie.setHttpOnly(true); // Optional, for security
-        cookie.setSecure(true); // Optional, if using HTTPS
-
-        System.out.println("cookie.getMaxAge() = " + cookie.getMaxAge());
-
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true); // 로컬 HTTP 테스트 시 false
         response.addCookie(cookie);
+        System.out.println("[DEBUG] refresh 쿠키 제거 완료");
 
-
-        // 설정 후 커밋
+        // 9) 최종 응답
         response.setStatus(HttpServletResponse.SC_OK);
+        System.out.println("[DEBUG] 로그아웃 처리 완료 → 200 반환");
     }
 }

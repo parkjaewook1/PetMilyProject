@@ -88,8 +88,19 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
         String access = jwtUtil.createJwt("access", username, role, 600000L); // 10분
         String refresh = jwtUtil.createJwt("refresh", username, role, 36000000L); // 10시간
 
+        // ✅ 기존 refresh 쿠키 삭제 (중복 방지)
+        Cookie deleteCookie = new Cookie("refresh", null);
+        deleteCookie.setMaxAge(0);
+        deleteCookie.setPath("/");
+        deleteCookie.setHttpOnly(true);
+        deleteCookie.setSecure(false); // 로컬 테스트 시 false, 운영 HTTPS면 true
+        deleteCookie.setAttribute("SameSite", "None");
+        response.addCookie(deleteCookie);
+
         // 토큰 저장
         addRefreshEntity(username, refresh, 36000000L);
+
+        // 새 refresh 쿠키 발급
         response.addCookie(createCookie("refresh", refresh));
         try {
             if (request.getRequestURI().equals("/api/member/login")) {
@@ -131,12 +142,21 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
     }
 
     private Cookie createCookie(String key, String value) {
-
         Cookie cookie = new Cookie(key, value);
-        cookie.setMaxAge(24 * 60 * 60);
-        //cookie.setSecure(true);
-        //cookie.setPath("/");
+        cookie.setMaxAge(24 * 60 * 60); // 1일
         cookie.setHttpOnly(true);
+
+        // 모든 경로에서 전송되도록
+        cookie.setPath("/");
+
+        // 로컬 테스트 시 HTTPS가 아니므로 false
+        cookie.setSecure(false);
+
+        // Java 11+에서 SameSite 설정
+        cookie.setAttribute("SameSite", "None");
+
+        //cookie.setSecure(true); // HTTPS에서만 전송
+        //cookie.setAttribute("SameSite", "None");  (운영,배포 할 때 수정)
 
         return cookie;
     }

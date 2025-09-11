@@ -52,7 +52,13 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    jvmArgs += '--enable-preview'
 }
+
+tasks.named('bootRun') {
+    jvmArgs += '--enable-preview'
+}
+
 
 compileJava {
     options.compilerArgs += ['--enable-preview']

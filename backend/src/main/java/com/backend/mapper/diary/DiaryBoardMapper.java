@@ -9,21 +9,21 @@ import java.util.List;
 public interface DiaryBoardMapper {
 
     @Insert("""
-                INSERT INTO diary(title, content, member_id,username)
-                VALUES (#{title}, #{content},  #{memberId},#{username})
+                INSERT INTO diary(title, content, member_id, username)
+                VALUES (#{title}, #{content}, #{memberId}, #{username})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    public int insert(DiaryBoard diaryBoard);
+    int insert(DiaryBoard diaryBoard);
 
     @Select("""
-                  SELECT
-                  d.id,
-                  d.title,
-            d.inserted,
-                  m.nickname writer
-                  FROM diary d JOIN member m ON d.member_id = m.id
-                  ORDER BY d.id DESC
-              """)
+                SELECT d.id,
+                       d.title,
+                       d.inserted,
+                       m.nickname writer
+                FROM diary d
+                JOIN member m ON d.member_id = m.id
+                ORDER BY d.id DESC
+            """)
     List<DiaryBoard> selectAll();
 
     @Select("""
@@ -34,7 +34,8 @@ public interface DiaryBoardMapper {
                        m.nickname writer,
                        d.member_id,
                        d.username
-                FROM diary d JOIN member m ON d.member_id = m.id
+                FROM diary d
+                JOIN member m ON d.member_id = m.id
                 WHERE d.id = #{id}
             """)
     DiaryBoard selectById(Integer id);
@@ -131,13 +132,11 @@ public interface DiaryBoardMapper {
             """)
     List<String> selectFileNameByDiaryId(Integer diaryId);
 
-
     @Delete("""
                 DELETE FROM diary
                 WHERE member_id = #{memberId}
             """)
     int deleteByMemberId(Integer memberId);
-
 
     @Select("""
                 SELECT COUNT(*)
@@ -146,8 +145,8 @@ public interface DiaryBoardMapper {
     int countAll();
 
     @Delete("""
-            DELETE FROM diary_file
-            WHERE diary_id = #{diaryId}
+                DELETE FROM diary_file
+                WHERE diary_id = #{diaryId}
             """)
     int deleteFileByDiaryId(Integer diaryId);
 
@@ -159,9 +158,9 @@ public interface DiaryBoardMapper {
     List<DiaryBoard> selectByMemberId(Integer memberId);
 
     @Delete("""
-            DELETE FROM diary_file
-            WHERE diary_id=#{diaryId}
-              AND name=#{fileName}
+                DELETE FROM diary_file
+                WHERE diary_id = #{diaryId}
+                  AND name = #{fileName}
             """)
     int deleteFileByDiaryIdAndName(Integer diaryId, String fileName);
 }

@@ -343,7 +343,7 @@ export const MainPage = () => {
                   onClick={() => navigate(`/board/${board.id}`)}
                 >
                   <Td
-                    extAlign="center"
+                    textAlign="center"
                     maxW="200px" // 최대 너비 설정
                     whiteSpace="nowrap"
                     overflow="hidden"
@@ -404,7 +404,7 @@ export const MainPage = () => {
                   onClick={() => navigate(`/board/${board.id}`)}
                 >
                   <Td
-                    extAlign="center"
+                    textAlign="center"
                     maxW="200px" // 최대 너비 설정
                     whiteSpace="nowrap"
                     overflow="hidden"

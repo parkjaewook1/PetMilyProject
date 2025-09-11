@@ -69,7 +69,9 @@ public class MemberController {
 
     // MemberPage
     @PostMapping("/profile/{id}")
-    public ResponseEntity<Map<String, String>> uploadProfileImage(@PathVariable Integer id, @RequestParam("profileImage") MultipartFile file) {
+    public ResponseEntity<Map<String, String>> uploadProfileImage(
+            @PathVariable Integer id,
+            @RequestParam("profileImage") MultipartFile file) {
         try {
             service.saveProfileImage(id, file);
             Profile profile = service.getProfileByMemberId(id); // 저장된 프로필 가져오기
@@ -80,7 +82,12 @@ public class MemberController {
             response.put("profileImage", imageUrl); // 저장된 프로필 이미지 URL 추가
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "프로필 이미지 저장 실패"));
+            // ✅ 예외 로그 출력
+            e.printStackTrace(); // 콘솔에 stack trace 출력
+            // log.error("프로필 이미지 저장 실패", e); // 로거 사용 시
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "프로필 이미지 저장 실패: " + e.getMessage()));
         }
     }
 
@@ -90,7 +97,12 @@ public class MemberController {
             service.deleteProfileByMemberId(id);
             return ResponseEntity.ok("프로필 이미지 삭제 성공");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("프로필 이미지 삭제 실패");
+            // ✅ 예외 로그 출력
+            e.printStackTrace();
+            // log.error("프로필 이미지 삭제 실패", e);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("프로필 이미지 삭제 실패: " + e.getMessage());
         }
     }
 
