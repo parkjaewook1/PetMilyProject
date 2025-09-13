@@ -16,11 +16,11 @@ import {
 } from "@chakra-ui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPenToSquare, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
 import React, { useContext, useState } from "react";
 import { CommentEdit } from "./CommentEdit.jsx";
 import { LoginContext } from "../LoginProvider.jsx";
 import { FaStar } from "react-icons/fa";
+import axios from "axios";
 
 export function CommentItem({ comment, isProcessing, setIsProcessing }) {
   const [isEditing, setIsEditing] = useState(false);

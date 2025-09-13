@@ -21,5 +21,9 @@ public class DiaryBoard {
 
     private List<DiaryBoardFile> fileList;
 
-
+    // ✅ 추가: 하루 기분
+    private String mood; // HAPPY, NEUTRAL, SAD, ANGRY, TIRED 등
 }
+
+
+

@@ -1,22 +1,22 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   Box,
-  Input,
   Button,
-  VStack,
-  Text,
+  CloseButton,
+  Flex,
+  HStack,
+  IconButton,
+  Input,
   InputGroup,
   InputRightElement,
-  IconButton,
-  CloseButton,
-  HStack,
-  Flex
+  Text,
+  VStack,
 } from "@chakra-ui/react";
-import { MinusIcon, ChatIcon } from "@chakra-ui/icons";
+import { ChatIcon, MinusIcon } from "@chakra-ui/icons";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import axios from "axios";
-import { LoginContext } from '../LoginProvider';
+import { LoginContext } from "../LoginProvider";
 
 export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
   const { memberInfo } = useContext(LoginContext) || {};
@@ -42,7 +42,9 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
     console.log("ChatComponent mounted. selectedFriend:", selectedFriend);
 
     if (username && selectedFriend) {
-      const roomId = [userId, selectedFriend.id].sort((a, b) => a - b).join('-');
+      const roomId = [userId, selectedFriend.id]
+        .sort((a, b) => a - b)
+        .join("-");
       const socket = new SockJS(`/ws`);
       const client = new Client({
         webSocketFactory: () => socket,
@@ -52,11 +54,17 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
             const receivedMessage = JSON.parse(message.body);
             setMessages((prevMessages) => [...prevMessages, receivedMessage]);
             console.log("Received message:", receivedMessage);
-            if (onNewMessage && typeof onNewMessage === 'function') {
-              console.log("Calling onNewMessage with senderId:", receivedMessage.senderId);
+            if (onNewMessage && typeof onNewMessage === "function") {
+              console.log(
+                "Calling onNewMessage with senderId:",
+                receivedMessage.senderId,
+              );
               onNewMessage(receivedMessage.senderId);
             } else {
-              console.log("onNewMessage is not available or not a function:", onNewMessage);
+              console.log(
+                "onNewMessage is not available or not a function:",
+                onNewMessage,
+              );
             }
           });
           setIsConnected(true);
@@ -73,7 +81,7 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
         },
         onDisconnect: () => {
           setIsConnected(false);
-        }
+        },
       });
       client.activate();
 
@@ -107,31 +115,31 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
       return;
     }
 
-    const roomId = [userId, selectedFriend.id].sort((a, b) => a - b).join('-');
+    const roomId = [userId, selectedFriend.id].sort((a, b) => a - b).join("-");
     const chatMessage = {
       senderId: userId,
       recipientId: selectedFriend.id,
       content: message,
       senderNickName: username,
-      recipientNickName: selectedFriend.nickname
+      recipientNickName: selectedFriend.nickname,
     };
 
     stompClient.publish({
       destination: `/app/chat/${roomId}`,
-      body: JSON.stringify(chatMessage)
+      body: JSON.stringify(chatMessage),
     });
 
     try {
-      await axios.post('/api/chat', chatMessage);
+      await axios.post("/api/chat", chatMessage);
     } catch (error) {
       console.error("Error saving message to the server:", error);
     }
 
-    setMessage('');
+    setMessage("");
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       sendMessage();
     }
   };
@@ -141,8 +149,25 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
   };
 
   return (
-    <Box position="fixed" bottom={2} right={2} p={2} minW="400px" maxW="400px" borderWidth="1px" borderRadius="lg" overflow="hidden" bg="white">
-      <Box display="flex" justifyContent="space-between" alignItems="center" borderBottomWidth="1px" p={2}>
+    <Box
+      position="fixed"
+      bottom={2}
+      right={2}
+      p={2}
+      minW="400px"
+      maxW="400px"
+      borderWidth="1px"
+      borderRadius="lg"
+      overflow="hidden"
+      bg="white"
+    >
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        borderBottomWidth="1px"
+        p={2}
+      >
         <HStack>
           <Text fontWeight="bold">채팅</Text>
           <Text color={"gray.400"}> with {selectedFriend.nickname}</Text>
@@ -159,20 +184,45 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
       </Box>
       {!isMinimized && (
         <VStack spacing={4} p={2}>
-          <Box width="100%" h="300px" overflowY="scroll" p={2} borderWidth="1px" borderRadius="lg">
+          <Box
+            width="100%"
+            h="300px"
+            overflowY="scroll"
+            p={2}
+            borderWidth="1px"
+            borderRadius="lg"
+          >
             {messages.map((msg, index) => (
-              <Flex key={index} justifyContent={Number(msg.senderId) === Number(userId) ? "flex-start" : "flex-end"} mb={2}>
+              <Flex
+                key={index}
+                justifyContent={
+                  Number(msg.senderId) === Number(userId)
+                    ? "flex-start"
+                    : "flex-end"
+                }
+                mb={2}
+              >
                 <Box
-                  bg={Number(msg.senderId) === Number(userId) ? "blue.100" : "gray.100"}
+                  bg={
+                    Number(msg.senderId) === Number(userId)
+                      ? "blue.100"
+                      : "gray.100"
+                  }
                   p={2}
                   borderRadius="md"
-                  textAlign={Number(msg.senderId) === Number(userId) ? "left" : "right"}
+                  textAlign={
+                    Number(msg.senderId) === Number(userId) ? "left" : "right"
+                  }
                   maxWidth="70%"
                 >
-                  <Text fontSize="md" fontWeight="bold">{msg.senderNickName}</Text>
+                  <Text fontSize="md" fontWeight="bold">
+                    {msg.senderNickName}
+                  </Text>
                   <Text fontSize="md">{msg.content}</Text>
                   <Text fontSize="md" color="gray.500">
-                    {new Date(msg.timestamp).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}
+                    {new Date(msg.timestamp).toLocaleString("ko-KR", {
+                      timeZone: "Asia/Seoul",
+                    })}
                   </Text>
                 </Box>
               </Flex>
@@ -188,7 +238,12 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
               placeholder="메시지를 입력하세요"
             />
             <InputRightElement width="4.5rem">
-              <Button h="1.75rem" size="sm" onClick={sendMessage} disabled={!isConnected}>
+              <Button
+                h="1.75rem"
+                size="sm"
+                onClick={sendMessage}
+                disabled={!isConnected}
+              >
                 보냄
               </Button>
             </InputRightElement>

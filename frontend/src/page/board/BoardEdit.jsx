@@ -6,6 +6,7 @@ import {
   FormControl,
   FormHelperText,
   FormLabel,
+  IconButton,
   Image,
   Input,
   Modal,
@@ -20,13 +21,12 @@ import {
   Textarea,
   useDisclosure,
   useToast,
-  IconButton,
 } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
 import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrashCan, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { LoginContext } from "../../component/LoginProvider.jsx";
 
 export function BoardEdit() {
@@ -52,7 +52,7 @@ export function BoardEdit() {
   useEffect(() => {
     if (board) {
       setDisableSaveButton(
-        board.title.trim().length === 0 || board.content.trim().length === 0
+        board.title.trim().length === 0 || board.content.trim().length === 0,
       );
     }
   }, [board]);
@@ -78,7 +78,9 @@ export function BoardEdit() {
       })
       .catch((err) => {
         const errorMessage =
-          err.response.status === 403 ? "권한이 없답니다" : "다른 오류가 발생했습니다";
+          err.response.status === 403
+            ? "권한이 없습니다."
+            : "다른 오류가 발생했습니다";
         toast({
           status: "error",
           description: errorMessage,
@@ -98,7 +100,9 @@ export function BoardEdit() {
   }
 
   const fileNameList = addFileList.map((file) => {
-    const duplicate = board.fileList.some((boardFile) => boardFile.name === file.name);
+    const duplicate = board.fileList.some(
+      (boardFile) => boardFile.name === file.name,
+    );
     return (
       <li key={file.name}>
         {file.name}

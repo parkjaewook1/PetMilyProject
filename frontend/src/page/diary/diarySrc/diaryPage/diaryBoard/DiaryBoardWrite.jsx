@@ -48,7 +48,7 @@ export function DiaryBoardWrite() {
           status: "success",
           position: "top",
         });
-        navigate(`/diary/${diaryId}/list/`);
+        navigate(`/diary/${diaryId}/list`);
       })
       .catch((e) => {
         const code = e.response.status;

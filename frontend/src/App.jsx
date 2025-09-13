@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { ChakraProvider, theme } from "@chakra-ui/react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import axios from "axios";
 import { Home } from "./page/Home.jsx";
 import { MainPage } from "./page/MainPage.jsx";
 import { AIChat } from "./component/chat/AIChat.jsx";
@@ -12,7 +13,7 @@ import { MemberFind } from "./page/member/MemberFind.jsx";
 import { MemberPage } from "./page/member/MemberPage.jsx";
 import { MemberList } from "./page/member/MemberList.jsx";
 import { MemberEdit } from "./page/member/MemberEdit.jsx";
-import { LoginProvider } from "./component/LoginProvider.jsx";
+import { LoginContext, LoginProvider } from "./component/LoginProvider.jsx";
 import { OAuthLogin } from "./page/member/OAuthLogin.jsx";
 
 // Board
@@ -47,66 +48,105 @@ import KakaoMap from "./KakaoMap.jsx";
 
 const App = () => {
   const [selectedCtprvnCd, setSelectedCtprvnCd] = useState(null);
+  const [user, setUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const memberInfo = useContext(LoginContext);
+
+  // 📌 앱 시작 시 토큰으로 내 정보 불러오기
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        if (!memberInfo?.id) return; // id 없으면 호출 안 함
+
+        const res = await axios.get(`/api/member/${memberInfo.id}`, {
+          withCredentials: true,
+        });
+        setUser(res.data); // { id, nickname, ... }
+      } catch (err) {
+        console.error("사용자 정보 불러오기 실패:", err);
+        setUser(null);
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+    fetchUser();
+  }, [memberInfo?.id]); // id가 바뀌면 다시 호출
+
+  // ✅ memberInfo가 세팅되면 로딩 종료
+  useEffect(() => {
+    if (memberInfo) {
+      setLoadingUser(false);
+    }
+  }, [memberInfo]);
+
   const router = createBrowserRouter([
     {
       path: "/",
       element: <Home />,
       children: [
-        { index: true, element: <MainPage /> }, // 메인페이지 렌더링
-        { path: "aichat", element: <AIChat /> }, // 챗봇 기능
+        { index: true, element: <MainPage /> },
+        { path: "aichat", element: <AIChat /> },
 
         // Member
-        { path: "member/signup", element: <MemberSignup /> }, // 회원 가입
-        { path: "member/login", element: <MemberLogin /> }, // 로그인
-        { path: "member/find", element: <MemberFind /> }, // 비밀번호 찾기
-        { path: "member/page/:id", element: <MemberPage /> }, // 회원 페이지
-        { path: "member/list", element: <MemberList /> }, // 회원 목록
-        { path: "member/edit/:id", element: <MemberEdit /> }, // 회원 정보 수정 및 탈퇴
-        { path: "member/oauth/login", element: <OAuthLogin /> }, // 소셜 로그인
+        { path: "member/signup", element: <MemberSignup /> },
+        { path: "member/login", element: <MemberLogin /> },
+        { path: "member/find", element: <MemberFind /> },
+        { path: "member/page/:id", element: <MemberPage /> },
+        { path: "member/list", element: <MemberList /> },
+        { path: "member/edit/:id", element: <MemberEdit /> },
+        { path: "member/oauth/login", element: <OAuthLogin /> },
 
         // Board
-        { path: "board/write", element: <BoardWrite /> }, // 게시판 글쓰기
-        { path: "board/list", element: <BoardList /> }, // 게시판 목록
-        { path: "board/:id", element: <BoardView /> }, // 게시글 보기
-        { path: "board/edit/:id", element: <BoardEdit /> }, // 게시글 수정
-        { path: "board/list/report", element: <BoardReportList /> }, // 신고 목록
+        { path: "board/write", element: <BoardWrite /> },
+        { path: "board/list", element: <BoardList /> },
+        { path: "board/:id", element: <BoardView /> },
+        { path: "board/edit/:id", element: <BoardEdit /> },
+        { path: "board/list/report", element: <BoardReportList /> },
         {
           path: "board/list/report/content",
           element: <BoardReportListContents />,
-        }, // 신고 내용
+        },
 
         // Diary
         {
           path: "diary/:diaryId",
           element: <DiaryHome />,
           children: [
-            // 다이어리 하위 경로 설정
-            { index: true, element: <DiaryHomeMain /> }, // 다이어리 메인페이지 렌더링
-            { path: "write", element: <DiaryBoardWrite /> }, // 다이어리 쓰기
-            { path: "list", element: <DiaryBoardList /> }, // 다이어리 목록
-            { path: "view/:id", element: <DiaryBoardView /> }, // 다이어리 보기
-            { path: "edit/:id", element: <DiaryBoardEdit /> }, // 다이어리 수정
-            { path: "comment", element: <DiaryComment /> }, // 방명록
-            { path: "comment/write", element: <DiaryCommentWrite /> }, // 방명록 쓰기
-            { path: "comment/view/:id", element: <DiaryCommentView /> }, // 방명록 더보기
-            { path: "comment/list", element: <DiaryCommentList /> }, // 방명록 리스트
-            { path: "comment/edit/:id", element: <DiaryCommentEdit /> }, // 방명록 수정
-            { path: "calendar", element: <DiaryCalendar /> }, // 예방접종
+            { index: true, element: <DiaryHomeMain /> },
+            { path: "write", element: <DiaryBoardWrite /> },
+            { path: "list", element: <DiaryBoardList /> },
+            { path: "view/:id", element: <DiaryBoardView /> },
+            { path: "edit/:id", element: <DiaryBoardEdit /> },
+            { path: "comment", element: <DiaryComment /> },
+            { path: "comment/write", element: <DiaryCommentWrite /> },
+            { path: "comment/view/:id", element: <DiaryCommentView /> },
+            { path: "comment/list", element: <DiaryCommentList /> },
+            { path: "comment/edit/:id", element: <DiaryCommentEdit /> },
+            {
+              path: "calendar",
+              element: loadingUser ? (
+                <div>로그인 정보를 불러오는 중...</div>
+              ) : user ? (
+                <DiaryCalendar user={user} />
+              ) : (
+                <div>유저 정보 없음</div>
+              ),
+            },
           ],
         },
 
         // Place
-        { path: "place/local", element: <PlaceLocal /> }, // 로컬 보기
-        { path: "place/map", element: <PlaceMap /> }, // 지도 보기
+        { path: "place/local", element: <PlaceLocal /> },
+        { path: "place/map", element: <PlaceMap /> },
         {
           path: "place-map2",
           element: <PlaceMap2 ctprvnCd={selectedCtprvnCd} />,
-        }, // 지도 보기 경로 설정
-        { path: "place/:id", element: <PlaceReview /> }, // 병원 정보 보기
+        },
+        { path: "place/:id", element: <PlaceReview /> },
         {
           path: "kakao-map",
           element: <KakaoMap onPolygonSelect={setSelectedCtprvnCd} />,
-        }, // KakaoMap 경로 설정
+        },
         { path: "place-map3", element: <PlaceMap3 /> },
       ],
     },

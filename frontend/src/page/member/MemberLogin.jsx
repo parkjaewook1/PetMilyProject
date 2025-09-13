@@ -15,7 +15,7 @@ import {
   Spinner,
   Text,
 } from "@chakra-ui/react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { LoginContext } from "../../component/LoginProvider.jsx";
 
@@ -25,6 +25,7 @@ export function MemberLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation(); // ✅ 추가
   const { setMemberInfo } = useContext(LoginContext);
 
   async function handleLogin(event) {
@@ -58,14 +59,18 @@ export function MemberLogin() {
       if (response.status === 200) {
         const { access, id, nickname } = response.data;
         const memberInfo = { access, id, nickname };
+        console.log("이거슨 데이터입니다", response.data);
 
         // ✅ 전역 상태 업데이트
         setMemberInfo(memberInfo);
+        localStorage.setItem("memberInfo", JSON.stringify(memberInfo));
 
-        // ✅ Axios 전역 헤더 즉시 세팅
+        // ✅ axios전역 헤더 즉시 세팅
         axios.defaults.headers.common["Authorization"] = `Bearer ${access}`;
 
-        navigate("/");
+        // ✅ 로그인 전 가려던 경로로 이동 (없으면 홈으로)
+        const redirectPath = location.state?.from || "/";
+        navigate(redirectPath, { replace: true });
       } else {
         setError("로그인에 실패했습니다.");
       }

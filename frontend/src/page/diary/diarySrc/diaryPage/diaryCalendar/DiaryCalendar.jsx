@@ -1,96 +1,77 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { useDisclosure } from "@chakra-ui/react";
-import "./DiaryCalendar.css";
-import ModalComponent from "./ModalComponent";
-import { LoginContext } from "../../../../../component/LoginProvider.jsx";
+import axios from "axios";
+import DiaryMoodModal from "./DiaryMoodModal";
+import PropTypes from "prop-types";
 
-const DiaryCalendar = () => {
+export default function DiaryCalendar({ user }) {
   const [events, setEvents] = useState([]);
-  const calendarRef = useRef(null);
-  const { memberInfo } = useContext(LoginContext);
-  const {
-    isOpen: modalIsOpen,
-    onOpen: openModal,
-    onClose: closeModal,
-  } = useDisclosure();
-  const [modalInfo, setModalInfo] = useState({ type: "", info: null });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+
+  const loadCalendarData = async (yearMonth) => {
+    const res = await axios.get("/api/diaryBoard/mood-stats", {
+      params: { memberId: user.id, yearMonth },
+    });
+    const mapped = res.data.map((stat) => ({
+      title: stat.mood,
+      start: stat.date,
+      color: mapMoodToColor(stat.mood),
+    }));
+    setEvents(mapped);
+  };
+
+  const mapMoodToColor = (mood) => {
+    switch (mood) {
+      case "HAPPY":
+        return "yellow";
+      case "NEUTRAL":
+        return "gray";
+      case "SAD":
+        return "blue";
+      case "ANGRY":
+        return "red";
+      case "TIRED":
+        return "purple";
+      default:
+        return "lightgray";
+    }
+  };
 
   useEffect(() => {
-    const savedEvents = JSON.parse(localStorage.getItem("diaryEvents"));
-    if (savedEvents) {
-      setEvents(savedEvents);
-    }
-  }, []);
-
-  const handleSave = (inputText) => {
-    if (modalInfo.type === "add") {
-      const newEvent = {
-        title: inputText,
-        start: modalInfo.info.dateStr,
-        allDay: true,
-      };
-      const updatedEvents = [...events, newEvent];
-      setEvents(updatedEvents);
-      localStorage.setItem("diaryEvents", JSON.stringify(updatedEvents));
-    } else if (modalInfo.type === "edit") {
-      const updatedEvents = events.map((event) =>
-        event.start === modalInfo.info.event.startStr
-          ? { ...event, title: inputText }
-          : event,
-      );
-      setEvents(updatedEvents);
-      localStorage.setItem("diaryEvents", JSON.stringify(updatedEvents));
-      modalInfo.info.event.setProp("title", inputText); // 캘린더의 이벤트 제목 업데이트
-    }
-    closeModal();
-  };
-
-  const handleDateClick = (info) => {
-    setModalInfo({ type: "add", info });
-    openModal();
-  };
-
-  const handleEventClick = (info) => {
-    setModalInfo({ type: "edit", info });
-    openModal();
-  };
-
-  const handleDelete = () => {
-    const updatedEvents = events.filter(
-      (event) => event.start !== modalInfo.info.event.startStr,
-    );
-    setEvents(updatedEvents);
-    localStorage.setItem("diaryEvents", JSON.stringify(updatedEvents));
-    closeModal();
-  };
+    if (!user) return; // user가 없으면 실행 안 함
+    const today = new Date();
+    loadCalendarData(today.toISOString().slice(0, 7));
+  }, [user]);
 
   return (
-    <div id="calendar">
-      {memberInfo.access && memberInfo.id && memberInfo.nickname && (
-        <FullCalendar
-          ref={calendarRef}
-          plugins={[dayGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
-          events={events}
-          dateClick={handleDateClick}
-          eventClick={handleEventClick}
-          height="auto"
-        />
-      )}
-      <ModalComponent
-        isOpen={modalIsOpen}
-        onClose={closeModal}
-        onSave={handleSave}
-        onDelete={handleDelete}
-        defaultText={
-          modalInfo.type === "edit" ? modalInfo.info.event.title : ""
-        }
+    <>
+      <FullCalendar
+        plugins={[dayGridPlugin, interactionPlugin]}
+        initialView="dayGridMonth"
+        events={events}
+        dateClick={(info) => {
+          setSelectedDate(info.dateStr);
+          setIsModalOpen(true);
+        }}
       />
-    </div>
-  );
-};
 
-export default DiaryCalendar;
+      <DiaryMoodModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        selectedDate={selectedDate}
+        username={user?.nickname}
+        reloadCalendar={loadCalendarData}
+      />
+    </>
+  );
+}
+// 📌 여기서 PropTypes 정의
+DiaryCalendar.propTypes = {
+  user: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    nickname: PropTypes.string.isRequired,
+  }).isRequired,
+};

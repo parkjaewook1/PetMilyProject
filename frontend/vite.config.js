@@ -13,29 +13,30 @@ export default defineConfig({
       "/ws": {
         target: `http://${targetServer}:8080`,
         changeOrigin: true,
-        ws: true
+        ws: true,
       },
       "/api": {
         target: `http://${targetServer}:8080`,
-        changeOrigin: true
-      }
+        changeOrigin: true,
+      },
     },
   },
   resolve: {
     alias: {
-      'global': 'global/auto'
-    }
+      "@": path.resolve(__dirname, "./src"), // src 절대 경로 alias
+      global: "global/auto",
+    },
   },
   optimizeDeps: {
     esbuildOptions: {
       define: {
-        global: 'globalThis'
+        global: "globalThis",
       },
       plugins: [
         NodeGlobalsPolyfillPlugin({
-          buffer: true
-        })
-      ]
-    }
-  }
-})
+          buffer: true,
+        }),
+      ],
+    },
+  },
+});

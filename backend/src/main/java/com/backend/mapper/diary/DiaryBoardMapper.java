@@ -1,6 +1,7 @@
 package com.backend.mapper.diary;
 
 import com.backend.domain.diary.DiaryBoard;
+import com.backend.domain.diary.MoodStat;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -9,8 +10,8 @@ import java.util.List;
 public interface DiaryBoardMapper {
 
     @Insert("""
-                INSERT INTO diary(title, content, member_id, username)
-                VALUES (#{title}, #{content}, #{memberId}, #{username})
+                INSERT INTO diary(title, content, member_id, username,mood)
+                VALUES (#{title}, #{content}, #{memberId}, #{username},#{mood})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(DiaryBoard diaryBoard);
@@ -18,6 +19,7 @@ public interface DiaryBoardMapper {
     @Select("""
                 SELECT d.id,
                        d.title,
+                       d.mood,
                        d.inserted,
                        m.nickname writer
                 FROM diary d
@@ -29,6 +31,7 @@ public interface DiaryBoardMapper {
     @Select("""
                 SELECT d.id,
                        d.title,
+                       d.mood,
                        d.content,
                        d.inserted,
                        m.nickname writer,
@@ -51,7 +54,8 @@ public interface DiaryBoardMapper {
                 SET title = #{title},
                     content = #{content},
                     username = #{username},
-                    nickname = #{nickname}
+                    nickname = #{nickname},
+                    mood = #{mood}
                 WHERE id = #{id}
             """)
     int update(DiaryBoard diaryBoard);
@@ -60,6 +64,7 @@ public interface DiaryBoardMapper {
                 <script>
                 SELECT d.id,
                        d.title,
+                       d.mood,
                        m.nickname writer,
                        d.inserted,
                        d.content
@@ -163,4 +168,15 @@ public interface DiaryBoardMapper {
                   AND name = #{fileName}
             """)
     int deleteFileByDiaryIdAndName(Integer diaryId, String fileName);
+
+    @Select("""
+                SELECT mood, COUNT(*) AS count
+                FROM diary
+                WHERE member_id = #{memberId}
+                  AND DATE_FORMAT(inserted, '%Y-%m') = #{yearMonth}
+                GROUP BY mood
+            """)
+    List<MoodStat> getMonthlyMoodStats(@Param("memberId") Integer memberId,
+                                       @Param("yearMonth") String yearMonth);
 }
+

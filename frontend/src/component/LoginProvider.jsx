@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useState } from "react";
+import { jwtDecode } from "jwt-decode";
 import axios from "axios";
-import { jwtDecode } from "jwt-decode"; // npm install jwt-decode
 
 export const LoginContext = createContext(null);
 
@@ -9,6 +9,14 @@ export function LoginProvider({ children }) {
     const stored = localStorage.getItem("memberInfo");
     return stored ? JSON.parse(stored) : null;
   });
+
+  // ✅ memberInfo에서 안전한 user 정보만 추출
+  const user = memberInfo
+    ? {
+        id: memberInfo.id,
+        nickname: memberInfo.nickname,
+      }
+    : null;
 
   // 공통 로그아웃 처리
   const logout = () => {
@@ -35,7 +43,6 @@ export function LoginProvider({ children }) {
           }, msUntilExpire);
           return () => clearTimeout(timer);
         } else {
-          // 이미 만료된 경우 → 다음 이벤트 루프에서 실행
           setTimeout(() => logout(), 0);
         }
       } catch (e) {
@@ -43,7 +50,6 @@ export function LoginProvider({ children }) {
         setTimeout(() => logout(), 0);
       }
     } else {
-      // 로그아웃 상태
       localStorage.removeItem("memberInfo");
       delete axios.defaults.headers.common["Authorization"];
     }
@@ -87,7 +93,7 @@ export function LoginProvider({ children }) {
   }, []);
 
   return (
-    <LoginContext.Provider value={{ memberInfo, setMemberInfo, logout }}>
+    <LoginContext.Provider value={{ memberInfo, user, setMemberInfo, logout }}>
       {children}
     </LoginContext.Provider>
   );

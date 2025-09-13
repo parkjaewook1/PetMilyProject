@@ -1,6 +1,7 @@
 package com.backend.service.diary;
 
 import com.backend.domain.diary.DiaryBoard;
+import com.backend.domain.diary.MoodStat;
 import com.backend.domain.member.Member;
 import com.backend.mapper.diary.DiaryBoardMapper;
 import com.backend.mapper.member.MemberMapper;
@@ -9,9 +10,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -30,22 +33,33 @@ public class DiaryBoardService {
 //    private String srcPrefix;
     //ddd
 
+    public void add(DiaryBoard diaryBoard, Authentication authentication) {
+        String username = diaryBoard.getUsername();
+        Member member = memberMapper.selectByDiaryName(username);
+
+        if (member != null) {
+            diaryBoard.setMemberId(member.getId());
+            mapper.insert(diaryBoard);
+        } else {
+            throw new UsernameNotFoundException("Username not found: " + username);
+        }
+    }
+
     public void add(DiaryBoard diaryBoard
-//            , MultipartFile[] files
+            , MultipartFile[] files
             , Authentication authentication) throws IOException {
         String username = diaryBoard.getUsername();
-
         Member member = memberMapper.selectByDiaryName((username));
 
         if (member != null) {
             // 회원 ID를 설정
             diaryBoard.setMemberId(member.getId());
-
             // 코멘트를 diary 테이블에 삽입
             mapper.insert(diaryBoard);
         } else {
             throw new UsernameNotFoundException("Username not found: " + username);
         }
+
 
         // db에 해당 게시물의 파일 목록 저장
 //        if (files != null) {
@@ -186,5 +200,9 @@ public class DiaryBoardService {
 //        diaryBoard.setFileList(files);
 
         return diaryBoard;
+    }
+
+    public List<MoodStat> getMonthlyMoodStats(Integer memberId, String yearMonth) {
+        return mapper.getMonthlyMoodStats(memberId, yearMonth);
     }
 }

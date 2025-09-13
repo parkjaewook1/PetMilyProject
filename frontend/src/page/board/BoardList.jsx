@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+
 import {
   Badge,
   Box,
@@ -35,6 +35,7 @@ import {
   faMagnifyingGlass,
 } from "@fortawesome/free-solid-svg-icons";
 import Pagination from "../../component/Pagination.jsx";
+import axios from "axios";
 
 export function BoardList() {
   const [boardList, setBoardList] = useState([]);

@@ -76,16 +76,16 @@ export function DiaryHomeMain() {
   return (
     <Box>
       <Center>
-      <Box mb={5}>
-        <Image
-          src="../../../../../public/img/diary_main_minimi.jpg"
-          alt="Diary Banner"
-          width="100%"
-          h="auto"
-          borderRadius="md"
-          boxShadow="md"
-        />
-      </Box>
+        <Box mb={5}>
+          <Image
+            src="../../../../../public/img/diary_main_minimi.jpg"
+            alt="Diary Banner"
+            width="100%"
+            h="auto"
+            borderRadius="md"
+            boxShadow="md"
+          />
+        </Box>
       </Center>
 
       <Box mb={10}>
@@ -118,8 +118,24 @@ export function DiaryHomeMain() {
                       cursor="pointer"
                     >
                       <Td fontSize="sm">{diaryBoardList.length - index}</Td>
-                      <Td fontSize="sm" maxW="100px" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{diaryBoard.title}</Td>
-                      <Td fontSize="sm" maxW="100px" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{diaryBoard.content}</Td>
+                      <Td
+                        fontSize="sm"
+                        maxW="100px"
+                        whiteSpace="nowrap"
+                        overflow="hidden"
+                        textOverflow="ellipsis"
+                      >
+                        {diaryBoard.title}
+                      </Td>
+                      <Td
+                        fontSize="sm"
+                        maxW="100px"
+                        whiteSpace="nowrap"
+                        overflow="hidden"
+                        textOverflow="ellipsis"
+                      >
+                        {diaryBoard.content}
+                      </Td>
                       <Td fontSize="sm">
                         {format(new Date(diaryBoard.inserted), "yyyy.MM.dd")}
                       </Td>
@@ -154,10 +170,22 @@ export function DiaryHomeMain() {
                       cursor="pointer"
                     >
                       <Td fontSize="sm">{index + 1}</Td>
-                      <Td fontSize="sm" maxW="100px" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">
+                      <Td
+                        fontSize="sm"
+                        maxW="100px"
+                        whiteSpace="nowrap"
+                        overflow="hidden"
+                        textOverflow="ellipsis"
+                      >
                         {diaryComment.nickname}
                       </Td>
-                      <Td fontSize="sm" maxW="200px" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">
+                      <Td
+                        fontSize="sm"
+                        maxW="200px"
+                        whiteSpace="nowrap"
+                        overflow="hidden"
+                        textOverflow="ellipsis"
+                      >
                         {diaryComment.comment.substring(0, 20)}
                       </Td>
                       <Td fontSize="sm">

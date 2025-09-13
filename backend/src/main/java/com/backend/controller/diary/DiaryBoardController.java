@@ -2,7 +2,7 @@ package com.backend.controller.diary;
 
 import com.backend.domain.diary.DiaryBoard;
 import com.backend.domain.diary.DiaryProfile;
-import com.backend.domain.member.Member;
+import com.backend.domain.diary.MoodStat;
 import com.backend.service.diary.DiaryBoardService;
 import com.backend.service.diary.DiaryProfileService;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -22,25 +23,40 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DiaryBoardController {
 
-    private final DiaryBoardService service;
+    private final DiaryBoardService diaryBoardService;
     private final DiaryProfileService diaryProfileService;
 
+
+    // 기존 다이어리 메인 (파일 포함)
     @PostMapping("/add")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity add(DiaryBoard diaryBoard,
-                              @RequestParam(value = "files[]", required = false) MultipartFile[] files,
-                              Authentication authentication) throws IOException {
-        if (service.validate(diaryBoard)) {
-            service.add(diaryBoard
-//                    , files
-                    , authentication);
-            System.out.println("diaryBoard = " + diaryBoard);
-            return ResponseEntity.ok().build();
-        } else {
+    public ResponseEntity<?> addDiary(
+            @ModelAttribute DiaryBoard diaryBoard,
+            @RequestParam(value = "files[]", required = false) MultipartFile[] files,
+            Authentication authentication) {
+        if (!diaryBoardService.validate(diaryBoard)) {
             return ResponseEntity.badRequest().build();
         }
 
+        try {
+            diaryBoardService.add(diaryBoard, files, authentication);
+            return ResponseEntity.ok().build();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
+    // 감정일기 (파일 없음)
+    @PostMapping("/add-mood")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> addMood(@RequestBody DiaryBoard diaryBoard,
+                                     Authentication authentication) {
+        if (diaryBoardService.validate(diaryBoard)) {
+            diaryBoardService.add(diaryBoard, authentication);
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.badRequest().build();
     }
 
     @GetMapping("/list")
@@ -48,13 +64,13 @@ public class DiaryBoardController {
                                     @RequestParam(value = "type", required = false) String searchType,
                                     @RequestParam(value = "keyword", defaultValue = "") String keyword,
                                     @RequestParam(value = "memberId", required = false) Integer memberId) {
-        return service.list(page, searchType, keyword, memberId);
+        return diaryBoardService.list(page, searchType, keyword, memberId);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity get(@PathVariable Integer id) {
 
-        DiaryBoard diaryBoard = service.get(id);
+        DiaryBoard diaryBoard = diaryBoardService.get(id);
         if (diaryBoard == null) {
             return ResponseEntity.notFound().build();
         } else {
@@ -66,8 +82,8 @@ public class DiaryBoardController {
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity delete(@PathVariable Integer id, Authentication authentication, @RequestParam(required = false) Integer memberId) {
-        if (service.hasAccess(id, authentication, memberId)) {
-            service.remove(id);
+        if (diaryBoardService.hasAccess(id, authentication, memberId)) {
+            diaryBoardService.remove(id);
             return ResponseEntity.ok().build();
 
         } else {
@@ -83,11 +99,11 @@ public class DiaryBoardController {
 //                               @RequestParam(value = "addFileList[]", required = false) MultipartFile[] addFileList,
                                Authentication authentication,
                                @RequestParam(required = false) Integer memberId) throws IOException {
-        if (!service.hasAccess(diaryBoard.getId(), authentication, memberId)) {
+        if (!diaryBoardService.hasAccess(diaryBoard.getId(), authentication, memberId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        if (service.validate(diaryBoard)) {
-            service.edit(diaryBoard
+        if (diaryBoardService.validate(diaryBoard)) {
+            diaryBoardService.edit(diaryBoard
 //                    , removeFileList, addFileList
             );
             return ResponseEntity.ok().build();
@@ -144,5 +160,11 @@ public class DiaryBoardController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    @GetMapping("/mood-stats")
+    public List<MoodStat> getMonthlyMoodStats(@RequestParam Integer memberId,
+                                              @RequestParam String yearMonth) {
+        return diaryBoardService.getMonthlyMoodStats(memberId, yearMonth);
     }
 }
