@@ -1,7 +1,13 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import axios from "@api/axiosConfig";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 import {
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogOverlay,
   Box,
   Button,
   Card,
@@ -31,13 +37,14 @@ export function DiaryCommentView() {
   const memberId = memberInfo && memberInfo.id ? parseInt(memberInfo.id) : null;
   const params = memberId ? { memberId } : {};
   const { onOpen, onClose, isOpen } = useDisclosure();
+  const cancelRef = useRef();
 
   useEffect(() => {
     axios
       .get(`/api/diaryComment/${id}`)
       .then((res) => setDiaryComment(res.data))
       .catch((err) => {
-        if (err.response.status === 404) {
+        if (err.response?.status === 404) {
           toast({
             status: "info",
             description: "해당 댓글이 존재하지 않습니다.",
@@ -86,6 +93,7 @@ export function DiaryCommentView() {
       </Center>
     );
   }
+
   const isWriter = Number(diaryComment?.memberId) === Number(memberInfo?.id);
   const isDiaryOwner = Number(diaryComment?.ownerId) === Number(memberInfo?.id);
 
@@ -127,14 +135,14 @@ export function DiaryCommentView() {
                     <Button colorScheme="purple" onClick={handleCommentEdit}>
                       수정
                     </Button>
-                    <Button colorScheme="red" onClick={handleClickRemove}>
+                    <Button colorScheme="red" onClick={onOpen}>
                       삭제
                     </Button>
                   </>
                 )}
 
                 {!isWriter && isDiaryOwner && (
-                  <Button colorScheme="red" onClick={handleClickRemove}>
+                  <Button colorScheme="red" onClick={onOpen}>
                     삭제
                   </Button>
                 )}
@@ -143,6 +151,34 @@ export function DiaryCommentView() {
           </CardBody>
         </Card>
       </Box>
+
+      {/* ✅ 삭제 확인 모달 */}
+      <AlertDialog
+        isOpen={isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              댓글 삭제
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              정말로 이 댓글을 삭제하시겠습니까?
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onClose}>
+                취소
+              </Button>
+              <Button colorScheme="red" onClick={handleClickRemove} ml={3}>
+                삭제
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Center>
   );
 }
