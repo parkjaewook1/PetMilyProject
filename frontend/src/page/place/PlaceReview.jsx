@@ -11,7 +11,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { CommentComponent } from "../../component/place/CommentComponent.jsx";
 import { StarIcon } from "@chakra-ui/icons";
 import { FaDirections, FaMapMarkerAlt, FaPhone } from "react-icons/fa";

@@ -16,7 +16,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { LoginContext } from "../../component/LoginProvider.jsx";
 
 export function MemberLogin() {
@@ -59,7 +59,7 @@ export function MemberLogin() {
       if (response.status === 200) {
         const { access, id, nickname } = response.data;
         const memberInfo = { access, id, nickname };
-        console.log("이거슨 데이터입니다", response.data);
+        console.log("데이터 입니다", response.data);
 
         // ✅ 전역 상태 업데이트
         setMemberInfo(memberInfo);

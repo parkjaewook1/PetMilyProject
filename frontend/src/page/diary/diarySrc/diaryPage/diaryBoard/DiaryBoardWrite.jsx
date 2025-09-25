@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -7,55 +7,86 @@ import {
   FormLabel,
   Heading,
   Input,
+  Select,
   Spinner,
   Textarea,
   useToast,
 } from "@chakra-ui/react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import axios from "@api/axiosConfig";
+import { useNavigate, useParams } from "react-router-dom";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
-import { generateDiaryId } from "../../../../../util/util.jsx";
+import {
+  extractUserIdFromDiaryId,
+  generateDiaryId,
+} from "../../../../../util/util.jsx";
 
 export function DiaryBoardWrite() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedMood, setSelectedMood] = useState("NEUTRAL");
+  const [ownerId, setOwnerId] = useState(null);
+  const [files, setFiles] = useState([]); // 📌 파일 상태 추가
+
   const { memberInfo } = useContext(LoginContext);
   const access = memberInfo?.access || null;
   const isLoggedIn = Boolean(access);
+
   const toast = useToast();
   const navigate = useNavigate();
+  const { diaryId: diaryIdParam } = useParams();
+
   const username = memberInfo?.nickname || "";
-  const diaryId = generateDiaryId(memberInfo.id);
+  const myDiaryId = generateDiaryId(memberInfo.id);
+
+  // ✅ URL의 diaryId에서 주인 memberId 추출
+  useEffect(() => {
+    if (diaryIdParam) {
+      const extractedOwnerId = extractUserIdFromDiaryId(diaryIdParam);
+      setOwnerId(extractedOwnerId);
+    }
+  }, [diaryIdParam]);
+
+  const isOwner = String(memberInfo?.id) === String(ownerId);
+
+  const handleFileChange = (e) => {
+    setFiles(Array.from(e.target.files)); // 여러 파일 선택 가능
+  };
 
   const handleSaveClick = () => {
     setLoading(true);
     const formData = new FormData();
-    formData.append("diaryId", diaryId);
     formData.append("title", title);
     formData.append("content", content);
-    formData.append("username", username);
+    formData.append("mood", selectedMood);
+
+    // 📌 파일 추가
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
 
     axios
-      .post("/api/diaryBoard/add", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
+      .post("/api/diaryBoard/add", formData)
       .then(() => {
         toast({
           description: "새 글이 등록되었습니다.",
           status: "success",
           position: "top",
         });
-        navigate(`/diary/${diaryId}/list`);
+        navigate(`/diary/${myDiaryId}/board/list`);
       })
       .catch((e) => {
-        const code = e.response.status;
+        const code = e.response?.status;
         if (code === 400) {
           toast({
             status: "error",
             description: "등록되지 않았습니다. 입력한 내용을 확인하세요.",
+            position: "top",
+          });
+        } else if (code === 401 || code === 403) {
+          toast({
+            status: "error",
+            description: "이 다이어리의 주인만 글을 작성할 수 있습니다.",
             position: "top",
           });
         }
@@ -66,6 +97,7 @@ export function DiaryBoardWrite() {
   const disableSaveButton =
     title.trim().length === 0 || content.trim().length === 0;
 
+  // 로그인 안 한 경우
   if (!isLoggedIn) {
     return (
       <Center mt={10}>
@@ -74,6 +106,23 @@ export function DiaryBoardWrite() {
     );
   }
 
+  // 주인 여부 판단 전 로딩
+  if (ownerId === null) {
+    return (
+      <Center mt={10}>
+        <Spinner size="xl" />
+      </Center>
+    );
+  }
+
+  // 로그인했지만 주인이 아닌 경우
+  if (!isOwner) {
+    return (
+      <Center mt={10}>이 다이어리의 주인만 글을 작성할 수 있습니다.</Center>
+    );
+  }
+
+  // 주인인 경우 작성 폼 표시
   return (
     <Center mt={5}>
       <Box w={500} p={6} boxShadow="lg" borderRadius="md" bg="white">
@@ -99,6 +148,29 @@ export function DiaryBoardWrite() {
             onChange={(e) => setContent(e.target.value)}
             placeholder="본문을 입력하세요"
             height="200px"
+          />
+        </FormControl>
+        <FormControl mb={4}>
+          <FormLabel>오늘의 기분</FormLabel>
+          <Select
+            value={selectedMood}
+            onChange={(e) => setSelectedMood(e.target.value)}
+            placeholder="기분을 선택하세요"
+          >
+            <option value="HAPPY">😊 행복</option>
+            <option value="SAD">😢 슬픔</option>
+            <option value="ANGRY">😡 화남</option>
+            <option value="NEUTRAL">😐 보통</option>
+          </Select>
+        </FormControl>
+        {/* 📌 파일 업로드 필드 */}
+        <FormControl mb={4}>
+          <FormLabel>첨부 파일</FormLabel>
+          <Input
+            type="file"
+            multiple
+            onChange={handleFileChange}
+            accept="image/*"
           />
         </FormControl>
         <Button

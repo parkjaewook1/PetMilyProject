@@ -10,7 +10,7 @@ import {
   useColorModeValue,
   VStack,
 } from "@chakra-ui/react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { useLocation } from "react-router-dom";
 
 export function BoardReportListContents() {

@@ -35,7 +35,7 @@ import {
   faMagnifyingGlass,
 } from "@fortawesome/free-solid-svg-icons";
 import Pagination from "../../component/Pagination.jsx";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 
 export function BoardList() {
   const [boardList, setBoardList] = useState([]);

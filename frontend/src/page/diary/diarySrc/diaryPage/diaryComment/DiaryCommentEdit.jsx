@@ -4,6 +4,7 @@ import {
   Center,
   FormControl,
   FormLabel,
+  HStack,
   Input,
   Modal,
   ModalBody,
@@ -18,28 +19,25 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import React, { useContext, useEffect, useState } from "react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { useNavigate, useParams } from "react-router-dom";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
-import { generateDiaryId } from "../../../../../util/util.jsx";
+
+// import { generateDiaryId } from "../../../../../util/util.jsx";
 
 export function DiaryCommentEdit() {
-  const { id } = useParams();
+  const { diaryId, id } = useParams();
   const [diaryComment, setDiaryComment] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
   const { memberInfo } = useContext(LoginContext);
-  const access = memberInfo.access;
-  const nickname = memberInfo.nickname;
-  const isLoggedIn = Boolean(access);
   const navigate = useNavigate();
-  const diaryId = generateDiaryId(memberInfo.id);
 
   useEffect(() => {
     axios
       .get(`/api/diaryComment/${id}`)
       .then((res) => setDiaryComment(res.data))
-      .catch((err) => {
+      .catch(() => {
         toast({
           status: "error",
           description: "댓글을 불러오는 중 오류가 발생했습니다.",
@@ -53,7 +51,7 @@ export function DiaryCommentEdit() {
 
     axios
       .put(`/api/diaryComment/edit`, {
-        id: diaryComment.id, // 수정할 댓글의 ID 사용
+        id: diaryComment.id,
         nickname: memberInfo.nickname,
         comment: diaryComment.comment,
         memberId: memberInfo.id,
@@ -67,7 +65,7 @@ export function DiaryCommentEdit() {
         navigate(`/diary/${diaryId}/comment/view/${id}`);
       })
       .catch((err) => {
-        if (err.response && err.response.status === 400) {
+        if (err.response?.status === 400) {
           toast({
             status: "error",
             description: "댓글이 수정되지 않았습니다.",
@@ -75,8 +73,29 @@ export function DiaryCommentEdit() {
           });
         }
       })
-      .finally(() => {
-        onClose();
+      .finally(onClose);
+  }
+
+  function handleDelete() {
+    if (!window.confirm("정말 삭제하시겠습니까?")) return;
+
+    axios
+      .delete(`/api/diaryComment/${diaryComment.id}`)
+      .then(() => {
+        toast({
+          status: "success",
+          description: "댓글이 삭제되었습니다.",
+          position: "top",
+        });
+        // 삭제 후 목록 페이지로 이동
+        navigate(`/diary/${diaryId}/comment/list`);
+      })
+      .catch((err) => {
+        toast({
+          status: "error",
+          description: "댓글 삭제 중 오류가 발생했습니다.",
+          position: "top",
+        });
       });
   }
 
@@ -115,14 +134,18 @@ export function DiaryCommentEdit() {
             <FormLabel>방명록 작성글</FormLabel>
             <Textarea
               value={diaryComment.comment}
-              key={diaryComment.id}
               onChange={(e) =>
                 setDiaryComment({ ...diaryComment, comment: e.target.value })
               }
-            ></Textarea>
-            <Button onClick={onOpen} mt={4}>
-              저장
-            </Button>
+            />
+            <HStack mt={4} spacing={3}>
+              <Button onClick={onOpen} colorScheme="blue">
+                저장
+              </Button>
+              <Button onClick={handleDelete} colorScheme="red">
+                삭제
+              </Button>
+            </HStack>
           </FormControl>
         </Box>
         <Modal isOpen={isOpen} onClose={onClose}>

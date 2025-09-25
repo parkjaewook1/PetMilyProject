@@ -1,6 +1,6 @@
 import { Box, Button, Textarea, Tooltip, useToast } from "@chakra-ui/react";
 import { useContext, useState } from "react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { LoginContext } from "../LoginProvider.jsx";

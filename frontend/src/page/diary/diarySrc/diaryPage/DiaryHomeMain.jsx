@@ -15,32 +15,63 @@ import {
   Tr,
   useColorModeValue,
 } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useNavigate, useParams } from "react-router-dom";
+import axios from "@api/axiosConfig";
 import { LoginContext } from "../../../../component/LoginProvider.jsx";
 import { format } from "date-fns";
-import { generateDiaryId } from "../../../../util/util.jsx";
 import { DiaryContext } from "../diaryComponent/DiaryContext.jsx";
 
 export function DiaryHomeMain() {
   const { memberInfo } = useContext(LoginContext);
-  const { diaryBoardList, setDiaryBoardList } = useContext(DiaryContext); // DiaryContext 사용
+  const { diaryBoardList, setDiaryBoardList } = useContext(DiaryContext);
   const [diaryCommentList, setDiaryCommentList] = useState([]);
+  const [numericDiaryId, setNumericDiaryId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const bg = useColorModeValue("white", "gray.800");
   const hoverBg = useColorModeValue("gray.100", "gray.700");
+  const { diaryId } = useParams(); // encodedId 또는 숫자
 
+  // encodedId 또는 memberId로 다이어리 PK 조회
   useEffect(() => {
+    if (!diaryId || !memberInfo?.id) {
+      console.warn("유효하지 않은 아이디:", diaryId);
+      setIsLoading(false);
+      return;
+    }
+
+    const resolveDiaryId = async () => {
+      try {
+        // 백엔드에서 변환 + 주인 검증 + PK 조회까지 처리
+        const res = await axios.get(`/api/diary/byMember/${diaryId}`);
+        setNumericDiaryId(res.data.id); // DB PK
+      } catch (err) {
+        if (err.response?.status === 404) {
+          console.warn("다이어리를 찾을 수 없습니다.");
+        } else if (err.response?.status === 403) {
+          console.warn("접근 권한이 없습니다.");
+        } else {
+          console.error("다이어리 ID 확인 실패:", err.response || err);
+        }
+        setIsLoading(false);
+      }
+    };
+
+    resolveDiaryId();
+  }, [diaryId, memberInfo]);
+
+  // numericDiaryId로 데이터 불러오기
+  useEffect(() => {
+    if (!numericDiaryId || !memberInfo?.id) return;
+
     const fetchData = async () => {
       try {
-        const diaryBoardRes = await axios.get(`/api/diaryBoard/list?limit=5`);
-        const diaryCommentRes = await axios.get(
-          `/api/diaryComment/list?limit=5`,
-        );
+        const diaryBoardRes = await axios.get("/api/diaryBoard/list", {
+          params: { diaryId: numericDiaryId, limit: 5 },
+        });
 
-        console.log("diaryBoardRes:", diaryBoardRes.data);
-        console.log("diaryCommentRes:", diaryCommentRes.data);
+        const diaryCommentRes = await axios.get("/api/diaryComment/list", {
+          params: { diaryId: numericDiaryId, limit: 5 },
+        });
 
         setDiaryBoardList(diaryBoardRes.data.diaryBoardList || []);
         setDiaryCommentList(
@@ -49,20 +80,21 @@ export function DiaryHomeMain() {
             : [],
         );
       } catch (err) {
-        console.error("데이터를 가져오는 중 오류 발생:", err);
+        console.error("데이터를 가져오는 중 오류 발생:", err.response || err);
       } finally {
         setIsLoading(false);
       }
     };
+
     fetchData();
-  }, [memberInfo.id, setDiaryBoardList]);
+  }, [numericDiaryId, memberInfo?.id, setDiaryBoardList]);
 
   const handleBoardClick = (id) => {
-    navigate(`/diary/${generateDiaryId(memberInfo.id)}/view/${id}`);
+    navigate(`/diary/${diaryId}/board/view/${id}`);
   };
 
-  const handleCommentClick = () => {
-    navigate(`/diary/${generateDiaryId(memberInfo.id)}/comment/list`);
+  const handleCommentClick = (id) => {
+    navigate(`/diary/${diaryId}/comment/view/${id}`);
   };
 
   if (isLoading) {
@@ -93,6 +125,7 @@ export function DiaryHomeMain() {
           최근 게시물
         </Heading>
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10}>
+          {/* 일기장 */}
           <Box>
             <Heading size="md" mb={3}>
               일기장
@@ -145,6 +178,8 @@ export function DiaryHomeMain() {
               </Table>
             )}
           </Box>
+
+          {/* 방명록 */}
           <Box>
             <Heading size="md" mb={3}>
               방명록
@@ -165,7 +200,7 @@ export function DiaryHomeMain() {
                   {diaryCommentList.slice(0, 5).map((diaryComment, index) => (
                     <Tr
                       key={diaryComment.id}
-                      onClick={() => handleCommentClick()}
+                      onClick={() => handleCommentClick(diaryComment.id)}
                       _hover={{ bg: hoverBg }}
                       cursor="pointer"
                     >

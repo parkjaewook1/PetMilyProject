@@ -85,8 +85,11 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
         String role = auth.getAuthority();
 
         // 토큰 생성
-        String access = jwtUtil.createJwt("access", username, role, 600000L); // 10분
-        String refresh = jwtUtil.createJwt("refresh", username, role, 36000000L); // 10시간
+        Long userId = customUserDetails.getId() != null
+                ? customUserDetails.getId().longValue()
+                : null; // 혹시 null일 경우 대비
+        String access = jwtUtil.createJwt("access", username, role, userId, 600000L); // 10분
+        String refresh = jwtUtil.createJwt("refresh", username, role, userId, 36000000L); // 10시간
 
         // ✅ 기존 refresh 쿠키 삭제 (중복 방지)
         Cookie deleteCookie = new Cookie("refresh", null);

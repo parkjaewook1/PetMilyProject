@@ -18,30 +18,39 @@ public class DiaryCommentController {
     private final DiaryCommentService service;
 
     @PostMapping("/add")
-    public ResponseEntity add(@RequestBody DiaryComment diaryComment,
-                              Authentication authentication) {
-        if (service.validate(diaryComment)) {
-            service.add(diaryComment, authentication);
-            System.out.println("diaryComment = " + diaryComment);
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.badRequest().build();
+    public ResponseEntity add(@RequestBody DiaryComment diaryComment, Authentication authentication) {
+        try {
+            System.out.println("diaryComment 찾아보자 = " + diaryComment);
+            if (service.validate(diaryComment)) {
+                service.add(diaryComment, authentication);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> list(
+            @RequestParam Integer diaryId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
-        Map<String, Object> response = service.list(page, pageSize);
+
+        Map<String, Object> response = service.list(diaryId, page, pageSize);
+        System.out.println("[DEBUG] list 호출: diaryId=" + diaryId + ", page=" + page + ", pageSize=" + pageSize);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity diaryDelete(@PathVariable Integer id, @RequestParam(required = false) Integer memberId,
-                                      Authentication authentication) {
-        if (service.hasAccess(id, authentication, memberId)) {
+    public ResponseEntity diaryDelete(@PathVariable Integer id, Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (service.hasAccess(id, authentication)) {
             service.diaryDelete(id);
             return ResponseEntity.ok().build();
         } else {
@@ -50,8 +59,14 @@ public class DiaryCommentController {
     }
 
     @PutMapping("/edit")
-    public ResponseEntity edit(@RequestBody DiaryComment diaryComment
-            , Authentication authentication) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity edit(@RequestBody DiaryComment diaryComment, Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (!service.hasAccess(diaryComment.getId(), authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         if (service.validate(diaryComment)) {
             service.edit(diaryComment);
             return ResponseEntity.ok().build();

@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import {
   Box,
   Button,
@@ -60,7 +60,7 @@ export function DiaryBoardEdit() {
           position: "top",
         });
         navigate(
-          `/diary/${generateDiaryId(memberInfo.id)}/view/${diaryBoard.id}`,
+          `/diary/${generateDiaryId(memberInfo.id)}/board/view/${diaryBoard.id}`,
         );
       })
       .catch((err) => {

@@ -17,10 +17,10 @@ import {
 } from "@chakra-ui/react";
 import { DiaryNavbar } from "../diaryComponent/DiaryNavbar.jsx";
 import { LoginContext } from "../../../../component/LoginProvider.jsx";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { extractUserIdFromDiaryId } from "../../../../util/util.jsx";
 import { DiaryProvider } from "../diaryComponent/DiaryContext.jsx";
-import { Chart } from "chart.js";
+import { Chart } from "chart.js/auto";
 
 export function DiaryHome() {
   const { memberInfo } = useContext(LoginContext);
@@ -41,6 +41,19 @@ export function DiaryHome() {
   const [isEditing, setIsEditing] = useState(false);
   const [moodStats, setMoodStats] = useState([]);
   const chartRef = useRef(null);
+
+  // ✅ 통계 조회 함수 분리
+  const fetchMoodStats = async () => {
+    const yearMonth = new Date().toISOString().slice(0, 7);
+    try {
+      const res = await axios.get(`/api/diary/mood-stats`, {
+        params: { memberId: ownerId, yearMonth },
+      });
+      setMoodStats(res.data);
+    } catch (err) {
+      console.error("mood-stats error:", err);
+    }
+  };
 
   // 1) 로그인 여부 체크 → 없으면 toast + 이전 페이지 이동
   useEffect(() => {
@@ -103,9 +116,7 @@ export function DiaryHome() {
 
       const yearMonth = new Date().toISOString().slice(0, 7);
       axios
-        .get(
-          `/api/diaryBoard/mood-stats?memberId=${ownerId}&yearMonth=${yearMonth}`,
-        )
+        .get(`/api/diary/mood-stats?memberId=${ownerId}&yearMonth=${yearMonth}`)
         .then((res) => setMoodStats(res.data))
         .catch((err) => console.error("mood-stats error:", err));
     }
@@ -148,7 +159,7 @@ export function DiaryHome() {
   // 프로필 데이터 로드
   const fetchDiaryProfile = async (ownerId) => {
     try {
-      const response = await axios.get(`/api/diaryBoard/profile/${ownerId}`);
+      const response = await axios.get(`/api/diary/profile/${ownerId}`);
       const { status_message, introduction } = response.data;
       setProfileData({
         statusMessage: status_message || "",
@@ -173,17 +184,17 @@ export function DiaryHome() {
 
     try {
       const checkProfileResponse = await axios.get(
-        `/api/diaryBoard/profile/${ownerId}`,
+        `/api/diary/profile/${ownerId}`,
       );
       if (checkProfileResponse.status === 200) {
-        await axios.put(`/api/diaryBoard/profile/${ownerId}`, data);
+        await axios.put(`/api/diary/profile/${ownerId}`, data);
       } else {
-        await axios.post(`/api/diaryBoard/profile`, data);
+        await axios.post(`/api/diary/profile`, data);
       }
       setIsEditing(false);
     } catch (error) {
       if (error.response?.status === 404) {
-        await axios.post(`/api/diaryBoard/profile`, data);
+        await axios.post(`/api/diary/profile`, data);
         setIsEditing(false);
       } else {
         console.error("Error saving profile data:", error);

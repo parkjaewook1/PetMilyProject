@@ -27,7 +27,6 @@ export default function DiaryMoodModal({
   isOpen,
   onClose,
   selectedDate, // YYYY-MM-DD
-  username, // 로그인한 사용자 닉네임
   reloadCalendar, // 저장 후 달력 새로고침 함수
   defaultMood,
   defaultMemo,
@@ -49,7 +48,6 @@ export default function DiaryMoodModal({
       await axios.post("/api/diaryBoard/add-mood", {
         title: "감정일기",
         content: memo,
-        username: username,
         mood: mood,
         inserted: selectedDate,
       });

@@ -15,7 +15,7 @@ import {
   Textarea,
   useToast,
 } from "@chakra-ui/react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { useLocation, useNavigate } from "react-router-dom";
 import { LoginContext } from "../../component/LoginProvider.jsx";
 import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";

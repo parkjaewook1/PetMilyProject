@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { Alert, AlertIcon, Box, Center } from "@chakra-ui/react";
 import { LoginContext } from "../../component/LoginProvider.jsx";
 

@@ -9,127 +9,129 @@ import java.util.List;
 @Mapper
 public interface DiaryBoardMapper {
 
+    // 글 작성
     @Insert("""
-                INSERT INTO diary(title, content, member_id, username,mood)
-                VALUES (#{title}, #{content}, #{memberId}, #{username},#{mood})
+                INSERT INTO diary_board(diary_id, title, content, mood)
+                VALUES (#{diaryId}, #{title}, #{content}, #{mood})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(DiaryBoard diaryBoard);
 
+    // 전체 글 목록
     @Select("""
-                SELECT d.id,
-                       d.title,
-                       d.mood,
-                       d.inserted,
-                       m.nickname writer
-                FROM diary d
+                SELECT db.id, db.diary_id,db.title, db.mood, db.inserted, m.nickname writer
+                FROM diary_board db
+                JOIN diary d ON db.diary_id = d.id
                 JOIN member m ON d.member_id = m.id
-                ORDER BY d.id DESC
+                ORDER BY db.id DESC
             """)
     List<DiaryBoard> selectAll();
 
+    // 글 상세 조회
     @Select("""
-                SELECT d.id,
-                       d.title,
-                       d.mood,
-                       d.content,
-                       d.inserted,
-                       m.nickname writer,
-                       d.member_id,
-                       d.username
-                FROM diary d
+                SELECT db.id,db.diary_id, db.title, db.mood, db.content, db.inserted,
+                       m.nickname writer, d.member_id
+                FROM diary_board db
+                JOIN diary d ON db.diary_id = d.id
                 JOIN member m ON d.member_id = m.id
-                WHERE d.id = #{id}
+                WHERE db.id = #{id}
             """)
     DiaryBoard selectById(Integer id);
 
+    // 글 삭제
     @Delete("""
-                DELETE FROM diary
+                DELETE FROM diary_board
                 WHERE id = #{id}
             """)
     int deleteById(Integer id);
 
+    // 글 수정
     @Update("""
-                UPDATE diary
+                UPDATE diary_board
                 SET title = #{title},
                     content = #{content},
-                    username = #{username},
-                    nickname = #{nickname},
                     mood = #{mood}
                 WHERE id = #{id}
             """)
     int update(DiaryBoard diaryBoard);
 
+    // 페이징 + 검색
     @Select("""
                 <script>
-                SELECT d.id,
-                       d.title,
-                       d.mood,
-                       m.nickname writer,
-                       d.inserted,
-                       d.content
-                FROM diary d
+                SELECT db.id,db.diary_id, db.title, db.mood, m.nickname writer, db.inserted, db.content
+                FROM diary_board db
+                JOIN diary d ON db.diary_id = d.id
                 JOIN member m ON d.member_id = m.id
                 <where>
                     <if test="memberId != null">
                         d.member_id = #{memberId}
                     </if>
+                    <if test="diaryId != null">
+                       AND db.diary_id = #{diaryId}
+                    </if>
                     <if test="searchType != null and keyword != null">
                         <bind name="pattern" value="'%' + keyword + '%'"/>
                         <choose>
                             <when test="searchType == 'text'">
-                                AND (d.title LIKE #{pattern} OR d.content LIKE #{pattern})
+                                AND (db.title LIKE #{pattern} OR db.content LIKE #{pattern})
                             </when>
                             <when test="searchType == 'nickname'">
                                 AND m.nickname LIKE #{pattern}
                             </when>
                             <otherwise>
-                                AND (d.title LIKE #{pattern} OR d.content LIKE #{pattern} OR m.nickname LIKE #{pattern})
+                                AND (db.title LIKE #{pattern} OR db.content LIKE #{pattern} OR m.nickname LIKE #{pattern})
                             </otherwise>
                         </choose>
                     </if>
                 </where>
-                GROUP BY d.id
-                ORDER BY d.id DESC
+                GROUP BY db.id
+                ORDER BY db.id DESC
                 LIMIT #{offset}, 10
                 </script>
             """)
-    List<DiaryBoard> selectAllPaging(Integer offset, String searchType, String keyword, Integer memberId);
+    List<DiaryBoard> selectAllPaging(Integer offset, String searchType, String keyword, Integer memberId, Integer diaryId);
 
+    // 페이징 카운트
     @Select("""
                 <script>
-                SELECT COUNT(d.id)
-                FROM diary d
+                SELECT COUNT(db.id)
+                FROM diary_board db
+                JOIN diary d ON db.diary_id = d.id
                 JOIN member m ON d.member_id = m.id
                 <where>
                     <if test="memberId != null">
                         d.member_id = #{memberId}
                     </if>
+                    <if test="diaryId != null">
+                    AND db.diary_id = #{diaryId}
+                    </if>
                     <if test="searchType != null and keyword != null">
                         <bind name="pattern" value="'%' + keyword + '%'"/>
                         <choose>
                             <when test="searchType == 'text'">
-                                AND (d.title LIKE #{pattern} OR d.content LIKE #{pattern})
+                                AND (db.title LIKE #{pattern} OR db.content LIKE #{pattern})
                             </when>
                             <when test="searchType == 'nickname'">
                                 AND m.nickname LIKE #{pattern}
                             </when>
                             <otherwise>
-                                AND (d.title LIKE #{pattern} OR d.content LIKE #{pattern} OR m.nickname LIKE #{pattern})
+                                AND (db.title LIKE #{pattern} OR db.content LIKE #{pattern} OR m.nickname LIKE #{pattern})
                             </otherwise>
                         </choose>
                     </if>
                 </where>
                 </script>
             """)
-    Integer countAllWithSearch(String searchType, String keyword, Integer memberId);
+    Integer countAllWithSearch(String searchType, String keyword, Integer memberId, Integer diaryId);
 
+    // 파일명 저장
     @Insert("""
                 INSERT INTO diary_file(diary_id, name)
                 VALUES (#{diaryId}, #{name})
             """)
     int insertFileName(Integer diaryId, String name);
 
+    // 파일명 조회
     @Select("""
                 SELECT name
                 FROM diary_file
@@ -137,24 +139,29 @@ public interface DiaryBoardMapper {
             """)
     List<String> selectFileNameByDiaryId(Integer diaryId);
 
+    // 회원 탈퇴 시 글 삭제
     @Delete("""
-                DELETE FROM diary
-                WHERE member_id = #{memberId}
+                DELETE db FROM diary_board db
+                JOIN diary d ON db.diary_id = d.id
+                WHERE d.member_id = #{memberId}
             """)
     int deleteByMemberId(Integer memberId);
 
+    // 전체 글 수
     @Select("""
                 SELECT COUNT(*)
-                FROM diary
+                FROM diary_board
             """)
     int countAll();
 
+    // 파일 삭제
     @Delete("""
                 DELETE FROM diary_file
                 WHERE diary_id = #{diaryId}
             """)
     int deleteFileByDiaryId(Integer diaryId);
 
+    // 회원의 다이어리 ID 조회
     @Select("""
                 SELECT id
                 FROM diary
@@ -162,6 +169,7 @@ public interface DiaryBoardMapper {
             """)
     List<DiaryBoard> selectByMemberId(Integer memberId);
 
+    // 특정 파일 삭제
     @Delete("""
                 DELETE FROM diary_file
                 WHERE diary_id = #{diaryId}
@@ -169,14 +177,25 @@ public interface DiaryBoardMapper {
             """)
     int deleteFileByDiaryIdAndName(Integer diaryId, String fileName);
 
+    // 월별 mood 통계
     @Select("""
                 SELECT mood, COUNT(*) AS count
-                FROM diary
-                WHERE member_id = #{memberId}
-                  AND DATE_FORMAT(inserted, '%Y-%m') = #{yearMonth}
+                FROM diary_board
+                WHERE diary_id = (
+                    SELECT id FROM diary WHERE member_id = #{memberId}
+                )
+                AND DATE_FORMAT(inserted, '%Y-%m') = #{yearMonth}
                 GROUP BY mood
             """)
     List<MoodStat> getMonthlyMoodStats(@Param("memberId") Integer memberId,
                                        @Param("yearMonth") String yearMonth);
-}
 
+    // 글 ID로 작성자 member_id 조회
+    @Select("""
+                SELECT d.member_id
+                FROM diary_board db
+                JOIN diary d ON db.diary_id = d.id
+                WHERE db.id = #{id}
+            """)
+    Integer selectMemberIdByDiaryBoardId(Integer id);
+}

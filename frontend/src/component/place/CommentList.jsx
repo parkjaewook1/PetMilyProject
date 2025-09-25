@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { Box } from "@chakra-ui/react";
 import { CommentItem } from "./CommentItem.jsx";
 

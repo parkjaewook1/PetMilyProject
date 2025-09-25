@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Button, VStack } from "@chakra-ui/react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { LoginContext } from "../../../../component/LoginProvider.jsx";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import {
   extractUserIdFromDiaryId,
   generateDiaryId,
@@ -97,7 +97,7 @@ export function DiaryNavbar() {
         방명록
       </Button>
       <Button
-        onClick={() => handleButtonClick(`/diary/${diaryId}/list`)}
+        onClick={() => handleButtonClick(`/diary/${diaryId}/board/list`)}
         cursor={"pointer"}
         w="100%"
         bg={activeButton === `/diary/${diaryId}/list` ? "blue.400" : "blue.200"}

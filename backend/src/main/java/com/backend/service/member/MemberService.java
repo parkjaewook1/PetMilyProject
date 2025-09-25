@@ -1,13 +1,14 @@
 package com.backend.service.member;
 
 import com.backend.domain.board.Board;
-import com.backend.domain.diary.DiaryBoard;
+import com.backend.domain.diary.Diary;
 import com.backend.domain.member.Member;
 import com.backend.domain.member.Profile;
 import com.backend.domain.member.Role;
 import com.backend.mapper.board.BoardCommentMapper;
 import com.backend.mapper.board.BoardMapper;
 import com.backend.mapper.diary.DiaryBoardMapper;
+import com.backend.mapper.diary.DiaryMapper;
 import com.backend.mapper.member.MemberMapper;
 import com.backend.mapper.member.ProfileMapper;
 import com.backend.mapper.member.RefreshMapper;
@@ -32,6 +33,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class MemberService {
+
     private final MemberMapper memberMapper;
     private final RefreshMapper refreshMapper;
     private final ProfileMapper profileMapper;
@@ -41,6 +43,7 @@ public class MemberService {
     private final BoardService boardService;
     private final BoardMapper boardMapper;
     private final BoardCommentMapper boardCommentMapper;
+    private final DiaryMapper diaryMapper;
 
     // s3 설정
     @Value("${aws.s3.bucket.name}")
@@ -49,13 +52,22 @@ public class MemberService {
     @Value("${image.src.prefix}")
     String srcPrefix;
 
-    //MemberSignup
+    // 회원가입
     public void signup(Member member) {
         member.setPassword(passwordEncoder.encode(member.getPassword()));
         member.setRole(Role.USER);
         memberMapper.signup(member);
+
+        // 2. 다이어리 자동 생성
+        Diary diary = new Diary();
+        diary.setMemberId(member.getId());
+        diary.setTitle(member.getNickname() + "님의 다이어리");
+        diary.setContent("");
+        diary.setMood("HAPPY"); // 기본값
+        diaryMapper.insertDiary(diary);
     }
 
+    // 로그인 전 중복 체크 등에 사용
     public Member getByUsername(String username) {
         return memberMapper.selectByUsername(username);
     }
@@ -64,7 +76,7 @@ public class MemberService {
         return memberMapper.selectByNickname(nickname);
     }
 
-    // MemberEdit
+    // 회원 단건 조회 (userId 기반)
     public Member getById(Integer id) {
         Member member = memberMapper.selectByMemberId(id);
         if (member == null) {
@@ -78,20 +90,21 @@ public class MemberService {
         return member;
     }
 
+    // 회원 수정
     public boolean update(Integer id, Member member) {
         member.setId(id);
-        // 비밀번호가 변경된 경우만 암호화
         if (member.getPassword() != null && !member.getPassword().isEmpty()) {
             member.setPassword(passwordEncoder.encode(member.getPassword()));
         }
         return memberMapper.update(member) > 0;
     }
 
-    // MemberPage
+    // 프로필 이미지 저장
     @Transactional
     public void saveProfileImage(Integer memberId, MultipartFile file) throws IOException {
         String fileName = memberId + "_" + file.getOriginalFilename();
         String key = "profile/" + memberId + "/" + fileName;
+
         PutObjectRequest objectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key("prj3/" + key)
@@ -105,8 +118,8 @@ public class MemberService {
         profile.setFileName(fileName);
         profile.setUploadPath(key);
 
-        Profile profile1 = profileMapper.selectProfileByMemberId(memberId);
-        if (profile1 != null) {
+        Profile existing = profileMapper.selectProfileByMemberId(memberId);
+        if (existing != null) {
             profileMapper.deleteProfileByMemberId(memberId);
         }
 
@@ -141,35 +154,39 @@ public class MemberService {
         return srcPrefix;
     }
 
-    // MemberDelete
+    // 회원 삭제
     public void delete(Integer id) {
-        //회원이 쓴 게시물 조회
+        // 회원이 쓴 게시물 삭제
         List<Board> boardList = boardMapper.selectByMemberId(id);
-
-        // 각 게시물 지우기
         boardList.forEach(board -> boardService.delete(board.getId()));
 
-        // 좋아요 지우기
+        // 좋아요 삭제
         boardMapper.deleteLikeByMemberId(id);
 
-        // 댓글 지우기
+        // 댓글 삭제
         boardCommentMapper.deleteByMemberId(id);
 
+        // 다이어리 삭제
+        diaryBoardMapper.selectByMemberId(id).forEach(diary -> {
+            // 필요 시 다이어리 관련 삭제 로직 추가
+        });
 
-        List<DiaryBoard> diaryBoardList = diaryBoardMapper.selectByMemberId(id);
-        refreshMapper.deleteByUsername(getById(id).getUsername());
+        // Refresh 토큰 삭제 (username 대신 id 기반 조회 후 username 추출)
+        Member member = memberMapper.selectByMemberId(id);
+        if (member != null) {
+            refreshMapper.deleteByUsername(member.getUsername());
+        }
+
+        // 회원 삭제
         memberMapper.deleteById(id);
     }
 
     public boolean validatePassword(Integer id, String password) {
         Member dbMember = memberMapper.selectByMemberId(id);
-        if (dbMember == null) {
-            return false;
-        }
-        return passwordEncoder.matches(password, dbMember.getPassword());
+        return dbMember != null && passwordEncoder.matches(password, dbMember.getPassword());
     }
 
-    // MemberList
+    // 회원 목록
     public Map<String, Object> list(int page, int pageSize) {
         int totalMembers = memberMapper.countAllMembers();
         int totalPages = (int) Math.ceil((double) totalMembers / pageSize);
@@ -185,9 +202,9 @@ public class MemberService {
         return result;
     }
 
-    // OAuth
-    public Map<String, Object> getMemberInfo(String username) {
-        Member member = memberMapper.selectByUsername(username);
+    // OAuth - userId 기반으로 변경
+    public Map<String, Object> getMemberInfoById(Integer id) {
+        Member member = memberMapper.selectByMemberId(id);
         Map<String, Object> map = new HashMap<>();
         map.put("member", member);
         return map;
@@ -197,9 +214,7 @@ public class MemberService {
     public Member getMemberByDiaryId(String diaryId) {
         try {
             int userId = Integer.parseInt(diaryId.split("-")[1]) / 17;
-            System.out.println("Extracted userId: " + userId);  // 로그 추가
             Member member = memberMapper.selectByMemberId(userId);
-            System.out.println("Found member: " + (member != null));  // 로그 추가
             return member;
         } catch (Exception e) {
             return null;

@@ -2,11 +2,13 @@ package com.backend.controller.member;
 
 import com.backend.domain.member.Member;
 import com.backend.domain.member.Profile;
+import com.backend.security.CustomUserDetails;
 import com.backend.service.member.EmailSenderService;
 import com.backend.service.member.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -19,19 +21,20 @@ import java.util.Map;
 @RequiredArgsConstructor
 @RequestMapping("/api/member")
 public class MemberController {
+
     private final MemberService service;
     private final EmailSenderService emailSenderService;
 
-    // MemberSignup
+    // 회원가입
     @PostMapping("/signup")
     public ResponseEntity signup(@RequestBody Member member) {
         service.signup(member);
         return ResponseEntity.ok().build();
     }
 
+    // 회원가입 전 username 중복 체크 (로그인 전)
     @GetMapping(value = "check", params = "username")
     public ResponseEntity checkUsername(@RequestParam("username") String username) {
-        System.out.println("username = " + username);
         Member member = service.getByUsername(username);
         if (member == null) {
             return ResponseEntity.notFound().build();
@@ -39,6 +42,7 @@ public class MemberController {
         return ResponseEntity.ok(username);
     }
 
+    // 회원가입 전 nickname 중복 체크 (로그인 전)
     @GetMapping(value = "check", params = "nickname")
     public ResponseEntity checkNickname(@RequestParam("nickname") String nickname) {
         Member member = service.getByNickname(nickname);
@@ -48,9 +52,16 @@ public class MemberController {
         return ResponseEntity.ok(nickname);
     }
 
-    // MemberEdit
     @GetMapping("/{id}")
-    public ResponseEntity<Member> getById(@PathVariable Integer id) {
+    public ResponseEntity<Member> getById(@PathVariable Integer id,
+                                          @AuthenticationPrincipal CustomUserDetails user) {
+        // 로그인 안 한 경우 user가 null
+        if (user != null) {
+            System.out.println("로그인한 사용자 ID: " + user.getId());
+        } else {
+            System.out.println("비로그인 접근");
+        }
+
         Member member = service.getById(id);
         if (member == null) {
             return ResponseEntity.notFound().build();
@@ -58,65 +69,63 @@ public class MemberController {
         return ResponseEntity.ok(member);
     }
 
-    @PutMapping("/edit/{id}")
-    public ResponseEntity update(@PathVariable Integer id, @RequestBody Member member) {
-        if (service.update(id, member)) {
+    // 회원 수정 (로그인 후)
+    @PutMapping("/edit")
+    public ResponseEntity update(@AuthenticationPrincipal CustomUserDetails principal,
+                                 @RequestBody Member member) {
+        if (service.update(principal.getId(), member)) {
             return ResponseEntity.ok().build();
         } else {
             return ResponseEntity.notFound().build();
         }
     }
 
-    // MemberPage
-    @PostMapping("/profile/{id}")
+    // 프로필 이미지 업로드 (로그인 후)
+    @PostMapping("/profile")
     public ResponseEntity<Map<String, String>> uploadProfileImage(
-            @PathVariable Integer id,
+            @AuthenticationPrincipal CustomUserDetails principal,
             @RequestParam("profileImage") MultipartFile file) {
         try {
-            service.saveProfileImage(id, file);
-            Profile profile = service.getProfileByMemberId(id); // 저장된 프로필 가져오기
-            String imageUrl = service.getSrcPrefix() + profile.getUploadPath(); // 프로필 이미지 URL 생성
+            service.saveProfileImage(principal.getId(), file);
+            Profile profile = service.getProfileByMemberId(principal.getId());
+            String imageUrl = service.getSrcPrefix() + profile.getUploadPath();
 
             Map<String, String> response = new HashMap<>();
             response.put("message", "프로필 이미지가 저장되었습니다.");
-            response.put("profileImage", imageUrl); // 저장된 프로필 이미지 URL 추가
+            response.put("profileImage", imageUrl);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            // ✅ 예외 로그 출력
-            e.printStackTrace(); // 콘솔에 stack trace 출력
-            // log.error("프로필 이미지 저장 실패", e); // 로거 사용 시
-
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "프로필 이미지 저장 실패: " + e.getMessage()));
         }
     }
 
-    @DeleteMapping("/profile/{id}")
-    public ResponseEntity<String> deleteProfileImage(@PathVariable Integer id) {
+    // 프로필 이미지 삭제 (로그인 후)
+    @DeleteMapping("/profile")
+    public ResponseEntity<String> deleteProfileImage(@AuthenticationPrincipal CustomUserDetails principal) {
         try {
-            service.deleteProfileByMemberId(id);
+            service.deleteProfileByMemberId(principal.getId());
             return ResponseEntity.ok("프로필 이미지 삭제 성공");
         } catch (Exception e) {
-            // ✅ 예외 로그 출력
             e.printStackTrace();
-            // log.error("프로필 이미지 삭제 실패", e);
-
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("프로필 이미지 삭제 실패: " + e.getMessage());
         }
     }
 
-    // MemberDelete
-    @DeleteMapping("/{id}")
-    public ResponseEntity delete(@PathVariable Integer id, @RequestParam(required = false) String password, @RequestHeader(value = "memberInfoId") Integer memberInfoId) {
-        if (memberInfoId == 1 || (password != null && service.validatePassword(id, password))) {
-            service.delete(id);
+    // 회원 삭제 (로그인 후)
+    @DeleteMapping
+    public ResponseEntity delete(@AuthenticationPrincipal CustomUserDetails principal,
+                                 @RequestParam(required = false) String password) {
+        if (principal.getId() == 1 || (password != null && service.validatePassword(principal.getId(), password))) {
+            service.delete(principal.getId());
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    // MemberList
+    // 회원 목록 (관리자 전용)
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> getMemberList(
             @RequestParam(defaultValue = "1") int page,
@@ -125,12 +134,13 @@ public class MemberController {
         return ResponseEntity.ok(response);
     }
 
-    // MemberFind
+    // 비밀번호 찾기 페이지 (로그인 전)
     @GetMapping("/find")
     public String findPassword(Model model) {
         return "/member/find";
     }
 
+    // 비밀번호 찾기 이메일 발송 (로그인 전)
     @Transactional
     @PostMapping("/sendEmail")
     public ResponseEntity<String> sendEmail(@RequestBody Map<String, String> request) {
@@ -143,23 +153,17 @@ public class MemberController {
         return ResponseEntity.ok(tempPassword);
     }
 
-    // OAuth
+    // OAuth 로그인 후 내 정보 조회 (로그인 후)
     @GetMapping("/info")
-    public ResponseEntity<Map<String, Object>> info(@RequestParam("username") String username) {
-        System.out.println("username = " + username);
-
-        return ResponseEntity.ok(service.getMemberInfo(username));
+    public ResponseEntity<Map<String, Object>> info(@AuthenticationPrincipal CustomUserDetails principal) {
+        return ResponseEntity.ok(service.getMemberInfoById(principal.getId()));
     }
 
-    // 다이어리 ID 검증
+    // 다이어리 ID 검증 (로그인 여부 무관)
     @GetMapping("/validateDiaryId/{diaryId}")
     public ResponseEntity<Map<String, Object>> validateDiaryId(@PathVariable String diaryId) {
         Map<String, Object> response = new HashMap<>();
         Member member = service.getMemberByDiaryId(diaryId);
-
-        System.out.println("Diary ID: " + diaryId);  // 로그 추가
-        System.out.println("Member found: " + (member != null));  // 로그 추가
-        System.out.println("memberId: " + member.getId());  // 로그 추가
 
         if (member != null) {
             response.put("isValid", true);

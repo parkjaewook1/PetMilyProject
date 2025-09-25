@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import DiaryMoodModal from "./DiaryMoodModal";
 import PropTypes from "prop-types";
 
@@ -62,7 +62,6 @@ export default function DiaryCalendar({ user }) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         selectedDate={selectedDate}
-        username={user?.nickname}
         reloadCalendar={loadCalendarData}
       />
     </>

@@ -15,7 +15,7 @@ import { ChatIcon, DeleteIcon, MinusIcon } from "@chakra-ui/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHouse, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { LoginContext } from "../LoginProvider.jsx";
 import { generateDiaryId } from "../../util/util";
 

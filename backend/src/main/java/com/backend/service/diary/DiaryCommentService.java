@@ -23,25 +23,22 @@ public class DiaryCommentService {
     private final MemberMapper memberMapper;
 
     public void add(DiaryComment diaryComment, Authentication authentication) {
-        String nickname = diaryComment.getNickname();
-        Member member = memberMapper.selectByDiaryCommentName(nickname);
-
-        if (member != null) {
-            diaryComment.setMemberId(member.getId());
-
-            mapper.diaryCommentInsert(diaryComment);
-        } else {
-            throw new UsernameNotFoundException("Username not fount:" + nickname);
+        // 로그인한 사용자 정보 가져오기
+        Member member = memberMapper.selectByUsername(authentication.getName());
+        if (member == null) {
+            throw new UsernameNotFoundException("로그인한 사용자를 찾을 수 없습니다.");
         }
 
+        diaryComment.setMemberId(member.getId());
+        mapper.diaryCommentInsert(diaryComment);
     }
 
-    public Map<String, Object> list(int page, int pageSize) {
-        int totalComments = mapper.countAllComments();
+    public Map<String, Object> list(Integer diaryId, int page, int pageSize) {
+        int totalComments = mapper.countByDiaryId(diaryId);
         int totalPages = (int) Math.ceil((double) totalComments / pageSize);
         int offset = (page - 1) * pageSize;
 
-        List<DiaryComment> comments = mapper.selectAll(pageSize, offset);
+        List<DiaryComment> comments = mapper.selectByDiaryId(diaryId, pageSize, offset);
 
         Map<String, Object> result = new HashMap<>();
         result.put("comments", comments);
@@ -59,8 +56,8 @@ public class DiaryCommentService {
         mapper.diaryUpdate(diaryComment);
     }
 
-    public DiaryComment get(Integer id) { // 반환 타입 수정
-        return mapper.selectById(id);
+    public DiaryComment get(Integer commentId) {
+        return mapper.selectById(commentId);
     }
 
     public boolean validate(DiaryComment diaryComment) {
@@ -70,11 +67,26 @@ public class DiaryCommentService {
         return true;
     }
 
-    public boolean hasAccess(Integer id, Authentication authentication, Integer memberId) {
-        DiaryComment diaryComment = mapper.selectById(id);
+    public boolean hasAccess(Integer commentId, Authentication authentication) {
+        // 현재 로그인한 사용자 정보
+        Member currentUser = memberMapper.selectByUsername(authentication.getName());
+        if (currentUser == null) {
+            throw new UsernameNotFoundException("로그인한 사용자를 찾을 수 없습니다.");
+        }
 
+        // 댓글 정보
+        DiaryComment diaryComment = mapper.selectById(commentId);
+        if (diaryComment == null) {
+            return false;
+        }
 
-        return diaryComment.getMemberId().equals(memberId);
+        // 댓글 작성자 ID
+        Integer commentOwnerId = diaryComment.getMemberId();
 
+        // 다이어리 주인 ID 조회 (DiaryComment에 diaryId가 있다고 가정)
+        Integer diaryOwnerId = mapper.findDiaryOwnerIdByDiaryId(diaryComment.getDiaryId());
+
+        // 작성자 본인 또는 다이어리 주인이면 true
+        return currentUser.getId().equals(commentOwnerId) || currentUser.getId().equals(diaryOwnerId);
     }
 }

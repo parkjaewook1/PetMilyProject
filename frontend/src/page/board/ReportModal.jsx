@@ -13,7 +13,7 @@ import {
   useToast,
   VStack,
 } from "@chakra-ui/react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 
 const ReportModal = ({ isOpen, onClose, boardId, memberId }) => {
   const toast = useToast();

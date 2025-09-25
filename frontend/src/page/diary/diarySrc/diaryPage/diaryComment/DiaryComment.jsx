@@ -1,51 +1,58 @@
 import { Box, Center, Spinner } from "@chakra-ui/react";
 import { useContext, useEffect, useState } from "react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { useParams } from "react-router-dom";
-import {
-  extractUserIdFromDiaryId,
-  generateDiaryId,
-} from "../../../../../util/util.jsx";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 import { DiaryCommentWrite } from "./DiaryCommentWrite.jsx";
 import { DiaryCommentList } from "./DiaryCommentList.jsx";
 import DiaryPagination from "./DiaryPagination.jsx";
 
 export function DiaryComment() {
-  const { diaryId } = useParams();
+  const { diaryId } = useParams(); // URL 예: "DIARY-34-ID" 또는 숫자
   const [diaryCommentList, setDiaryCommentList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const { memberInfo } = useContext(LoginContext);
-  const isOwner =
-    Number(memberInfo?.id) === Number(extractUserIdFromDiaryId(diaryId));
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [numericDiaryId, setNumericDiaryId] = useState(0);
 
+  // encodedId 또는 memberId로 다이어리 PK 조회
   useEffect(() => {
-    const diaryId = generateDiaryId(memberInfo.id);
-    const fetchComments = async (page) => {
+    if (!diaryId || !memberInfo?.id) return;
+
+    const fetchDiaryId = async () => {
       try {
-        const res = await axios.get(`/api/diaryComment/list`, {
-          params: { diaryId, page, pageSize: 5 },
-        });
-        setDiaryCommentList(res.data.comments || []); // null 체크 후 빈 배열 설정
-        setTotalPages(res.data.totalPages || 1); // null 체크 후 기본값 설정
-        console.log("Comments fetched:", res.data);
+        const res = await axios.get(`/api/diary/byMember/${diaryId}`);
+        setNumericDiaryId(res.data.id); // DB PK
       } catch (err) {
-        console.error("Error fetching comments:", err);
-      } finally {
-        setIsLoading(false);
+        console.error("다이어리 ID 조회 실패:", err);
       }
     };
-    fetchComments(currentPage);
-  }, [diaryId, memberInfo.id, currentPage]);
 
-  const handleCommentAdded = (newComment) => {
-    setDiaryCommentList((prevList) => [newComment, ...prevList]); // 새로운 댓글을 맨 위에 추가
+    fetchDiaryId();
+  }, [diaryId, memberInfo]);
+
+  const fetchComments = async (page) => {
+    if (!numericDiaryId) return;
+    try {
+      const res = await axios.get(`/api/diaryComment/list`, {
+        params: { diaryId: numericDiaryId, page, pageSize: 5 },
+      });
+      setDiaryCommentList(res.data.comments || []);
+      setTotalPages(res.data.totalPages || 1);
+    } catch (err) {
+      console.error("Error fetching comments:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handlePageButtonClick = (pageNumber) => {
-    setCurrentPage(pageNumber);
+  useEffect(() => {
+    fetchComments(currentPage);
+  }, [numericDiaryId, currentPage]);
+
+  const handleCommentAdded = () => {
+    fetchComments(currentPage);
   };
 
   if (isLoading) {
@@ -59,8 +66,8 @@ export function DiaryComment() {
   return (
     <Box>
       <DiaryCommentWrite
+        diaryId={numericDiaryId} // PK 전달
         onCommentAdded={handleCommentAdded}
-        diaryCommentList={diaryCommentList}
       />
       <DiaryCommentList diaryCommentList={diaryCommentList} />
       <DiaryPagination
@@ -71,8 +78,8 @@ export function DiaryComment() {
           lastPageNumber: totalPages,
         }}
         pageNumbers={Array.from({ length: totalPages }, (_, i) => i + 1)}
-        handlePageButtonClick={handlePageButtonClick}
-        maxPageButtons={10} // 페이지 버튼을 10개씩 끊어서 표시합니다.
+        handlePageButtonClick={setCurrentPage}
+        maxPageButtons={10}
       />
     </Box>
   );

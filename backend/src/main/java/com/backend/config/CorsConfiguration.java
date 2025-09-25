@@ -11,8 +11,9 @@ public class CorsConfiguration implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry corsRegistry) {
         corsRegistry.addMapping("/**")
                 .exposedHeaders("Set-Cookie")
-                .allowedMethods("*")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .allowedOrigins("http://52.79.251.74:8080");
+                .allowCredentials(true)
+                .allowedOrigins("http://52.79.251.74:8080", "http://localhost:5173");     // 개발용 Vite 서버
     }
 }

@@ -13,7 +13,7 @@ import {
 import { ChatIcon, MinusIcon } from "@chakra-ui/icons";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { LoginContext } from "../LoginProvider.jsx";
 
 export function AIChat() {

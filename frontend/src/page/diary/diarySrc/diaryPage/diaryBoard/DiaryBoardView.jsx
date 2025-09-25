@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import React, { useContext, useEffect, useState } from "react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import {
   Box,
   Button,
@@ -53,7 +53,7 @@ export function DiaryBoardView() {
             description: "해당 게시물이 존재하지 않습니다.",
             position: "top",
           });
-          navigate(`/diary/${diaryId}/list`);
+          navigate(`/diary/${diaryId}/board/list`);
         }
       });
   }, [id, navigate, toast, diaryId]);
@@ -67,7 +67,7 @@ export function DiaryBoardView() {
           description: `${id} 게시물이 삭제되었습니다.`,
           position: "top",
         });
-        navigate(`/diary/${diaryId}/list`);
+        navigate(`/diary/${diaryId}/board/list`);
       })
       .catch(() => {
         toast({
@@ -80,7 +80,7 @@ export function DiaryBoardView() {
   };
 
   const handleDiaryEdit = () => {
-    navigate(`/diary/${diaryId}/edit/${id}`);
+    navigate(`/diary/${diaryId}/board/edit/${id}`);
   };
 
   if (diaryBoard === null) {

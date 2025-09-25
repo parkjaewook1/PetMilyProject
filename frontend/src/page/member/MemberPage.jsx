@@ -12,7 +12,7 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import Swal from "sweetalert2";
 import { LoginContext } from "../../component/LoginProvider.jsx";
 import { AddIcon } from "@chakra-ui/icons";

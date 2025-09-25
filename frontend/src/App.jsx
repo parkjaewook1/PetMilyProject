@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { ChakraProvider, theme } from "@chakra-ui/react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { Home } from "./page/Home.jsx";
 import { MainPage } from "./page/MainPage.jsx";
 import { AIChat } from "./component/chat/AIChat.jsx";
@@ -113,15 +113,21 @@ const App = () => {
           element: <DiaryHome />,
           children: [
             { index: true, element: <DiaryHomeMain /> },
-            { path: "write", element: <DiaryBoardWrite /> },
-            { path: "list", element: <DiaryBoardList /> },
-            { path: "view/:id", element: <DiaryBoardView /> },
-            { path: "edit/:id", element: <DiaryBoardEdit /> },
+
+            // 게시판(일기)
+            { path: "board/write", element: <DiaryBoardWrite /> },
+            { path: "board/list", element: <DiaryBoardList /> },
+            { path: "board/view/:id", element: <DiaryBoardView /> }, // ✅ /diary/:diaryId/view/:id
+            { path: "board/edit/:id", element: <DiaryBoardEdit /> },
+
+            // 방명록(댓글)
             { path: "comment", element: <DiaryComment /> },
             { path: "comment/write", element: <DiaryCommentWrite /> },
             { path: "comment/view/:id", element: <DiaryCommentView /> },
-            { path: "comment/list", element: <DiaryCommentList /> },
+            { path: "comment/list", element: <DiaryCommentList /> }, // ✅ /diary/:diaryId/comment/list
             { path: "comment/edit/:id", element: <DiaryCommentEdit /> },
+
+            // 캘린더
             {
               path: "calendar",
               element: loadingUser ? (

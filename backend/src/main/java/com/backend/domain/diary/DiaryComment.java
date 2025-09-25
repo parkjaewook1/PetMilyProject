@@ -7,10 +7,11 @@ import java.time.LocalDateTime;
 @Data
 public class DiaryComment {
     private Integer id;
+    private Integer diaryId;
+    private Integer ownerId;
     private String comment;
     private Integer memberId;
     private String nickname;
-    private String username;
     private LocalDateTime inserted;
 
 

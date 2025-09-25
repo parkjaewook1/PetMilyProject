@@ -18,7 +18,7 @@ import {
 } from "@chakra-ui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPenToSquare, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { BoardCommentEdit } from "./BoardCommentEdit.jsx";
 import { LoginContext } from "../LoginProvider.jsx";
 import { generateDiaryId } from "../../util/util.jsx";

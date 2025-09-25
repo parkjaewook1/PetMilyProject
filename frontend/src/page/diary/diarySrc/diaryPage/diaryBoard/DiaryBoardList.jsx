@@ -17,7 +17,7 @@ import {
 import React, { useContext, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 import { DiaryContext } from "../../diaryComponent/DiaryContext.jsx";
@@ -88,12 +88,12 @@ export function DiaryBoardList() {
   }
 
   function handleSelectedDiaryBoard(id) {
-    return () => navigate(`/diary/${diaryId}/view/${id}`);
+    return () => navigate(`/diary/${diaryId}/board/view/${id}`);
   }
 
   function handleWriteClick() {
     const diaryId = generateDiaryId(memberInfo.id);
-    navigate(`/diary/${diaryId}/write`);
+    navigate(`/diary/${diaryId}/board/write`);
   }
 
   const hoverBg = useColorModeValue("gray.100", "gray.700");
@@ -104,16 +104,22 @@ export function DiaryBoardList() {
       <Center>
         <Heading>다이어리 목록</Heading>
       </Center>
-      <Box>{isOwner && <Button onClick={handleWriteClick}>글쓰기</Button>}</Box>
+      <Box>{isOwner && <Button onClick={handleWriteClick}>작성</Button>}</Box>
       <Box>
         {diaryBoardList.length === 0 && <Center>조회 결과가 없습니다.</Center>}
         {diaryBoardList.length > 0 && (
-          <Table>
+          <Table w="100%" sx={{ tableLayout: "fixed" }}>
             <Thead>
               <Tr>
-                <Th textAlign="center">N번째 일기</Th>
-                <Th textAlign="center">제목</Th>
-                <Th textAlign="center">작성일자</Th>
+                <Th w="15%" textAlign="center">
+                  N번째 일기
+                </Th>
+                <Th w="55%" textAlign="center">
+                  제목
+                </Th>
+                <Th w="30%" textAlign="center">
+                  작성일자
+                </Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -122,15 +128,12 @@ export function DiaryBoardList() {
                   key={diaryBoard.id}
                   _hover={{ bg: hoverBg }}
                   cursor="pointer"
-                  onClick={handleSelectedDiaryBoard(
-                    diaryBoard.id,
-                    diaryBoardList.length - index,
-                  )}
+                  onClick={handleSelectedDiaryBoard(diaryBoard.id)}
                 >
-                  <Td w="10%" textAlign="center">
-                    {diaryBoard.id / 10}
+                  <Td w="15%" textAlign="center">
+                    {diaryBoardList.length - index}
                   </Td>
-                  <Td w="30%" textAlign="center">
+                  <Td w="55%" textAlign="center">
                     {diaryBoard.title}
                     {/*{diaryBoard.numberOfImages > 0 && (*/}
                     {/*  <Badge ml={2} colorScheme="teal">*/}
@@ -142,7 +145,7 @@ export function DiaryBoardList() {
                   {/*<Td w="50%" textAlign="center">*/}
                   {/*  {diaryBoard.content}*/}
                   {/*</Td>*/}
-                  <Td w="10%" textAlign="center">
+                  <Td w="30%" textAlign="center">
                     {format(new Date(diaryBoard.inserted), "yyyy.MM.dd")}
                   </Td>
                 </Tr>

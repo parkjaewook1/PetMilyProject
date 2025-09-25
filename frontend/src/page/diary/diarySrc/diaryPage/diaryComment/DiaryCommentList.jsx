@@ -5,25 +5,76 @@ import {
   CardBody,
   Center,
   HStack,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverCloseButton,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTrigger,
   Text,
   Textarea,
+  useToast,
   VStack,
 } from "@chakra-ui/react";
 import React, { useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 import { generateDiaryId } from "../../../../../util/util.jsx";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import { format, isValid, parseISO } from "date-fns";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faHouseUser,
+  faMagnifyingGlass,
+} from "@fortawesome/free-solid-svg-icons";
+import axios from "@api/axiosConfig";
 
 export function DiaryCommentList({ diaryCommentList }) {
-  const navigate = useNavigate();
   const { memberInfo } = useContext(LoginContext);
+  const navigate = useNavigate();
+  const toast = useToast();
+  const { diaryId, id } = useParams(); // "DIARY-187-ID"
+  const numericDiaryId = Number(diaryId.replace(/\D/g, ""));
 
-  function handleViewClick(id) {
-    const diaryId = generateDiaryId(memberInfo.id);
-    return () => navigate(`/diary/${diaryId}/comment/view/${id}`);
+  function goToMiniHome(authorId) {
+    const targetDiaryId = generateDiaryId(authorId);
+    navigate(`/diary/${targetDiaryId}`);
+  }
+
+  function handleEdit(commentId, memberId) {
+    const diaryId = generateDiaryId(memberId);
+    navigate(`/diary/${diaryId}/comment/edit/${commentId}`);
+  }
+
+  function handleView(commentId, diaryId) {
+    console.log("commentId", commentId);
+    navigate(`/diary/${diaryId}/comment/view/${commentId}`);
+  }
+
+  function handleDelete(commentId) {
+    if (!window.confirm("정말 삭제하시겠습니까?")) return;
+
+    axios
+      .delete(`/api/diaryComment/${commentId}`)
+      .then(() => {
+        toast({ status: "success", description: "댓글이 삭제되었습니다." });
+        // 삭제 후에는 새로고침하거나 상위(Home)에서 상태를 갱신해줘야 함
+      })
+      .catch(() =>
+        toast({
+          status: "error",
+          description: "댓글 삭제 중 오류가 발생했습니다.",
+          position: "top",
+        }),
+      );
+  }
+
+  if (!Array.isArray(diaryCommentList)) {
+    return (
+      <Center>
+        <Text>댓글이 없습니다.</Text>
+      </Center>
+    );
   }
 
   return (
@@ -33,56 +84,95 @@ export function DiaryCommentList({ diaryCommentList }) {
           방명록 보기
         </Text>
       </Center>
-      {diaryCommentList.length === 0 ? (
-        <Center>방명록이 없습니다.</Center>
-      ) : (
-        <VStack spacing={4}>
-          {diaryCommentList.map((diaryComment, index) => {
-            const insertedDate = diaryComment.inserted
-              ? parseISO(diaryComment.inserted)
-              : null;
-            const formattedDate =
-              insertedDate && isValid(insertedDate)
-                ? format(insertedDate, "yyyy.MM.dd")
-                : "Unknown date";
 
-            return (
-              <Card
-                key={`${diaryComment.id}-${index}`}
-                w="100%"
-                variant="outline"
-                boxShadow="md"
-              >
-                <CardBody>
-                  <HStack justifyContent="space-between" mb={2}>
-                    <HStack>
-                      <Text fontWeight="bold">No.{diaryComment.id / 10}</Text>
-                      <Text fontWeight="bold">{diaryComment.nickname}</Text>
+      <VStack spacing={4}>
+        {diaryCommentList.map((diaryComment, index) => {
+          const insertedDate = diaryComment.inserted
+            ? parseISO(diaryComment.inserted)
+            : null;
+          const formattedDate =
+            insertedDate && isValid(insertedDate)
+              ? format(insertedDate, "yyyy.MM.dd")
+              : "Unknown date";
+
+          const isCommentOwner =
+            Number(memberInfo?.id) === Number(diaryComment.memberId);
+          const isDiaryOwner = Number(memberInfo?.id) === numericDiaryId;
+
+          return (
+            <Card
+              key={diaryComment.id}
+              w="100%"
+              variant="outline"
+              boxShadow="md"
+            >
+              <CardBody>
+                <HStack justifyContent="space-between" mb={2}>
+                  <HStack spacing={2}>
+                    <Text fontWeight="bold">{index + 1}</Text>
+                    <Text fontWeight="bold">{diaryComment.nickname}</Text>
+
+                    {/* 미니홈피 이동 */}
+                    <Popover placement="bottom-start">
+                      <PopoverTrigger>
+                        <Button colorScheme="teal" size="sm">
+                          <FontAwesomeIcon icon={faHouseUser} />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent w="auto">
+                        <PopoverArrow />
+                        <PopoverCloseButton />
+                        <PopoverHeader fontWeight="bold" fontSize="md">
+                          미니홈피 이동
+                        </PopoverHeader>
+                        <PopoverBody>
+                          <Button
+                            colorScheme="pink"
+                            size="sm"
+                            onClick={() => goToMiniHome(diaryComment.memberId)}
+                          >
+                            이동하기
+                          </Button>
+                        </PopoverBody>
+                      </PopoverContent>
+                    </Popover>
+
+                    {/* View 버튼 */}
+                    <Button
+                      colorScheme="blue"
+                      size="sm"
+                      onClick={() => handleView(diaryComment.id, diaryId)}
+                    >
+                      <FontAwesomeIcon icon={faMagnifyingGlass} />
+                    </Button>
+                    {/* 삭제 버튼 (내 댓글이거나 다이어리 주인일 때) */}
+                    {(isCommentOwner || isDiaryOwner) && (
                       <Button
-                        colorScheme="teal"
+                        colorScheme="red"
                         size="sm"
-                        onClick={handleViewClick(diaryComment.id)}
+                        onClick={() => handleDelete(diaryComment.id)}
                       >
-                        <FontAwesomeIcon icon={faMagnifyingGlass} />
+                        삭제
                       </Button>
-                    </HStack>
-                    <Text fontSize="sm" color="gray.500">
-                      <span style={{ color: "red" }} />
-                      {formattedDate}
-                    </Text>
+                    )}
                   </HStack>
-                  <Textarea
-                    value={diaryComment.comment}
-                    minH="100px"
-                    isReadOnly
-                    mb={2}
-                  />
-                </CardBody>
-              </Card>
-            );
-          })}
-        </VStack>
-      )}
+
+                  <Text fontSize="sm" color="gray.500">
+                    {formattedDate}
+                  </Text>
+                </HStack>
+
+                <Textarea
+                  value={diaryComment.comment}
+                  minH="100px"
+                  isReadOnly
+                  mb={2}
+                />
+              </CardBody>
+            </Card>
+          );
+        })}
+      </VStack>
     </Box>
   );
 }

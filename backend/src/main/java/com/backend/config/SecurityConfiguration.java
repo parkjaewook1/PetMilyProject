@@ -9,8 +9,10 @@ import com.backend.security.JWTFilter;
 import com.backend.security.JWTUtil;
 import com.backend.service.member.CustomOAuth2UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,6 +22,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
@@ -66,13 +69,17 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         System.out.println("=== SecurityFilterChain Bean 실행됨 ===");
+
         // ✅ CORS 설정
         http.cors(corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource() {
             @Override
             public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
                 CorsConfiguration configuration = new CorsConfiguration();
-                configuration.setAllowedOrigins(Collections.singletonList("http://52.79.251.74:8080"));
-                configuration.setAllowedMethods(Collections.singletonList("*"));
+                configuration.setAllowedOrigins(Arrays.asList(
+                        "http://52.79.251.74:8080",
+                        "http://localhost:5173"
+                ));
+                configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 configuration.setAllowCredentials(true);
                 configuration.setAllowedHeaders(Collections.singletonList("*"));
                 configuration.setMaxAge(3600L);
@@ -80,6 +87,19 @@ public class SecurityConfiguration {
                 return configuration;
             }
         }));
+
+        // ✅ 인증 실패 시 처리
+        http.exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    if (request.getRequestURI().startsWith("/api/")) {
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json;charset=UTF-8");
+                        response.getWriter().write("{\"error\":\"unauthorized\"}");
+                    } else {
+                        response.sendRedirect("/oauth2/authorization/test");
+                    }
+                })
+        );
 
         // ✅ CSRF, 폼 로그인, HTTP Basic 비활성화
         http.csrf(csrf -> csrf.disable());
@@ -95,8 +115,14 @@ public class SecurityConfiguration {
                 new CustomLogoutFilter(jwtUtil, refreshMapper, loginCheckMapper),
                 LogoutFilter.class
         );
-        http.addFilterAt(new CustomLoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, refreshMapper, loginCheckMapper),
-                UsernamePasswordAuthenticationFilter.class);
+
+        // ✅ 로그인 URL만 처리하도록 CustomLoginFilter 등록
+        CustomLoginFilter loginFilter =
+                new CustomLoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, refreshMapper, loginCheckMapper);
+        loginFilter.setRequiresAuthenticationRequestMatcher(
+                new AntPathRequestMatcher("/api/member/login", "POST")
+        );
+        http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
 
         // ✅ OAuth2 로그인 설정
         http.oauth2Login(oauth2 -> oauth2
@@ -105,7 +131,8 @@ public class SecurityConfiguration {
 
         // ✅ 경로별 권한 설정
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/member/logout").permitAll() // 로그아웃 경로 허용
+                .requestMatchers(HttpMethod.POST, "/api/member/signup").permitAll() // 회원가입 허용
+                .requestMatchers("/api/member/logout").permitAll()
                 .requestMatchers("/reissue").permitAll()
                 .requestMatchers("/admin").hasRole("ADMIN")
                 .requestMatchers("/**").permitAll()

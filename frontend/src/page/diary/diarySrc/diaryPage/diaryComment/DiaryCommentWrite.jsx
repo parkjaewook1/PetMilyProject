@@ -1,39 +1,42 @@
 import React, { useContext, useState } from "react";
 import { Box, Button, Text, Textarea, useToast } from "@chakra-ui/react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
-import { useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 
-export function DiaryCommentWrite({ onCommentAdded }) {
+export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
   const toast = useToast();
   const { memberInfo } = useContext(LoginContext);
   const nickname = memberInfo.nickname;
-  const { diaryId } = useParams(); // 수정: diaryId를 useParams로 가져옴
 
   const handleDiaryCommentSubmitClick = () => {
+    if (!comment.trim()) return;
+
     setLoading(true);
+    const payload = {
+      diaryId, // 부모에서 받은 PK 그대로 사용
+      nickname,
+      memberId: memberInfo.id,
+      comment,
+    };
+
     axios
-      .post("/api/diaryComment/add", {
-        diaryId,
-        nickname,
-        memberId: memberInfo.id,
-        comment,
+      .post("/api/diaryComment/add", payload, {
+        headers: { "Content-Type": "application/json" },
       })
-      .then((res) => {
+      .then(() => {
         toast({
           status: "success",
           position: "top",
           description: "방명록이 등록되었습니다.",
         });
-        onCommentAdded(res.data); // 새로운 댓글을 추가
         setComment(""); // 입력창 초기화
-        window.location.reload(); // 페이지 새로고침
+        onCommentAdded(); // 부모에서 fetchComments 호출
       })
-      .catch((e) => {
+      .catch(() => {
         toast({
           status: "error",
           position: "top",
@@ -42,8 +45,6 @@ export function DiaryCommentWrite({ onCommentAdded }) {
       })
       .finally(() => setLoading(false));
   };
-
-  let disableSaveButton = comment.trim().length === 0;
 
   return (
     <Box>
@@ -61,8 +62,8 @@ export function DiaryCommentWrite({ onCommentAdded }) {
       </Box>
       <Button
         isLoading={loading}
-        isDisabled={disableSaveButton}
-        colorScheme={"blue"}
+        isDisabled={!comment.trim()}
+        colorScheme="blue"
         onClick={handleDiaryCommentSubmitClick}
       >
         <FontAwesomeIcon icon={faPaperPlane} />

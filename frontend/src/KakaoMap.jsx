@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Box } from "@chakra-ui/react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 
 const KakaoMap = ({ onPolygonSelect }) => {
   const [geojson, setGeojson] = useState(null);

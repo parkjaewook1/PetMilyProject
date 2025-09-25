@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 
 export const LoginContext = createContext(null);
 
@@ -70,25 +70,60 @@ export function LoginProvider({ children }) {
     return () => axios.interceptors.request.eject(reqInterceptor);
   }, []);
 
-  // ✅ Axios 응답 인터셉터: 401 감지 → 자동 로그아웃
+  // ✅ Axios 응답 인터셉터: 401 감지 → 토큰 재발급 시도
   useEffect(() => {
     const resInterceptor = axios.interceptors.response.use(
       (res) => res,
-      (err) => {
-        if (err.response?.status === 401) {
-          const msg = err.response.data;
-          if (
-            msg === "access token expired" ||
-            msg === "no token" ||
-            msg === "invalid access token"
-          ) {
-            console.warn("🚨 401 감지 → 자동 로그아웃");
+      async (err) => {
+        const originalRequest = err.config;
+
+        if (err.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          try {
+            const reissueResponse = await axios.post(
+              "/api/member/reissue",
+              {},
+              { withCredentials: true },
+            );
+
+            const newAccess = reissueResponse.headers["access"];
+            if (newAccess) {
+              // memberInfo 갱신
+              const saved = localStorage.getItem("memberInfo");
+              if (saved) {
+                const parsed = JSON.parse(saved);
+                parsed.access = newAccess;
+                localStorage.setItem("memberInfo", JSON.stringify(parsed));
+                setMemberInfo(parsed);
+              }
+
+              // 원래 요청 Authorization 교체 후 재시도
+              axios.defaults.headers.common["Authorization"] =
+                `Bearer ${newAccess}`;
+              originalRequest.headers["Authorization"] = `Bearer ${newAccess}`;
+
+              // FormData 요청이면 복제
+              if (originalRequest.data instanceof FormData) {
+                const newData = new FormData();
+                for (let [key, value] of originalRequest.data.entries()) {
+                  newData.append(key, value);
+                }
+                originalRequest.data = newData;
+              }
+
+              // 재시도
+              return axios(originalRequest);
+            }
+          } catch (reissueErr) {
+            console.warn("🚨 토큰 재발급 실패 → 로그아웃");
             logout();
           }
         }
+
         return Promise.reject(err);
       },
     );
+
     return () => axios.interceptors.response.eject(resInterceptor);
   }, []);
 

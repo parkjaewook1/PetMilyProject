@@ -13,7 +13,7 @@ import {
 import React, { useContext, useEffect } from "react";
 import { LoginContext } from "./LoginProvider.jsx";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { generateDiaryId } from "../util/util.jsx";
 import BoardMenu from "./BoardMenu.jsx";
 import { ChevronDownIcon } from "@chakra-ui/icons";

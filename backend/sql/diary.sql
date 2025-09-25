@@ -126,29 +126,68 @@ SET title   = 'yz1 234',
     content = '567 890'
 WHERE id % 3 = 2;
 
-CREATE TABLE members (
-                         member_id INT AUTO_INCREMENT PRIMARY KEY,
-                         intro TEXT,
-                         profile_image VARCHAR(255),
-                         guest_book TEXT,
-                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+CREATE TABLE members
+(
+    member_id     INT AUTO_INCREMENT PRIMARY KEY,
+    intro         TEXT,
+    profile_image VARCHAR(255),
+    guest_book    TEXT,
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE diary_profile (
-                               member_id INT PRIMARY KEY,
-                               intro TEXT,
-                               guest_book TEXT,
-                               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                               updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                               FOREIGN KEY (member_id) REFERENCES member(id)
+CREATE TABLE diary_profile
+(
+    member_id  INT PRIMARY KEY,
+    intro      TEXT,
+    guest_book TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (member_id) REFERENCES member (id)
 );
 
 ALTER TABLE diary_profile
     CHANGE COLUMN condition_message status_message TEXT;
 
 ALTER TABLE diary_profile
-DROP COLUMN created_at,
-DROP COLUMN updated_at;
+    DROP COLUMN created_at,
+    DROP COLUMN updated_at;
 
 DROP TABLE diary_file;
+
+
+-- diary_file → diary 참조 해제
+ALTER TABLE diary_file
+    DROP FOREIGN KEY fk_diary_file_diary;
+
+-- diary_comment → diary 참조 해제
+ALTER TABLE diary_comment
+    DROP FOREIGN KEY fk_diary_comment_diary;
+
+DROP TABLE diary;
+
+CREATE TABLE diary
+(
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    member_id    INT          NOT NULL,
+    title        VARCHAR(255) NOT NULL,
+    introduction TEXT,
+    inserted     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (member_id) REFERENCES member (id) ON DELETE CASCADE
+);
+
+CREATE TABLE diary_board
+(
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    diary_id   INT          NOT NULL,
+    title      VARCHAR(255) NOT NULL,
+    content    TEXT         NOT NULL,
+    inserted   TIMESTAMP                                      DEFAULT CURRENT_TIMESTAMP,
+    updated    TIMESTAMP                                      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    view_count INT                                            DEFAULT 0,
+    mood       ENUM ('HAPPY','NEUTRAL','SAD','ANGRY','TIRED') DEFAULT 'NEUTRAL',
+    FOREIGN KEY (diary_id) REFERENCES diary (id) ON DELETE CASCADE
+);
+INSERT INTO diary_comment (diary_id, member_id, comment, inserted)
+VALUES (11, 5, '테스트 댓글입니다', NOW());

@@ -18,13 +18,13 @@ public class CustomUserDetails implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Collection<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(() -> member.getTokenRole());
+        authorities.add(() -> member.getTokenRole() != null ? member.getTokenRole() : "ROLE_USER"); // null 방지
         return authorities;
     }
 
     @Override
     public String getUsername() {
-        return member.getUsername();
+        return member.getUsername() != null ? member.getUsername() : ""; // null 방지
     }
 
     // ID 정보

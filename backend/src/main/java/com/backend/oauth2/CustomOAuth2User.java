@@ -13,41 +13,36 @@ public class CustomOAuth2User implements OAuth2User {
     private final OAuth2Member oAuth2Member;
 
     public CustomOAuth2User(OAuth2Member oAuth2Member) {
-
         this.oAuth2Member = oAuth2Member;
     }
 
     @Override
     public Map<String, Object> getAttributes() {
-
-        return null;
+        return null; // 필요하면 attributes를 받아서 반환하도록 수정 가능
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-
         Collection<GrantedAuthority> collection = new ArrayList<>();
-
-        collection.add(new GrantedAuthority() {
-
-            @Override
-            public String getAuthority() {
-
-                return oAuth2Member.getRole();
-            }
-        });
-
+        collection.add(() -> oAuth2Member.getRole());
         return collection;
     }
 
     @Override
     public String getName() {
-
         return oAuth2Member.getName();
     }
 
     public String getUsername() {
-
         return oAuth2Member.getUsername();
+    }
+
+    // ✅ 추가: id 반환
+    public Integer getId() {
+        return oAuth2Member.getId();
+    }
+
+    public String getRole() {
+        return oAuth2Member.getRole();
     }
 }

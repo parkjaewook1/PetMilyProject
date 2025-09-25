@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 import {
   Box,
@@ -19,10 +19,9 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
-import { generateDiaryId } from "../../../../../util/util.jsx";
 
 export function DiaryCommentView() {
-  const { id } = useParams();
+  const { diaryId, id } = useParams();
   const [diaryComment, setDiaryComment] = useState(null);
   const { memberInfo } = useContext(LoginContext);
   const access = memberInfo?.access;
@@ -32,7 +31,6 @@ export function DiaryCommentView() {
   const memberId = memberInfo && memberInfo.id ? parseInt(memberInfo.id) : null;
   const params = memberId ? { memberId } : {};
   const { onOpen, onClose, isOpen } = useDisclosure();
-  const diaryId = generateDiaryId(memberInfo.id);
 
   useEffect(() => {
     axios
@@ -88,6 +86,8 @@ export function DiaryCommentView() {
       </Center>
     );
   }
+  const isWriter = Number(diaryComment?.memberId) === Number(memberInfo?.id);
+  const isDiaryOwner = Number(diaryComment?.ownerId) === Number(memberInfo?.id);
 
   return (
     <Center bg="gray.100" py={20}>
@@ -122,12 +122,22 @@ export function DiaryCommentView() {
                 </FormControl>
               </Box>
               <HStack spacing={4} justifyContent="flex-end">
-                <Button colorScheme="purple" onClick={handleCommentEdit}>
-                  수정
-                </Button>
-                <Button colorScheme="red" onClick={handleClickRemove}>
-                  삭제
-                </Button>
+                {isWriter && (
+                  <>
+                    <Button colorScheme="purple" onClick={handleCommentEdit}>
+                      수정
+                    </Button>
+                    <Button colorScheme="red" onClick={handleClickRemove}>
+                      삭제
+                    </Button>
+                  </>
+                )}
+
+                {!isWriter && isDiaryOwner && (
+                  <Button colorScheme="red" onClick={handleClickRemove}>
+                    삭제
+                  </Button>
+                )}
               </HStack>
             </VStack>
           </CardBody>

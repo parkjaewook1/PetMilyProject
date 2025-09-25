@@ -13,7 +13,7 @@ import {
   useToast,
   VStack,
 } from "@chakra-ui/react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 
 export function MemberFind() {
   const [username, setUsername] = useState("");

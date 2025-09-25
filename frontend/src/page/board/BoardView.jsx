@@ -20,7 +20,7 @@ import {
 } from "@chakra-ui/react";
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import styled, { css, keyframes } from "styled-components";
 import { BoardCommentComponent } from "../../component/board/BoardCommentComponent.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

@@ -17,7 +17,7 @@ import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaperPlane } from "@fortawesome/free-regular-svg-icons";
 import { useContext, useState } from "react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { LoginContext } from "../LoginProvider.jsx";
 import { StarRating } from "./StarRating.jsx";
 

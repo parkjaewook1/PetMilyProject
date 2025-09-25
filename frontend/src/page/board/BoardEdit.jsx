@@ -24,7 +24,7 @@ import {
 } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
 import React, { useContext, useEffect, useState } from "react";
-import axios from "axios";
+import axios from "@api/axiosConfig";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { LoginContext } from "../../component/LoginProvider.jsx";
@@ -150,9 +150,19 @@ export function BoardEdit() {
   };
 
   return (
-    <Box maxW="1000px" m="auto" p={6} boxShadow="lg" borderRadius="md" mt={10} bg="white">
+    <Box
+      maxW="1000px"
+      m="auto"
+      p={6}
+      boxShadow="lg"
+      borderRadius="md"
+      mt={10}
+      bg="white"
+    >
       <Box p={4} bg="white" borderRadius="md" boxShadow="md" mb={4}>
-        <Text fontSize="2xl" fontWeight="bold" mb={6}>{id}번 게시물 수정</Text>
+        <Text fontSize="2xl" fontWeight="bold" mb={6}>
+          {id}번 게시물 수정
+        </Text>
         <FormControl mb={4}>
           <FormLabel>제목</FormLabel>
           <Input
@@ -170,7 +180,14 @@ export function BoardEdit() {
         <Box mb={4}>
           {board.fileList &&
             board.fileList.map((file) => (
-              <Box border="1px solid gray" borderRadius="md" p={3} mb={3} key={file.name} position="relative">
+              <Box
+                border="1px solid gray"
+                borderRadius="md"
+                p={3}
+                mb={3}
+                key={file.name}
+                position="relative"
+              >
                 <Flex align="center">
                   <Box position="relative">
                     <Image
@@ -180,7 +197,9 @@ export function BoardEdit() {
                       alt={file.name}
                       borderRadius="md"
                       style={
-                        removeFileList.includes(file.name) ? { filter: "blur(8px)" } : {}
+                        removeFileList.includes(file.name)
+                          ? { filter: "blur(8px)" }
+                          : {}
                       }
                     />
                     <IconButton
@@ -201,7 +220,12 @@ export function BoardEdit() {
         </Box>
         <FormControl mb={4}>
           <FormLabel>파일</FormLabel>
-          <Input multiple type="file" accept="image/*" onChange={handleChange} />
+          <Input
+            multiple
+            type="file"
+            accept="image/*"
+            onChange={handleChange}
+          />
           {!invisibledText && (
             <FormHelperText color="red.500">
               총 용량은 100MB, 한 파일은 100MB를 초과할 수 없습니다.
@@ -212,7 +236,11 @@ export function BoardEdit() {
           <ul>{fileNameList}</ul>
         </Box>
         <Flex justify="flex-end" gap={3}>
-          <Button colorScheme="blue" onClick={onOpen} isDisabled={disableSaveButton}>
+          <Button
+            colorScheme="blue"
+            onClick={onOpen}
+            isDisabled={disableSaveButton}
+          >
             수정
           </Button>
         </Flex>
