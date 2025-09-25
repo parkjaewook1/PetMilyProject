@@ -30,8 +30,6 @@ export function DiaryCommentView() {
   const { diaryId, id } = useParams();
   const [diaryComment, setDiaryComment] = useState(null);
   const { memberInfo } = useContext(LoginContext);
-  const access = memberInfo?.access;
-  const isLoggedIn = Boolean(access);
   const toast = useToast();
   const navigate = useNavigate();
   const memberId = memberInfo && memberInfo.id ? parseInt(memberInfo.id) : null;
