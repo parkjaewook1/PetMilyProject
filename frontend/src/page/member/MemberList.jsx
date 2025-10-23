@@ -35,7 +35,7 @@ export function MemberList() {
   const { memberInfo } = useContext(LoginContext);
 
   useEffect(() => {
-    if (memberInfo?.id === "1") {
+    if (memberInfo?.role === "ADMIN") {
       fetchMembers(currentPage);
     } else {
       setIsLoading(false);
@@ -135,7 +135,7 @@ export function MemberList() {
     );
   }
 
-  if (memberInfo === null || memberInfo?.id !== "1") {
+  if (memberInfo === null || memberInfo?.role !== "ADMIN") {
     return (
       <Center mt={10}>
         <Text fontSize="xl" fontWeight="bold" color="red.500">
@@ -210,7 +210,7 @@ export function MemberList() {
                         />
                       </Button>
                     </Tooltip>
-                    {member.id !== 1 && (
+                    {member.role !== "ADMIN" && (
                       <Tooltip label="삭제" aria-label="삭제" hasArrow>
                         <Button
                           size="sm"

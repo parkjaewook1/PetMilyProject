@@ -26,7 +26,7 @@ import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 // import { generateDiaryId } from "../../../../../util/util.jsx";
 
 export function DiaryCommentEdit() {
-  const { diaryId, id } = useParams();
+  const { encodedId, id } = useParams();
   const [diaryComment, setDiaryComment] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
@@ -62,7 +62,7 @@ export function DiaryCommentEdit() {
           description: "댓글이 수정되었습니다.",
           position: "top",
         });
-        navigate(`/diary/${diaryId}/comment/view/${id}`);
+        navigate(`/diary/${encodedId}/comment/view/${id}`);
       })
       .catch((err) => {
         if (err.response?.status === 400) {
@@ -88,7 +88,7 @@ export function DiaryCommentEdit() {
           position: "top",
         });
         // 삭제 후 목록 페이지로 이동
-        navigate(`/diary/${diaryId}/comment/list`);
+        navigate(`/diary/${encodedId}/comment/list`);
       })
       .catch((err) => {
         toast({

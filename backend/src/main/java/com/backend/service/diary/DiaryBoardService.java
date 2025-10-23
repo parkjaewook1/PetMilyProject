@@ -6,6 +6,7 @@ import com.backend.mapper.diary.DiaryBoardMapper;
 import com.backend.mapper.member.MemberMapper;
 import com.backend.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -14,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,10 +26,12 @@ import java.util.Map;
 @Service
 @Transactional(rollbackFor = Exception.class)
 @RequiredArgsConstructor
+@Slf4j   // ✅ 추가
 public class DiaryBoardService {
 
     private final DiaryBoardMapper mapper;
     private final MemberMapper memberMapper;
+
 
     public void add(DiaryBoard diaryBoard, Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
@@ -35,6 +40,15 @@ public class DiaryBoardService {
         Object principal = authentication.getPrincipal();
         if (principal instanceof CustomUserDetails cud) {
             diaryBoard.setMemberId(cud.getId());
+
+            // ✅ 오늘 이미 작성된 일기 있는지 확인
+            LocalDate today = LocalDate.now();
+            int count = mapper.countByDiaryIdAndDate(diaryBoard.getDiaryId(), today);
+            if (count > 0) {
+                throw new IllegalStateException("오늘은 이미 일기를 작성하셨습니다.");
+            }
+            diaryBoard.setInserted(LocalDateTime.now()); // 시간까지 포함
+            diaryBoard.setInsertedDate(today);           // 날짜만 (하루 1개 제약용)
             mapper.insert(diaryBoard);
         } else {
             throw new UsernameNotFoundException("인증된 사용자 정보를 찾을 수 없습니다.");
@@ -50,7 +64,20 @@ public class DiaryBoardService {
         Object principal = authentication.getPrincipal();
         if (principal instanceof CustomUserDetails cud) {
             diaryBoard.setMemberId(cud.getId());
+
+            // ✅ 오늘 이미 작성된 일기 있는지 확인
+            LocalDate today = LocalDate.now();
+            int count = mapper.countByDiaryIdAndDate(diaryBoard.getDiaryId(), today);
+            if (count > 0) {
+                throw new IllegalStateException("오늘은 이미 일기를 작성하셨습니다.");
+            }
+
+            // ✅ 날짜와 시간 세팅
+            diaryBoard.setInserted(LocalDateTime.now());
+            diaryBoard.setInsertedDate(today);
+//            log.info("insertedDate={}", diaryBoard.getInsertedDate());
             mapper.insert(diaryBoard);
+
             // 파일 저장 로직 필요 시 추가
         } else {
             throw new UsernameNotFoundException("인증된 사용자 정보를 찾을 수 없습니다.");
@@ -112,7 +139,11 @@ public class DiaryBoardService {
         return mapper.selectById(id);
     }
 
-    public List<MoodStat> getMonthlyMoodStats(Integer memberId, String yearMonth) {
-        return mapper.getMonthlyMoodStats(memberId, yearMonth);
+    public List<MoodStat> getMonthlyMoodStats(Integer diaryId, String yearMonth) {
+        return mapper.getMonthlyMoodStats(diaryId, yearMonth);
+    }
+
+    public List<DiaryBoard> getRecentBoards(Long diaryId, int limit) {
+        return mapper.selectRecentBoards(diaryId, limit);
     }
 }

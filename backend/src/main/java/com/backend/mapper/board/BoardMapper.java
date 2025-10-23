@@ -353,6 +353,7 @@ public interface BoardMapper {
                        b.board_type,
                        b.views,
                        b.member_id,
+                       b.inserted,
                        COUNT(DISTINCT f.name) AS number_of_images,
                        (SELECT COUNT(*) FROM board_like l WHERE l.board_id = b.id) AS number_of_likes,
                        COUNT(DISTINCT c.id) AS number_of_comments
@@ -373,6 +374,7 @@ public interface BoardMapper {
                        b.board_type,
                        b.views,
                        b.member_id,
+                       b.inserted,
                        COUNT(DISTINCT f.name) AS number_of_images,
                        (SELECT COUNT(*) FROM board_like l WHERE l.board_id = b.id) AS number_of_likes,
                        COUNT(DISTINCT c.id) AS number_of_comments

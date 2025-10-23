@@ -1,10 +1,10 @@
-// DiaryCommentService.java
 package com.backend.service.diary;
 
 import com.backend.domain.diary.DiaryComment;
 import com.backend.domain.member.Member;
 import com.backend.mapper.diary.DiaryCommentMapper;
 import com.backend.mapper.member.MemberMapper;
+import com.backend.service.friends.FriendsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -21,24 +21,51 @@ import java.util.Map;
 public class DiaryCommentService {
     final DiaryCommentMapper mapper;
     private final MemberMapper memberMapper;
+    private final DiaryService diaryService;
+    private final FriendsService friendsService;
 
-    public void add(DiaryComment diaryComment, Authentication authentication) {
-        // 로그인한 사용자 정보 가져오기
+
+    public DiaryComment add(DiaryComment diaryComment, Authentication authentication) {
         Member member = memberMapper.selectByUsername(authentication.getName());
         if (member == null) {
             throw new UsernameNotFoundException("로그인한 사용자를 찾을 수 없습니다.");
         }
 
         diaryComment.setMemberId(member.getId());
+
+        // ✅ 대댓글(replyCommentId) 유효성 검증
+        if (diaryComment.getReplyCommentId() != null) {
+            DiaryComment parent = mapper.selectById(diaryComment.getReplyCommentId());
+            if (parent == null) {
+                throw new IllegalArgumentException("부모 댓글이 존재하지 않습니다.");
+            }
+            if (!parent.getDiaryId().equals(diaryComment.getDiaryId())) {
+                throw new IllegalArgumentException("부모 댓글과 다른 다이어리에 대댓글을 달 수 없습니다.");
+            }
+        }
+
         mapper.diaryCommentInsert(diaryComment);
+        // ✅ 방금 저장된 댓글 객체를 다시 조회해서 반환
+        return mapper.selectById(diaryComment.getId());
     }
 
-    public Map<String, Object> list(Integer diaryId, int page, int pageSize) {
-        int totalComments = mapper.countByDiaryId(diaryId);
+
+    // ✅ 부모 댓글 페이징 목록 (대댓글은 미리보기 제외, replyCount만 내려줌)
+    public Map<String, Object> list(Integer diaryId, int page, int pageSize, String type, String keyword) {
+        // 부모 댓글 총 개수 (검색 조건 포함)
+        int totalComments = mapper.countParentCommentsByDiaryIdAndSearch(diaryId, type, keyword);
         int totalPages = (int) Math.ceil((double) totalComments / pageSize);
         int offset = (page - 1) * pageSize;
 
-        List<DiaryComment> comments = mapper.selectByDiaryId(diaryId, pageSize, offset);
+        // 부모 댓글만 페이징 조회 (검색 조건 포함)
+        List<DiaryComment> comments = mapper.selectParentCommentsBySearch(diaryId, type, keyword, pageSize, offset);
+
+        // 각 부모 댓글에 replyCount만 세팅
+        for (DiaryComment comment : comments) {
+            int replyCount = mapper.countReplies(comment.getId());
+            comment.setReplyCount(replyCount);
+            comment.setReplies(null); // ❌ 미리보기 replies는 넣지 않음
+        }
 
         Map<String, Object> result = new HashMap<>();
         result.put("comments", comments);
@@ -48,8 +75,8 @@ public class DiaryCommentService {
         return result;
     }
 
-    public void diaryDelete(Integer id) {
-        mapper.deleteById(id);
+    public void diaryDelete(Integer commentId) {
+        mapper.deleteById(commentId);
     }
 
     public void edit(DiaryComment diaryComment) {
@@ -61,10 +88,7 @@ public class DiaryCommentService {
     }
 
     public boolean validate(DiaryComment diaryComment) {
-        if (diaryComment.getComment() == null || diaryComment.getComment().isBlank()) {
-            return false;
-        }
-        return true;
+        return diaryComment.getComment() != null && !diaryComment.getComment().isBlank();
     }
 
     public boolean hasAccess(Integer commentId, Authentication authentication) {
@@ -83,10 +107,46 @@ public class DiaryCommentService {
         // 댓글 작성자 ID
         Integer commentOwnerId = diaryComment.getMemberId();
 
-        // 다이어리 주인 ID 조회 (DiaryComment에 diaryId가 있다고 가정)
+        // 다이어리 주인 ID 조회
         Integer diaryOwnerId = mapper.findDiaryOwnerIdByDiaryId(diaryComment.getDiaryId());
 
         // 작성자 본인 또는 다이어리 주인이면 true
         return currentUser.getId().equals(commentOwnerId) || currentUser.getId().equals(diaryOwnerId);
+    }
+
+    public List<DiaryComment> getRecentComments(Integer diaryId, int limit) {
+        return mapper.selectRecentComments(diaryId, limit);
+    }
+
+    // ✅ 특정 댓글의 전체 대댓글 조회 (더보기 API)
+    public List<DiaryComment> getAllReplies(Integer commentId) {
+        return mapper.selectAllReplies(commentId);
+    }
+
+    public List<DiaryComment> selectAllByDiaryId(Integer diaryId) {
+        return mapper.selectAllByDiaryId(diaryId);
+    }
+
+    public boolean canAccessDiary(Integer diaryId, Authentication authentication) {
+        var diary = diaryService.getDiaryById(diaryId);
+        if (diary == null) return false;
+
+        Integer userId = null;
+        if (authentication != null) {
+            Member currentUser = memberMapper.selectByUsername(authentication.getName());
+            if (currentUser != null) {
+                userId = currentUser.getId();
+            }
+        }
+
+        boolean isOwner = (userId != null && userId.equals(diary.getMemberId()));
+        boolean isFriend = (!isOwner && userId != null)
+                && friendsService.checkFriendship(userId, diary.getMemberId());
+
+        String visibility = diary.getVisibility();
+
+        return isOwner
+                || "PUBLIC".equalsIgnoreCase(visibility)
+                || ("FRIENDS".equalsIgnoreCase(visibility) && isFriend);
     }
 }

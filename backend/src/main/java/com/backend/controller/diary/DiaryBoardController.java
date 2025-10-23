@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -38,13 +39,11 @@ public class DiaryBoardController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        // 로그인한 사용자 기준으로 diary 조회
         var diary = diaryService.getDiaryByMemberId(user.getId());
         if (diary == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        // DB 저장용 diaryId 세팅
         diaryBoard.setDiaryId(diary.getId());
 
         if (!diaryBoardService.validate(diaryBoard)) {
@@ -53,7 +52,10 @@ public class DiaryBoardController {
 
         try {
             diaryBoardService.add(diaryBoard, files, authentication);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok(Map.of("id", diaryBoard.getId()));
+        } catch (IllegalStateException e) {
+            // ✅ 하루 1개 제약 위반 시 409 Conflict 반환
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (IOException e) {
             log.error("Error adding diary", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -68,6 +70,14 @@ public class DiaryBoardController {
         if (user == null || user.getId() == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+
+        var diary = diaryService.getDiaryByMemberId(user.getId());
+        if (diary == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        diaryBoard.setDiaryId(diary.getId()); // ✅ 반드시 세팅
+
         if (diaryBoardService.validate(diaryBoard)) {
             diaryBoardService.add(diaryBoard, authentication);
             return ResponseEntity.ok().build();
@@ -119,6 +129,14 @@ public class DiaryBoardController {
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.badRequest().build();
+    }
+
+    @GetMapping("/{id}/recent-boards")
+    public ResponseEntity<List<DiaryBoard>> getRecentBoards(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "5") int limit) {
+        List<DiaryBoard> boards = diaryBoardService.getRecentBoards(id, limit);
+        return ResponseEntity.ok(boards);
     }
 
 

@@ -16,4 +16,7 @@ public class Diary {
     private Integer viewCount;
 
     private String introduction;
+
+    // ✅ 공개 범위: PUBLIC, FRIENDS, PRIVATE
+    private String visibility = "PUBLIC";
 }

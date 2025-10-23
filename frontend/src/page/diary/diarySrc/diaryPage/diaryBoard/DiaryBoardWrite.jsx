@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   Box,
   Button,
@@ -13,19 +13,15 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import axios from "@api/axiosConfig";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
-import {
-  extractUserIdFromDiaryId,
-  generateDiaryId,
-} from "../../../../../util/util.jsx";
+import { generateDiaryId } from "../../../../../util/util.jsx";
 
 export function DiaryBoardWrite() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedMood, setSelectedMood] = useState("NEUTRAL");
-  const [ownerId, setOwnerId] = useState(null);
   const [files, setFiles] = useState([]); // 📌 파일 상태 추가
 
   const { memberInfo } = useContext(LoginContext);
@@ -35,22 +31,15 @@ export function DiaryBoardWrite() {
   const toast = useToast();
   const navigate = useNavigate();
   const { diaryId: diaryIdParam } = useParams();
+  const { ownerId, numericDiaryId, encodedId } = useOutletContext();
 
   const username = memberInfo?.nickname || "";
   const myDiaryId = generateDiaryId(memberInfo.id);
 
-  // ✅ URL의 diaryId에서 주인 memberId 추출
-  useEffect(() => {
-    if (diaryIdParam) {
-      const extractedOwnerId = extractUserIdFromDiaryId(diaryIdParam);
-      setOwnerId(extractedOwnerId);
-    }
-  }, [diaryIdParam]);
-
   const isOwner = String(memberInfo?.id) === String(ownerId);
 
   const handleFileChange = (e) => {
-    setFiles(Array.from(e.target.files)); // 여러 파일 선택 가능
+    setFiles(Array.f디om(e.target.files)); // 여러 파일 선택 가능
   };
 
   const handleSaveClick = () => {
@@ -67,16 +56,23 @@ export function DiaryBoardWrite() {
 
     axios
       .post("/api/diaryBoard/add", formData)
-      .then(() => {
+      .then((res) => {
+        const newId = res.data.id;
         toast({
           description: "새 글이 등록되었습니다.",
           status: "success",
           position: "top",
         });
-        navigate(`/diary/${myDiaryId}/board/list`);
+        navigate(`/diary/${myDiaryId}/board/list`, {
+          state: { newPostId: newId },
+        });
+        console.log("encodedId:", encodedId);
+        console.log("myDiaryId:", myDiaryId);
       })
       .catch((e) => {
         const code = e.response?.status;
+        const message = e.response?.data; // 서버에서 body로 문자열 내려줬다면 그냥 data
+
         if (code === 400) {
           toast({
             status: "error",
@@ -87,6 +83,18 @@ export function DiaryBoardWrite() {
           toast({
             status: "error",
             description: "이 다이어리의 주인만 글을 작성할 수 있습니다.",
+            position: "top",
+          });
+        } else if (code === 409) {
+          toast({
+            status: "warning",
+            description: message || "오늘은 이미 일기를 작성하셨습니다.",
+            position: "top",
+          });
+        } else {
+          toast({
+            status: "error",
+            description: "알 수 없는 오류가 발생했습니다.",
             position: "top",
           });
         }

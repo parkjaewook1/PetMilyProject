@@ -27,7 +27,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 
 export function DiaryCommentView() {
-  const { diaryId, id } = useParams();
+  const { encodedId, id } = useParams();
   const [diaryComment, setDiaryComment] = useState(null);
   const { memberInfo } = useContext(LoginContext);
   const toast = useToast();
@@ -48,10 +48,10 @@ export function DiaryCommentView() {
             description: "해당 댓글이 존재하지 않습니다.",
             position: "top",
           });
-          navigate(`/diary/${diaryId}/comment`);
+          navigate(`/diary/${encodedId}/comment`);
         }
       });
-  }, [id, navigate, toast, diaryId]);
+  }, [id, navigate, toast, encodedId]);
 
   function handleClickRemove() {
     axios
@@ -62,7 +62,7 @@ export function DiaryCommentView() {
           description: "댓글이 삭제되었습니다.",
           position: "top",
         });
-        navigate(`/diary/${diaryId}/comment`);
+        navigate(`/diary/${encodedId}/comment`);
       })
       .catch(() => {
         toast({
@@ -78,7 +78,7 @@ export function DiaryCommentView() {
 
   function handleCommentEdit() {
     if (id !== null) {
-      navigate(`/diary/${diaryId}/comment/edit/${id}`);
+      navigate(`/diary/${encodedId}/comment/edit/${id}`);
     } else {
       console.error("ID is null, cannot navigate.");
     }

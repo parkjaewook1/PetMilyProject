@@ -37,6 +37,7 @@ import { DiaryCommentView } from "./page/diary/diarySrc/diaryPage/diaryComment/D
 import { DiaryCommentList } from "./page/diary/diarySrc/diaryPage/diaryComment/DiaryCommentList.jsx";
 import { DiaryCommentEdit } from "./page/diary/diarySrc/diaryPage/diaryComment/DiaryCommentEdit.jsx";
 import DiaryCalendar from "./page/diary/diarySrc/diaryPage/diaryCalendar/DiaryCalendar.jsx";
+import { ThemeProvider } from "./page/diary/diarySrc/diaryComponent/ThemeContext.jsx";
 
 // Place
 import { PlaceLocal } from "./page/place/PlaceLocal.jsx";
@@ -48,8 +49,8 @@ import KakaoMap from "./KakaoMap.jsx";
 
 const App = () => {
   const [selectedCtprvnCd, setSelectedCtprvnCd] = useState(null);
-  const [user, setUser] = useState(null);
-  const [loadingUser, setLoadingUser] = useState(true);
+  const [, setUser] = useState(null);
+  const [, setLoadingUser] = useState(true);
   const memberInfo = useContext(LoginContext);
 
   // 📌 앱 시작 시 토큰으로 내 정보 불러오기
@@ -109,7 +110,7 @@ const App = () => {
 
         // Diary
         {
-          path: "diary/:diaryId",
+          path: "diary/:encodedId",
           element: <DiaryHome />,
           children: [
             { index: true, element: <DiaryHomeMain /> },
@@ -130,13 +131,7 @@ const App = () => {
             // 캘린더
             {
               path: "calendar",
-              element: loadingUser ? (
-                <div>로그인 정보를 불러오는 중...</div>
-              ) : user ? (
-                <DiaryCalendar user={user} />
-              ) : (
-                <div>유저 정보 없음</div>
-              ),
+              element: <DiaryCalendar />, // ✅ user props 제거
             },
           ],
         },
@@ -161,7 +156,9 @@ const App = () => {
   return (
     <LoginProvider>
       <ChakraProvider theme={theme}>
-        <RouterProvider router={router} />
+        <ThemeProvider>
+          <RouterProvider router={router} />
+        </ThemeProvider>
       </ChakraProvider>
     </LoginProvider>
   );

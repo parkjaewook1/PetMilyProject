@@ -4,15 +4,16 @@ import com.backend.domain.diary.DiaryBoard;
 import com.backend.domain.diary.MoodStat;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Mapper
 public interface DiaryBoardMapper {
 
-    // 글 작성
+    //글 작성
     @Insert("""
-                INSERT INTO diary_board(diary_id, title, content, mood)
-                VALUES (#{diaryId}, #{title}, #{content}, #{mood})
+                INSERT INTO diary_board(diary_id, title, content, mood, inserted, inserted_date)
+                VALUES (#{diaryId}, #{title}, #{content}, #{mood}, #{inserted}, #{insertedDate})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(DiaryBoard diaryBoard);
@@ -180,12 +181,13 @@ public interface DiaryBoardMapper {
     // 월별 mood 통계
     @Select("""
                 SELECT mood, COUNT(*) AS count
-                FROM diary_board
-                WHERE diary_id = (
-                    SELECT id FROM diary WHERE member_id = #{memberId}
-                )
-                AND DATE_FORMAT(inserted, '%Y-%m') = #{yearMonth}
-                GROUP BY mood
+                             FROM diary_board
+                             WHERE diary_id = (
+                                 SELECT id FROM diary WHERE member_id = #{memberId}
+                             )
+                             AND DATE_FORMAT(inserted, '%Y-%m') = #{yearMonth}
+                             AND mood IS NOT NULL
+                             GROUP BY mood
             """)
     List<MoodStat> getMonthlyMoodStats(@Param("memberId") Integer memberId,
                                        @Param("yearMonth") String yearMonth);
@@ -198,4 +200,32 @@ public interface DiaryBoardMapper {
                 WHERE db.id = #{id}
             """)
     Integer selectMemberIdByDiaryBoardId(Integer id);
+
+
+    @Select("""
+                SELECT
+                    b.id AS id,
+                    b.diary_id,
+                    b.title,
+                    b.content,
+                    b.inserted,
+                    b.updated,
+                    b.view_count,
+                    b.mood
+                FROM diary_board b
+                WHERE b.diary_id = #{diaryId}
+                ORDER BY b.inserted DESC
+                LIMIT #{limit}
+            """)
+    List<DiaryBoard> selectRecentBoards(@Param("diaryId") Long diaryId,
+                                        @Param("limit") int limit);
+
+    @Select("""
+                SELECT COUNT(*)
+                FROM diary_board
+                WHERE diary_id = #{diaryId}
+                  AND inserted_date = #{today}
+            """)
+    int countByDiaryIdAndDate(@Param("diaryId") Integer diaryId,
+                              @Param("today") LocalDate today);
 }

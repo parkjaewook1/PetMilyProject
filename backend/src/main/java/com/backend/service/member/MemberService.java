@@ -64,6 +64,7 @@ public class MemberService {
         diary.setTitle(member.getNickname() + "님의 다이어리");
         diary.setContent("");
         diary.setMood("HAPPY"); // 기본값
+        diary.setVisibility("PUBLIC");
         diaryMapper.insertDiary(diary);
     }
 
@@ -202,11 +203,15 @@ public class MemberService {
         return result;
     }
 
-    // OAuth - userId 기반으로 변경
     public Map<String, Object> getMemberInfoById(Integer id) {
         Member member = memberMapper.selectByMemberId(id);
         Map<String, Object> map = new HashMap<>();
-        map.put("member", member);
+        if (member != null) {
+            map.put("id", member.getId());
+            map.put("username", member.getUsername());
+            map.put("nickname", member.getNickname());
+            map.put("role", member.getRole().name()); // ✅ role 추가
+        }
         return map;
     }
 

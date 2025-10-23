@@ -5,6 +5,8 @@ import {
   Flex,
   Heading,
   Input,
+  InputGroup,
+  InputRightElement,
   Select,
   Table,
   Tbody,
@@ -18,31 +20,51 @@ import React, { useContext, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import axios from "@api/axiosConfig";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate,
+  useOutletContext,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 import { DiaryContext } from "../../diaryComponent/DiaryContext.jsx";
 import { format } from "date-fns";
-import {
-  extractUserIdFromDiaryId,
-  generateDiaryId,
-} from "../../../../../util/util.jsx";
 import Pagination from "../../../../../component/Pagination.jsx";
 
 export function DiaryBoardList() {
   const { memberInfo } = useContext(LoginContext);
   const { diaryBoardList, setDiaryBoardList } = useContext(DiaryContext); // DiaryContext 사용
   const [pageInfo, setPageInfo] = useState({});
+  const { numericDiaryId, ownerId } = useOutletContext(); // ✅ 부모에서 받은 값
   const [searchType, setSearchType] = useState("all");
   const [searchKeyword, setSearchKeyword] = useState("");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const diaryId = useParams().diaryId;
-  const isOwner =
-    Number(memberInfo?.id) === Number(extractUserIdFromDiaryId(diaryId));
+  const { encodedId } = useParams();
+  const isOwner = Number(memberInfo?.id) === Number(ownerId);
+  const location = useLocation();
+  const newPostId = location.state?.newPostId;
 
+  function getMoodIcon(mood) {
+    if (!mood) return "❓";
+    switch (mood.toUpperCase()) {
+      case "HAPPY":
+        return "😊";
+      case "SAD":
+        return "😢";
+      case "ANGRY":
+        return "😡";
+      case "NEUTRAL":
+        return "😐";
+      default:
+        return "❓";
+    }
+  }
   useEffect(() => {
+    if (!numericDiaryId) return;
     const params = new URLSearchParams(searchParams);
-    params.set("memberId", extractUserIdFromDiaryId(diaryId));
+    params.set("diaryId", numericDiaryId); // ✅ 이제 numericDiaryId 사용
     axios.get(`/api/diaryBoard/list?${params.toString()}`).then((res) => {
       setDiaryBoardList(res.data.diaryBoardList);
       setPageInfo(res.data.pageInfo);
@@ -59,7 +81,7 @@ export function DiaryBoardList() {
     if (keywordParam) {
       setSearchKeyword(keywordParam);
     }
-  }, [searchParams, diaryId, setDiaryBoardList]);
+  }, [searchParams, encodedId, setDiaryBoardList]);
 
   const pageNumbers = [];
   for (let i = pageInfo.leftPageNumber; i <= pageInfo.rightPageNumber; i++) {
@@ -73,7 +95,7 @@ export function DiaryBoardList() {
     // 새로운 파라미터를 설정합니다.
     params.set("type", searchType);
     params.set("keyword", searchKeyword);
-    params.set("memberId", extractUserIdFromDiaryId(diaryId));
+    params.set("diaryId", numericDiaryId); // ✅ numericDiaryId 사용
 
     // 수정된 쿼리 파라미터로 페이지를 이동합니다.
     console.log(params.toString());
@@ -83,28 +105,40 @@ export function DiaryBoardList() {
   function handlePageButtonClick(pageNumber) {
     const params = new URLSearchParams(searchParams);
     params.set("page", pageNumber);
-    params.set("memberId", extractUserIdFromDiaryId(diaryId));
+    params.set("diaryId", numericDiaryId); // ✅ numericDiaryId 사용
     navigate(`?${params.toString()}`);
   }
 
   function handleSelectedDiaryBoard(id) {
-    return () => navigate(`/diary/${diaryId}/board/view/${id}`);
+    return () => navigate(`/diary/${encodedId}/board/view/${id}`);
   }
 
   function handleWriteClick() {
-    const diaryId = generateDiaryId(memberInfo.id);
-    navigate(`/diary/${diaryId}/board/write`);
+    navigate(`/diary/${encodedId}/board/write`);
   }
 
   const hoverBg = useColorModeValue("gray.100", "gray.700");
 
+  useEffect(() => {
+    if (newPostId) {
+      const el = document.getElementById(`post-${newPostId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  }, [newPostId]);
+
   return (
     <>
       <Box mb={5}></Box>
-      <Center>
-        <Heading>다이어리 목록</Heading>
+      <Center mb={4}>
+        <Heading size="lg" color="dark" _dark={{ color: "teal.300" }}>
+          일기장
+        </Heading>
       </Center>
-      <Box>{isOwner && <Button onClick={handleWriteClick}>작성</Button>}</Box>
+      <Flex justify="flex-end" mb={4}>
+        {isOwner && <Button onClick={handleWriteClick}>✍️</Button>}
+      </Flex>
       <Box>
         {diaryBoardList.length === 0 && <Center>조회 결과가 없습니다.</Center>}
         {diaryBoardList.length > 0 && (
@@ -114,8 +148,11 @@ export function DiaryBoardList() {
                 <Th w="15%" textAlign="center">
                   N번째 일기
                 </Th>
-                <Th w="55%" textAlign="center">
+                <Th w="45%" textAlign="center">
                   제목
+                </Th>
+                <Th w="10%" textAlign="center">
+                  기분
                 </Th>
                 <Th w="30%" textAlign="center">
                   작성일자
@@ -126,6 +163,8 @@ export function DiaryBoardList() {
               {diaryBoardList.map((diaryBoard, index) => (
                 <Tr
                   key={diaryBoard.id}
+                  id={`post-${diaryBoard.id}`}
+                  bg={diaryBoard.id === newPostId ? "yellow.50" : "transparent"} // ✅ 하이라이트
                   _hover={{ bg: hoverBg }}
                   cursor="pointer"
                   onClick={handleSelectedDiaryBoard(diaryBoard.id)}
@@ -145,6 +184,9 @@ export function DiaryBoardList() {
                   {/*<Td w="50%" textAlign="center">*/}
                   {/*  {diaryBoard.content}*/}
                   {/*</Td>*/}
+                  <Td textAlign="center">
+                    {getMoodIcon(diaryBoard.mood)} {/* ✅ mood 표시 */}
+                  </Td>
                   <Td w="30%" textAlign="center">
                     {format(new Date(diaryBoard.inserted), "yyyy.MM.dd")}
                   </Td>
@@ -174,25 +216,31 @@ export function DiaryBoardList() {
               <option value="nickname">작성자</option>
             </Select>
           </Box>
-          <Box>
+          <InputGroup
+            size="md"
+            w="300px"
+            boxShadow="md"
+            _hover={{ boxShadow: "lg" }}
+          >
             <Input
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
-              placeholder="검색어"
-              boxShadow="md"
-              _hover={{ boxShadow: "lg" }}
+              placeholder="검색어를 입력하세요"
+              borderRadius="full" // 둥근 검색창 느낌
+              pr="3rem" // 버튼 공간 확보
             />
-          </Box>
-          <Box>
-            <Button
-              onClick={handleSearchClick}
-              colorScheme="teal"
-              boxShadow="md"
-              _hover={{ boxShadow: "lg" }}
-            >
-              <FontAwesomeIcon icon={faMagnifyingGlass} />
-            </Button>
-          </Box>
+            <InputRightElement width="3rem">
+              <Button
+                h="1.75rem"
+                size="sm"
+                onClick={handleSearchClick}
+                colorScheme="teal"
+                borderRadius="full"
+              >
+                <FontAwesomeIcon icon={faMagnifyingGlass} />
+              </Button>
+            </InputRightElement>
+          </InputGroup>
         </Flex>
       </Center>
     </>

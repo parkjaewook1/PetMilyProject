@@ -2,6 +2,7 @@ package com.backend.domain.diary;
 
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,6 +16,8 @@ public class DiaryBoard {
     private String writer;
     private Integer memberId;        // member.id
     private LocalDateTime inserted;
+    private LocalDate insertedDate;  // ✅ DB의 inserted_date 컬럼 매핑
+
 
     private Integer numberOfImages;
     private List<String> imageSrcList;
@@ -22,4 +25,5 @@ public class DiaryBoard {
     private List<DiaryBoardFile> fileList; // 내부도 Integer 타입 확인
 
     private String mood; // HAPPY, NEUTRAL, SAD, ANGRY, TIRED
+    
 }

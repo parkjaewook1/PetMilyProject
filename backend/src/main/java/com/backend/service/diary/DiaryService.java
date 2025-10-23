@@ -47,7 +47,9 @@ public class DiaryService {
         return diaryMapper.selectByMemberId(memberId);
     }
 
-    public Diary getDiaryById(Long id) {
+    public Diary getDiaryById(Integer id) {
         return diaryMapper.selectById(id);
     }
+
+
 }

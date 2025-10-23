@@ -5,7 +5,7 @@ const DiaryPagination = ({
   pageInfo,
   pageNumbers,
   handlePageButtonClick,
-  maxPageButtons = 10, // 최대 페이지 버튼 수를 설정합니다.
+  maxPageButtons = 5, // 최대 페이지 버튼 수를 설정합니다.
 }) => {
   const { currentPageNumber, nextPageNumber, prevPageNumber, lastPageNumber } =
     pageInfo;
@@ -28,6 +28,8 @@ const DiaryPagination = ({
           이전
         </Button>
       )}
+      {/* 앞쪽 ... */}
+      {startPageNumber > 1 && <Button isDisabled>...</Button>}
       {pageNumbers
         .slice(startPageNumber - 1, endPageNumber)
         .map((pageNumber) => (
@@ -39,6 +41,8 @@ const DiaryPagination = ({
             {pageNumber}
           </Button>
         ))}
+      {/* 뒤쪽 ... */}
+      {endPageNumber < lastPageNumber && <Button isDisabled>...</Button>}
       {nextPageNumber && (
         <Button onClick={() => handlePageButtonClick(nextPageNumber)}>
           다음

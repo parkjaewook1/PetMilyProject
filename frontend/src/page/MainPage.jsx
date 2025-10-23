@@ -8,21 +8,11 @@ import {
   Flex,
   Image,
   Input,
-  SimpleGrid,
-  Table,
-  Tbody,
-  Td,
   Text,
-  Th,
-  Thead,
-  Tr,
   useColorModeValue,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
-import { StarIcon } from "@chakra-ui/icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFire } from "@fortawesome/free-solid-svg-icons";
-import KakaoMap2 from "../KakaoMap2.jsx";
+import ImageCarousel from "../component/ImageCarousel.jsx";
 
 const podiumMargins = {
   1: "0px",
@@ -129,6 +119,8 @@ export const MainPage = () => {
   const [showLogo, setShowLogo] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+
+  const images = ["/img/dog1.png", "/img/cat1.png", "/img/juntos2.png"]; // ✅ 로컬 이미지 배열
 
   const handleMapClick = () => {
     navigate("place-map3");
@@ -278,7 +270,7 @@ export const MainPage = () => {
               key={1}
               imgSrc={topLikedImages[1].imageUrl}
               rank={2}
-              onClick={() => handleImageClick(topLikedImages[1].id)} // 클릭 이벤트 핸들러 추가
+              onClick={() => handleImageClick(topLikedImages[1].id)}
             />
           )}
         </Flex>
@@ -288,7 +280,7 @@ export const MainPage = () => {
               key={0}
               imgSrc={topLikedImages[0].imageUrl}
               rank={1}
-              onClick={() => handleImageClick(topLikedImages[0].id)} // 클릭 이벤트 핸들러 추가
+              onClick={() => handleImageClick(topLikedImages[0].id)}
             />
           )}
         </Flex>
@@ -298,70 +290,19 @@ export const MainPage = () => {
               key={2}
               imgSrc={topLikedImages[2].imageUrl}
               rank={3}
-              onClick={() => handleImageClick(topLikedImages[2].id)} // 클릭 이벤트 핸들러 추가
+              onClick={() => handleImageClick(topLikedImages[2].id)}
             />
           )}
         </Flex>
       </Flex>
-      <Flex justify="space-around" mb={8} wrap="wrap" gap={8}>
-        <Box
-          flex="1"
-          minW="300px"
-          p={4}
-          bg="white"
-          borderRadius="md"
-          boxShadow="md"
-          transition="transform 0.2s"
-          _hover={{ transform: "scale(1.05)" }}
-        >
-          <Flex alignItems="center" mb={2}>
-            <StarIcon color="teal.500" boxSize={6} mr={2} />
-            <Text fontSize="2xl" fontWeight="bold" color="teal.500">
-              New
-            </Text>
-          </Flex>
-          <Table
-            variant="simple"
-            borderWidth="1px"
-            borderRadius="lg"
-            overflow="hidden"
-          >
-            <Thead bg={useColorModeValue("gray.100", "gray.700")}>
-              <Tr>
-                <Th textAlign="center">제목</Th>
-                <Th textAlign="center">작성자</Th>
-                <Th textAlign="center">추천수</Th>
-                <Th textAlign="center">조회수</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {latestBoards.slice(0, 5).map((board) => (
-                <Tr
-                  key={board.id}
-                  cursor="pointer"
-                  _hover={{ bg: hoverBg }}
-                  onClick={() => navigate(`/board/${board.id}`)}
-                >
-                  <Td
-                    textAlign="center"
-                    maxW="200px" // 최대 너비 설정
-                    whiteSpace="nowrap"
-                    overflow="hidden"
-                    textOverflow="ellipsis"
-                  >
-                    {board.title}
-                  </Td>
-                  <Td textAlign="center">{board.writer}</Td>
-                  <Td textAlign="center">{board.numberOfLikes}</Td>
-                  <Td textAlign="center">{board.views}</Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        </Box>
 
+      {/* ✅ 슬라이드가 New/Hot 게시판보다 위로 이동 */}
+      <ImageCarousel images={images} />
+
+      <Flex justify="center" mb={8} wrap="wrap" gap={8}>
+        {/* 🆕 최신 글 */}
         <Box
-          flex="1"
+          w="500px"
           minW="300px"
           p={4}
           bg="white"
@@ -371,58 +312,125 @@ export const MainPage = () => {
           _hover={{ transform: "scale(1.05)" }}
         >
           <Flex alignItems="center" mb={2}>
-            <FontAwesomeIcon
-              icon={faFire}
-              color="red"
-              size="2x"
-              style={{ marginRight: "8px" }}
-            />
-            <Text fontSize="2xl" fontWeight="bold" color="red.500">
-              Hot
+            <Text fontSize="xl" fontWeight="bold" color="teal.600">
+              🆕 최신 글
             </Text>
           </Flex>
-          <Table
-            variant="simple"
-            borderWidth="1px"
-            borderRadius="lg"
-            overflow="hidden"
-          >
-            <Thead bg={useColorModeValue("gray.100", "gray.700")}>
-              <Tr>
-                <Th textAlign="center">제목</Th>
-                <Th textAlign="center">작성자</Th>
-                <Th textAlign="center">추천수</Th>
-                <Th textAlign="center">조회수</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {popularBoards.slice(0, 5).map((board) => (
-                <Tr
-                  key={board.id}
-                  cursor="pointer"
-                  _hover={{ bg: hoverBg }}
-                  onClick={() => navigate(`/board/${board.id}`)}
+          <Box>
+            {latestBoards.slice(0, 5).map((board) => (
+              <Box
+                key={board.id}
+                borderBottom="1px solid"
+                borderColor="gray.200"
+                p={3}
+                cursor="pointer"
+                _hover={{ bg: "gray.50" }}
+                onClick={() => navigate(`/board/${board.id}`)}
+              >
+                <Text fontWeight="bold" fontSize="lg" noOfLines={1}>
+                  {board.title}
+                </Text>
+                <Flex
+                  justify="space-between"
+                  fontSize="sm"
+                  color="gray.500"
+                  mt={1}
                 >
-                  <Td
-                    textAlign="center"
-                    maxW="200px" // 최대 너비 설정
-                    whiteSpace="nowrap"
-                    overflow="hidden"
-                    textOverflow="ellipsis"
-                  >
+                  <Text>{board.writer}</Text>
+                  <Text>
+                    {board.inserted
+                      ? new Date(board.inserted).toLocaleDateString()
+                      : "날짜 없음"}
+                  </Text>
+                </Flex>
+                <Flex justify="flex-end" fontSize="sm" color="gray.500" mt={1}>
+                  <Text>
+                    👍 {board.numberOfLikes} · 👀 {board.views}
+                  </Text>
+                </Flex>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+        {/* 🔥 인기 글 */}
+        <Box
+          w="500px"
+          minW="300px"
+          p={4}
+          bg="white"
+          borderRadius="md"
+          boxShadow="md"
+          transition="transform 0.2s"
+          _hover={{ transform: "scale(1.05)" }}
+        >
+          <Flex alignItems="center" mb={2}>
+            <Text fontSize="xl" fontWeight="bold" color="red.500">
+              🔥 인기 글
+            </Text>
+          </Flex>
+          <Box>
+            {popularBoards.slice(0, 5).map((board, index) => (
+              <Box
+                key={board.id}
+                borderBottom="1px solid"
+                borderColor="gray.200"
+                p={3}
+                cursor="pointer"
+                _hover={{ bg: "gray.50" }}
+                onClick={() => navigate(`/board/${board.id}`)}
+              >
+                <Flex align="center" mb={1}>
+                  {/* 순위 뱃지 */}
+                  {index === 0 && (
+                    <Badge colorScheme="yellow" mr={2}>
+                      🥇 1위
+                    </Badge>
+                  )}
+                  {index === 1 && (
+                    <Badge colorScheme="gray" mr={2}>
+                      🥈 2위
+                    </Badge>
+                  )}
+                  {index === 2 && (
+                    <Badge colorScheme="orange" mr={2}>
+                      🥉 3위
+                    </Badge>
+                  )}
+                  {index > 2 && (
+                    <Badge colorScheme="purple" mr={2}>
+                      {index + 1}위
+                    </Badge>
+                  )}
+
+                  <Text fontWeight="bold" fontSize="lg" noOfLines={1}>
                     {board.title}
-                  </Td>
-                  <Td textAlign="center">{board.writer}</Td>
-                  <Td textAlign="center">{board.numberOfLikes}</Td>
-                  <Td textAlign="center">{board.views}</Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+                  </Text>
+                </Flex>
+                <Flex
+                  justify="space-between"
+                  fontSize="sm"
+                  color="gray.500"
+                  mt={1}
+                >
+                  <Text>{board.writer}</Text>
+                  <Text>
+                    {board.inserted
+                      ? new Date(board.inserted).toLocaleDateString()
+                      : "날짜 없음"}
+                  </Text>
+                </Flex>
+                <Flex justify="flex-end" fontSize="sm" color="gray.500" mt={1}>
+                  <Text>
+                    👍 {board.numberOfLikes} · 👀 {board.views}
+                  </Text>
+                </Flex>
+              </Box>
+            ))}
+          </Box>
         </Box>
       </Flex>
 
-      <Flex justify="flex-start" p={4} mb={8}>
+      {/*<Flex justify="flex-start" p={4} mb={8}>
         <Box
           flex="1"
           minW="300px"
@@ -519,7 +527,7 @@ export const MainPage = () => {
             ))}
           </SimpleGrid>
         </Box>
-      </Flex>
+      </Flex>*/}
     </Box>
   );
 };

@@ -7,6 +7,7 @@ import {
   Flex,
   FormControl,
   FormLabel,
+  Image,
   Input,
   Modal,
   ModalBody,
@@ -23,9 +24,10 @@ import {
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 import { generateDiaryId } from "../../../../../util/util.jsx";
 import { DiaryContext } from "../../diaryComponent/DiaryContext.jsx";
+import dayjs from "dayjs";
 
 export function DiaryBoardView() {
-  const { id, number } = useParams();
+  const { id } = useParams();
   const { diaryBoardList } = useContext(DiaryContext);
   const [diaryBoard, setDiaryBoard] = useState(null);
   const { memberInfo } = useContext(LoginContext);
@@ -43,7 +45,6 @@ export function DiaryBoardView() {
     axios
       .get(`/api/diaryBoard/${id}`)
       .then((res) => {
-        console.log("data:", res.data); // 서버 응답 데이터 확인
         setDiaryBoard(res.data);
       })
       .catch((err) => {
@@ -88,9 +89,24 @@ export function DiaryBoardView() {
   }
 
   const isOwner = diaryBoard.writer === nickname;
-
   const diaryIndex = diaryBoardList.findIndex((item) => item.id === Number(id));
   const diaryNumber = diaryBoardList.length - diaryIndex;
+
+  // 기분 아이콘 함수
+  const getMoodIcon = (mood) => {
+    switch (mood) {
+      case "HAPPY":
+        return "😊 행복";
+      case "SAD":
+        return "😢 슬픔";
+      case "ANGRY":
+        return "😡 화남";
+      case "NEUTRAL":
+        return "😐 보통";
+      default:
+        return "❓";
+    }
+  };
 
   return (
     <Box
@@ -136,16 +152,32 @@ export function DiaryBoardView() {
         </FormControl>
       </Box>
 
-      {/*<Box mb={6}>*/}
-      {/*  {diaryBoard.fileList &&*/}
-      {/*    diaryBoard.fileList.map((file) => (*/}
-      {/*      <Card m={3} key={file.name} boxShadow="md">*/}
-      {/*        <CardBody>*/}
-      {/*          <Image w="100%" src={file.src} borderRadius="md" />*/}
-      {/*        </CardBody>*/}
-      {/*      </Card>*/}
-      {/*    ))}*/}
-      {/*</Box>*/}
+      <Box mb={6}>
+        <FormControl>
+          <FormLabel fontSize="lg" fontWeight="bold">
+            오늘의 기분
+          </FormLabel>
+          <Input value={getMoodIcon(diaryBoard.mood)} readOnly bg="gray.50" />
+        </FormControl>
+      </Box>
+
+      <Box mb={6}>
+        <FormControl>
+          <FormLabel fontSize="lg" fontWeight="bold">
+            첨부 파일
+          </FormLabel>
+          {diaryBoard.fileList && diaryBoard.fileList.length > 0 ? (
+            diaryBoard.fileList.map((file) => (
+              <Box key={file.name} mb={2}>
+                <Image src={file.src} alt={file.name} borderRadius="md" />
+                <Text>{file.name}</Text>
+              </Box>
+            ))
+          ) : (
+            <Text>첨부된 파일이 없습니다.</Text>
+          )}
+        </FormControl>
+      </Box>
 
       <Box mb={6}>
         <FormControl>
@@ -163,7 +195,7 @@ export function DiaryBoardView() {
           </FormLabel>
           <Input
             type="datetime-local"
-            value={diaryBoard.inserted}
+            value={dayjs(diaryBoard.inserted).format("YYYY-MM-DDTHH:mm")}
             readOnly
             bg="gray.50"
           />

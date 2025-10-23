@@ -23,10 +23,11 @@ public interface DiaryMapper {
                                        @Param("yearMonth") String yearMonth);
 
     // 다이어리 생성 (기본정보만)
-    @Insert("""
-                INSERT INTO diary (member_id, title, introduction, inserted, updated)
-                VALUES (#{memberId}, #{title}, #{introduction}, NOW(), NOW())
-            """)
+    @Insert
+            ("""
+                    INSERT INTO diary (member_id, title, introduction, visibility, inserted, updated)
+                    VALUES (#{memberId}, #{title}, #{introduction}, #{visibility}, NOW(), NOW())
+                    """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertDiary(Diary diary);
 
@@ -35,7 +36,7 @@ public interface DiaryMapper {
     Diary selectByMemberId(Integer memberId);
 
     @Select("SELECT * FROM diary WHERE id = #{id}")
-    Diary selectById(Long id);
+    Diary selectById(Integer id);
 }
 
 // 필요 시 홈 화면 전용 쿼리(최근 글, 프로필 등) 추가 가능
