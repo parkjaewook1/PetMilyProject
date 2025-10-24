@@ -64,7 +64,7 @@ public class BoardService {
 
     public boolean validate(Board board) throws Exception {
         return board.getTitle() != null && !board.getTitle().isBlank() &&
-               board.getContent() != null && !board.getContent().isBlank();
+                board.getContent() != null && !board.getContent().isBlank();
     }
 
     public Map<String, Object> list(Integer page, Integer pageAmount, Boolean offsetReset, HttpSession session, String boardType,
@@ -381,7 +381,7 @@ public class BoardService {
         return Map.of("pageInfo", pageInfo, "boardList", mapper.selectAllPagingWithReportBoard(offset, pageAmount, boardType, searchType, keyword));
     }
 
-    public Map<String, Object> reportContent(Integer boardId, Integer repoterMemberId) {
+    public Map<String, Object> reportContent(Integer boardId) {
         Map<String, Object> response = new HashMap<>();
 
         // 게시글 정보 조회

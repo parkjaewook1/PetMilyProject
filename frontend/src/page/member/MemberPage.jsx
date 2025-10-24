@@ -277,7 +277,7 @@ export function MemberPage() {
             >
               정보 수정
             </Button>
-            {memberInfo && memberInfo.id !== "1" && (
+            {memberInfo && memberInfo.role !== "ROLE_ADMIN" && (
               <Button
                 width="100%"
                 bg="red.500"
@@ -289,7 +289,7 @@ export function MemberPage() {
                 회원 탈퇴
               </Button>
             )}
-            {memberInfo && memberInfo.id === "1" && (
+            {memberInfo && memberInfo.role === "ROLE_ADMIN" && (
               <Button
                 width="100%"
                 bg="green.500"

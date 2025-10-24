@@ -106,6 +106,9 @@ export function DiaryHome() {
 
   // 로그인 여부 체크
   useEffect(() => {
+    if (memberInfo === null) {
+      return; // 초기 로딩 중에는 아무 것도 안 함
+    }
     if (!memberInfo) {
       toast({
         title: "로그인 회원만 가능합니다",

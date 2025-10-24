@@ -19,8 +19,8 @@ public class Board {
     private LocalDateTime inserted;
     private Integer views;
     private String boardType;
-    private String repoterId;
-    private String repoterNickname;
+    private String reporterId;
+    private String reporterNickname;
     private String thumbnailUrl;
     private BoardFile fileName;
 

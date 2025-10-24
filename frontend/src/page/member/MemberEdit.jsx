@@ -66,9 +66,9 @@ export function MemberEdit(props) {
     postcode;
 
   useEffect(() => {
-    console.log(id);
-    if (!memberInfo || (memberInfo.id !== "1" && memberInfo.id !== id)) {
-      navigate("/unauthorized"); // 접근 권한이 없을 때 리디렉션할 페이지
+    console.log(memberInfo?.role);
+    if (!memberInfo || memberInfo.role !== "ROLE_ADMIN") {
+      navigate("/unauthorized");
       return;
     }
 
@@ -82,7 +82,9 @@ export function MemberEdit(props) {
         setGender(memberData.gender);
         setNationality(memberData.nationality);
         setName(memberData.name);
-        setBirthDate(memberData.birthDate.replace(/-/g, "")); // YYYY-MM-DD 형식을 YYYYMMDD로 변환
+        setBirthDate(
+          memberData.birthDate ? memberData.birthDate.replace(/-/g, "") : "",
+        );
         setPhoneNumber(memberData.phoneNumber);
         setPostcode(memberData.postcode);
         setMainAddress(memberData.mainAddress);
@@ -104,7 +106,7 @@ export function MemberEdit(props) {
     }
 
     fetchMemberData();
-  }, [id]);
+  }, [id, memberInfo]);
 
   function validateNickname(nickname) {
     const nicknameRegex = /^[가-힣a-zA-Z0-9]{3,12}$/.test(nickname);
@@ -237,7 +239,6 @@ export function MemberEdit(props) {
     const updatedData = {
       name: name,
       nickname: nickname,
-      password: password,
       gender: gender,
       nationality: nationality,
       birthDate: formattedBirthDate,
@@ -245,6 +246,7 @@ export function MemberEdit(props) {
       postcode: postcode,
       mainAddress: mainAddress,
       detailedAddress: detailedAddress || "",
+      ...(password && { password }), // 비밀번호 입력했을 때만 포함
     };
 
     axios

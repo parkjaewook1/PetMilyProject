@@ -8,6 +8,7 @@ import {
   Container,
   Flex,
   Heading,
+  HStack,
   Input,
   Menu,
   MenuButton,
@@ -17,6 +18,7 @@ import {
   Table,
   Tbody,
   Td,
+  Text,
   Th,
   Thead,
   Tr,
@@ -52,6 +54,7 @@ export function BoardReportList() {
     axios
       .get(`/api/board/report/list?${searchParams}`)
       .then((res) => {
+        console.log("응답 데이터:", res.data);
         setBoardList(res.data.boardList);
         setPageInfo(res.data.pageInfo);
       })
@@ -262,8 +265,8 @@ export function BoardReportList() {
                     />
                   </Th>
                   <Th>누적된 신고 수</Th>
-                  <Th textAlign={"center"}>게시판 종류</Th>
-                  <Th>게시글ID</Th>
+                  <Th textAlign="center">게시판 종류</Th>
+                  <Th>게시글 ID</Th>
                   <Th w={500} textAlign="center">
                     제목
                   </Th>
@@ -282,19 +285,24 @@ export function BoardReportList() {
                         onChange={() => toggleCheckbox(board.id)}
                       />
                     </Td>
-                    <Td
-                      textAlign="center"
-                      onClick={() =>
-                        navigate("content", {
-                          state: {
-                            boardId: board.id,
-                            repoterMemberId: board.repoterId,
-                          },
-                        })
-                      }
-                      style={{ cursor: "pointer" }}
-                    >
-                      <span>{board.numberOfReports}</span>
+                    <Td textAlign="center">
+                      <HStack spacing={2} justify="center">
+                        <Text>{board.numberOfReports}건</Text>
+                        <Button
+                          size="sm"
+                          colorScheme="red"
+                          onClick={() =>
+                            navigate("content", {
+                              state: {
+                                boardId: board.id,
+                                reporterMemberId: board.reporterId,
+                              },
+                            })
+                          }
+                        >
+                          확인
+                        </Button>
+                      </HStack>
                     </Td>
                     <Td textAlign="center">
                       <span

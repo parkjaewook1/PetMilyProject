@@ -278,8 +278,7 @@ public interface BoardMapper {
                    b.board_type,
                    b.views,
                    b.member_id,
-                   br.member_id repoterId,
-                   COUNT(br.board_id) number_of_reports,
+                   COUNT(DISTINCT br.board_id) number_of_reports,
                    COUNT(DISTINCT f.name) number_of_images,
                    COUNT(DISTINCT l.member_id) number_of_likes,
                    COUNT(DISTINCT c.id) number_of_comments
@@ -315,7 +314,7 @@ public interface BoardMapper {
                     </choose>
                 </if>
             </where>
-            GROUP BY b.id, b.title, m.nickname, b.board_type, b.views, b.member_id, br.member_id
+            GROUP BY b.id, b.title, m.nickname, b.board_type, b.views, b.member_id
             ORDER BY b.id DESC
             LIMIT #{offset}, #{pageAmount}
             </script>
@@ -325,7 +324,7 @@ public interface BoardMapper {
 
     @Select("""
             SELECT * FROM board
-            WHERE id = #{boardId} 
+            WHERE id = #{boardId}
             """)
     Board selectBoardById(Integer boardId);
 

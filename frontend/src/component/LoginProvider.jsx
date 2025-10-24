@@ -18,6 +18,11 @@ export function LoginProvider({ children }) {
       }
     : null;
 
+  useEffect(() => {
+    console.log("memberInfo:", memberInfo);
+    console.log("memberInfo.role:", memberInfo?.role);
+  }, [memberInfo]);
+
   // 공통 로그아웃 처리
   const logout = () => {
     localStorage.removeItem("memberInfo");
@@ -31,10 +36,19 @@ export function LoginProvider({ children }) {
     if (memberInfo?.access) {
       axios.defaults.headers.common["Authorization"] =
         `Bearer ${memberInfo.access}`;
-      localStorage.setItem("memberInfo", JSON.stringify(memberInfo));
-
       try {
-        const { exp } = jwtDecode(memberInfo.access);
+        const decoded = jwtDecode(memberInfo.access);
+        const { exp, role } = decoded;
+
+        // role을 memberInfo에 병합
+        if (role && memberInfo.role !== role) {
+          const updated = { ...memberInfo, role };
+          setMemberInfo(updated);
+          localStorage.setItem("memberInfo", JSON.stringify(updated));
+        } else {
+          localStorage.setItem("memberInfo", JSON.stringify(memberInfo));
+        }
+
         const msUntilExpire = exp * 1000 - Date.now();
         if (msUntilExpire > 0) {
           const timer = setTimeout(() => {

@@ -33,7 +33,7 @@ public interface MemberMapper {
 
     // 회원 목록
     @Select("""
-            SELECT *
+            SELECT id, name, username, nickname, password, gender, nationality, birth_date, phone_number, postcode, main_address, detailed_address, inserted_at AS inserted, role
             FROM member
             ORDER BY id ASC
             LIMIT #{limit} OFFSET #{offset}
@@ -48,7 +48,8 @@ public interface MemberMapper {
 
     // 회원 단건 조회 (id 기반)
     @Select("""
-            SELECT *
+            SELECT id, name, username, nickname, password, gender, nationality, birth_date,
+                   phone_number, postcode, main_address, detailed_address, inserted_at, role
             FROM member
             WHERE id = #{id}
             """)
@@ -88,8 +89,8 @@ public interface MemberMapper {
 
     // OAuth2 신규 회원 등록
     @Insert("""
-            INSERT INTO member(name, username, nickname, password, gender, nationality, birth_date, phone_number, postcode, main_address, detailed_address)
-            VALUES (#{name}, #{username}, #{nickname}, #{password}, #{gender}, #{nationality}, #{birthDate}, #{phoneNumber}, #{postcode}, #{mainAddress}, #{detailedAddress})
+            INSERT INTO member(name, username, nickname, password, gender, nationality, birth_date, phone_number, postcode, main_address, detailed_address, role)
+            VALUES (#{name}, #{username}, #{nickname}, #{password}, #{gender}, #{nationality}, #{birthDate}, #{phoneNumber}, #{postcode}, #{mainAddress}, #{detailedAddress}, #{role})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertMember(Member member);

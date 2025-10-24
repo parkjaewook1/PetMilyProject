@@ -109,7 +109,7 @@ const BoardMenu = ({ isOpen, onOpen, onClose }) => {
           >
             이벤트/모임 게시판
           </MenuItem>
-          {memberInfo && Number(memberInfo.id) === 1 && (
+          {memberInfo && memberInfo.role === "ROLE_ADMIN" && (
             <MenuItem
               size="md"
               onClick={() => {

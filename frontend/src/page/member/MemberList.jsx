@@ -1,13 +1,15 @@
 import React, { useContext, useEffect, useState } from "react";
 import {
   Box,
-  Button,
   Center,
   Container,
   Flex,
   Heading,
+  HStack,
+  IconButton,
   Spinner,
   Table,
+  TableContainer,
   Tbody,
   Td,
   Text,
@@ -35,7 +37,7 @@ export function MemberList() {
   const { memberInfo } = useContext(LoginContext);
 
   useEffect(() => {
-    if (memberInfo?.role === "ADMIN") {
+    if (memberInfo?.role === "ROLE_ADMIN") {
       fetchMembers(currentPage);
     } else {
       setIsLoading(false);
@@ -46,6 +48,7 @@ export function MemberList() {
     axios
       .get(`/api/member/list?page=${page}&pageSize=10`)
       .then((response) => {
+        console.log(response.data.members);
         setMembers(response.data.members);
         setTotalPages(response.data.totalPages);
       })
@@ -135,7 +138,7 @@ export function MemberList() {
     );
   }
 
-  if (memberInfo === null || memberInfo?.role !== "ADMIN") {
+  if (memberInfo === null || memberInfo?.role !== "ROLE_ADMIN") {
     return (
       <Center mt={10}>
         <Text fontSize="xl" fontWeight="bold" color="red.500">
@@ -155,88 +158,80 @@ export function MemberList() {
           </Heading>
         </Flex>
       </Center>
+
       <Box textAlign="center" mt={5} mb={10}>
         <Text fontSize="lg" color="gray.600">
           회원 목록을 확인하고 관리할 수 있습니다.
         </Text>
       </Box>
+
       <Center mt={10}>
         <Box mb={10} w="100%" px={5}>
-          <Table
-            variant="simple"
-            borderWidth="1px"
-            borderRadius="lg"
-            overflow="hidden"
-          >
-            <Thead bg={"gray.100"}>
-              <Tr>
-                <Th textAlign="center">ID</Th>
-                <Th textAlign="center">이메일</Th>
-                <Th textAlign="center">닉네임</Th>
-                <Th textAlign="center">성별</Th>
-                <Th textAlign="center">생년월일</Th>
-                <Th textAlign="center">가입일시</Th>
-                <Th textAlign="center">회원 관리</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {members.map((member) => (
-                <Tr key={member.id}>
-                  <Td textAlign="center">{member.id}</Td>
-                  <Td textAlign="center">{member.username}</Td>
-                  <Td textAlign="center">{member.nickname}</Td>
-                  <Td textAlign="center">
-                    {member.gender === "male" ? "남성" : "여성"}
-                  </Td>
-                  <Td textAlign="center">{member.birthDate}</Td>
-                  <Td textAlign="center">{formatDate(member.inserted)}</Td>
-                  <Td display={"flex"} justifyContent="center">
-                    <Tooltip label="수정" aria-label="수정" hasArrow>
-                      <Button
-                        size="sm"
-                        colorScheme="blue"
-                        onClick={() => navigate(`/member/edit/${member.id}`)}
-                        mr={2}
-                      >
-                        <FontAwesomeIcon
-                          icon={faEdit}
-                          style={{
-                            color: "white",
-                            fontSize: "16px",
-                            padding: "5px",
-                            backgroundColor: "#3182CE",
-                            borderRadius: "5px",
-                          }}
-                        />
-                      </Button>
-                    </Tooltip>
-                    {member.role !== "ADMIN" && (
-                      <Tooltip label="삭제" aria-label="삭제" hasArrow>
-                        <Button
-                          size="sm"
-                          colorScheme="red"
-                          onClick={() => handleDeleteMember(member.id)}
-                        >
-                          <FontAwesomeIcon
-                            icon={faTrash}
-                            style={{
-                              color: "white",
-                              fontSize: "16px",
-                              padding: "5px",
-                              backgroundColor: "#E53E3E",
-                              borderRadius: "5px",
-                            }}
-                          />
-                        </Button>
-                      </Tooltip>
-                    )}
-                  </Td>
+          {/* ✅ 반응형을 위해 TableContainer 추가 */}
+          <TableContainer overflowX="auto">
+            <Table
+              variant="simple"
+              borderWidth="1px"
+              borderRadius="lg"
+              overflow="hidden"
+            >
+              <Thead bg={"gray.100"}>
+                <Tr>
+                  <Th textAlign="center">ID</Th>
+                  <Th textAlign="center">이메일</Th>
+                  <Th textAlign="center">닉네임</Th>
+                  <Th textAlign="center">성별</Th>
+                  <Th textAlign="center">생년월일</Th>
+                  <Th textAlign="center">가입일시</Th>
+                  <Th textAlign="center">회원 관리</Th>
                 </Tr>
-              ))}
-            </Tbody>
-          </Table>
+              </Thead>
+              <Tbody>
+                {members.map((member) => (
+                  <Tr key={member.id}>
+                    <Td textAlign="center">{member.id}</Td>
+                    <Td textAlign="center">{member.username}</Td>
+                    <Td textAlign="center">{member.nickname}</Td>
+                    <Td textAlign="center">
+                      {member.gender === "male" ? "남성" : "여성"}
+                    </Td>
+                    <Td textAlign="center">{member.birthDate}</Td>
+                    <Td textAlign="center">{formatDate(member.inserted)}</Td>
+                    <Td textAlign="center">
+                      <HStack spacing={2} justify="center">
+                        <Tooltip label="수정" hasArrow>
+                          <IconButton
+                            size="sm"
+                            colorScheme="blue"
+                            aria-label="수정"
+                            icon={<FontAwesomeIcon icon={faEdit} />}
+                            onClick={() =>
+                              navigate(`/member/edit/${member.id}`)
+                            }
+                          />
+                        </Tooltip>
+
+                        {member.role !== "ROLE_ADMIN" && (
+                          <Tooltip label="삭제" hasArrow>
+                            <IconButton
+                              size="sm"
+                              colorScheme="red"
+                              aria-label="삭제"
+                              icon={<FontAwesomeIcon icon={faTrash} />}
+                              onClick={() => handleDeleteMember(member.id)}
+                            />
+                          </Tooltip>
+                        )}
+                      </HStack>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          </TableContainer>
         </Box>
       </Center>
+
       <Pagination
         pageInfo={{
           currentPageNumber: currentPage,

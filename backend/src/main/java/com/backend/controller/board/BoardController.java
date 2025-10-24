@@ -137,8 +137,8 @@ public class BoardController {
     }
 
     @GetMapping("/report/list/content")
-    public ResponseEntity<Map<String, Object>> reportContent(@RequestParam Integer boardId, @RequestParam Integer repoterMemberId) {
-        Map<String, Object> response = service.reportContent(boardId, repoterMemberId);
+    public ResponseEntity<Map<String, Object>> reportContent(@RequestParam Integer boardId) {
+        Map<String, Object> response = service.reportContent(boardId);
         return ResponseEntity.ok(response);
     }
 

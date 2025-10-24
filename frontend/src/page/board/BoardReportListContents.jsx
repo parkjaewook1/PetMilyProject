@@ -18,13 +18,13 @@ export function BoardReportListContents() {
   const [board, setBoard] = useState({});
   const [reports, setReports] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { boardId, repoterMemberId } = location.state || {};
+  const { boardId, reporterMemberId } = location.state || {};
 
   useEffect(() => {
     if (boardId) {
       axios
         .get(`/api/board/report/list/content`, {
-          params: { boardId, repoterMemberId },
+          params: { boardId, reporterMemberId },
         })
         .then((res) => {
           setBoard(res.data.board);
@@ -36,7 +36,7 @@ export function BoardReportListContents() {
           setIsLoading(false);
         });
     }
-  }, [boardId, repoterMemberId]);
+  }, [boardId, reporterMemberId]);
 
   if (isLoading) {
     return (
@@ -67,11 +67,16 @@ export function BoardReportListContents() {
             <Divider />
             <Text fontWeight="bold">{board.title}</Text>
             <Text>{board.content}</Text>
+            {/* ✅ 신고 건수 요약 */}
+            <Text color="red.600" fontWeight="bold">
+              총 {reports.length}건의 신고가 접수되었습니다.
+            </Text>
           </VStack>
         </Box>
-        {reports.map((report) => (
+
+        {reports.map((report, idx) => (
           <Box
-            key={report.boardId}
+            key={`${report.boardId}-${idx}`}
             borderWidth="1px"
             borderRadius="lg"
             p={6}
@@ -81,11 +86,12 @@ export function BoardReportListContents() {
           >
             <VStack align="stretch" spacing={4}>
               <HStack justify="space-between">
-                <Text fontWeight="bold">신고자: {report.reporter}</Text>
-                <Text color="red.500">신고 사유: {report.reportType}</Text>
+                <Text fontWeight="bold">신고 #{idx + 1}</Text>
+                <Text color="red.500">사유: {report.reportType}</Text>
               </HStack>
+              <Text>신고자: {report.reporter}</Text>
               <Divider />
-              <Text>신고 내용: {report.content}</Text>
+              <Text>내용: {report.content}</Text>
             </VStack>
           </Box>
         ))}
