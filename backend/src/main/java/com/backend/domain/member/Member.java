@@ -31,3 +31,4 @@ public class Member {
         return this.role != null ? "ROLE_" + this.role.name() : "ROLE_USER";
     }
 }
+//asdf
