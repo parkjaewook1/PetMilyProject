@@ -99,7 +99,7 @@ export function MemberPage() {
       formData.append("profileImage", imageFile);
 
       try {
-        const res = await axios.post(`/api/member/profile/${id}`, formData, {
+        const res = await axios.post(`/api/member/profile`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
