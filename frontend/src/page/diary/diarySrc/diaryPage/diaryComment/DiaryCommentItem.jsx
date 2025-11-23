@@ -1,6 +1,7 @@
 import {
   Avatar,
   Box,
+  Button,
   Flex,
   IconButton,
   Image,
@@ -14,13 +15,15 @@ import {
 } from "@chakra-ui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faChevronDown,
+  faChevronUp,
   faEllipsisV,
   faHouseUser,
   faMagnifyingGlass,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { useContext, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 import { generateDiaryId } from "../../../../../util/util.jsx";
 import axios from "@api/axiosConfig";
@@ -28,35 +31,48 @@ import { ReplyWrite } from "./ReplyWrite";
 import { format, isValid, parseISO } from "date-fns";
 import PropTypes from "prop-types";
 
-export function DiaryCommentItem({ comment, allComments, onCommentAdded }) {
+// ✅ depth(깊이) props 추가 (기본값 0)
+export function DiaryCommentItem({
+  comment,
+  allComments,
+  onCommentAdded,
+  depth = 0,
+}) {
   const { memberInfo } = useContext(LoginContext);
   const navigate = useNavigate();
+  const { encodedId } = useParams();
   const toast = useToast();
   const numericDiaryId = comment.diaryId;
+
   const [showReply, setShowReply] = useState(false);
+  const [showAllReplies, setShowAllReplies] = useState(false);
+
+  // ✅ [핵심 설정] 깊이에 따라 보여줄 개수 다르게 설정
+  // depth 0 (최상위 부모): 3개까지 보여줌
+  // depth 1 이상 (대댓글, 손자...): 0개 보여줌 (무조건 버튼만 뜸)
+  const REPLY_LIMIT = depth === 0 ? 3 : 0;
 
   const cardBg = useColorModeValue("white", "gray.700");
   const border = useColorModeValue("gray.200", "gray.600");
   const cmColor = useColorModeValue("gray.800", "gray.200");
+  const lineColor = useColorModeValue("gray.300", "gray.600");
 
   const isCommentOwner = Number(memberInfo?.id) === Number(comment.memberId);
   const isDiaryOwner = Number(memberInfo?.id) === numericDiaryId;
 
-  // 날짜 포맷
   const insertedDate = comment.inserted ? parseISO(comment.inserted) : null;
   const formattedDate =
     insertedDate && isValid(insertedDate)
       ? format(insertedDate, "yyyy.MM.dd")
       : "Unknown date";
 
-  // 이동/삭제 함수
   function goToMiniHome(authorId) {
     const targetDiaryId = generateDiaryId(authorId);
     navigate(`/diary/${targetDiaryId}`);
   }
 
   function handleView(commentId) {
-    navigate(`/diary/${comment.diaryId}/comment/view/${commentId}`);
+    navigate(`/diary/${encodedId}/comment/view/${commentId}`);
   }
 
   function handleDelete(commentId) {
@@ -64,95 +80,141 @@ export function DiaryCommentItem({ comment, allComments, onCommentAdded }) {
     axios
       .delete(`/api/diaryComment/${commentId}`)
       .then(() => {
-        toast({ status: "success", description: "댓글이 삭제되었습니다." });
+        toast({ status: "success", description: "삭제되었습니다." });
         onCommentAdded?.();
       })
       .catch(() =>
-        toast({
-          status: "error",
-          description: "댓글 삭제 중 오류가 발생했습니다.",
-          position: "top",
-        }),
+        toast({ status: "error", description: "오류가 발생했습니다." }),
       );
   }
 
-  // 자식 댓글은 allComments에서 필터링
+  // 1. 내 자식 찾기
   const childComments = allComments.filter(
-    (c) => c.replyCommentId === comment.id,
+    (c) => String(c.replyCommentId) === String(comment.id),
   );
 
-  // 디버깅 로그
-  console.log("렌더링된 댓글:", comment.id, "자식 댓글:", childComments);
+  // 2. 보여줄 목록 계산
+  const visibleChildren = showAllReplies
+    ? childComments
+    : childComments.slice(0, REPLY_LIMIT);
 
-  return comment.replyCommentId ? (
-    // ✅ 대댓글 (줄 단위 UI)
-    <Flex align="flex-start" mt={2} ml={6}>
-      {comment.profileImage ? (
-        <Image
-          src={comment.profileImage}
-          alt={comment.nickname}
-          boxSize="24px"
-          borderRadius="full"
-          mr={2}
-        />
-      ) : (
-        <Avatar name={comment.nickname} size="xs" mr={2} />
-      )}
+  const hiddenCount = childComments.length - REPLY_LIMIT;
 
-      <Box>
-        <Text fontSize="sm">
-          <Text as="span" fontWeight="bold" mr={2}>
-            {comment.nickname}
-          </Text>
-          {comment.comment}
-        </Text>
+  // -------------------------------------------------------
+  // 🎨 자식 렌더링 섹션
+  // -------------------------------------------------------
+  const renderChildrenSection = () => {
+    if (childComments.length === 0) return null;
 
-        <Flex gap={3} mt={1} align="center">
-          <Text fontSize="xs" color="gray.500">
-            {formattedDate}
-          </Text>
-          <Text
-            as="button"
-            fontSize="xs"
-            color="blue.400"
-            onClick={() => setShowReply(!showReply)}
-          >
-            {showReply ? "취소" : "답글 달기"}
-          </Text>
-        </Flex>
-
-        {showReply && (
-          <ReplyWrite
-            diaryId={comment.diaryId}
-            replyCommentId={comment.id}
-            onReplyAdded={(newReply) => {
-              console.log("대댓글 작성 완료 → onCommentAdded 호출", newReply);
-              onCommentAdded?.(newReply); // ✅ 새 대댓글 객체를 부모로 전달
-              setShowReply(false); // 작성 후 입력창 닫기
-            }}
-          />
-        )}
-
-        {childComments.map((child) => (
+    return (
+      <Box mt={2} pl={3} ml={2} borderLeft="2px solid" borderColor={lineColor}>
+        {visibleChildren.map((child) => (
           <DiaryCommentItem
             key={child.id}
             comment={child}
             allComments={allComments}
             onCommentAdded={onCommentAdded}
+            // ✅ 재귀 호출 시 깊이(depth)를 1씩 늘려줌
+            depth={depth + 1}
           />
         ))}
+
+        {/* 더보기 버튼 */}
+        {/* 대댓글(depth>=1)은 LIMIT이 0이므로, 1개만 있어도 버튼이 뜸 */}
+        {childComments.length > REPLY_LIMIT && (
+          <Button
+            size="xs"
+            variant="ghost"
+            color="gray.500"
+            h="28px"
+            mt={1}
+            ml={2}
+            onClick={() => setShowAllReplies(!showAllReplies)}
+            leftIcon={
+              <FontAwesomeIcon
+                icon={showAllReplies ? faChevronUp : faChevronDown}
+              />
+            }
+            justifyContent="flex-start"
+          >
+            {showAllReplies ? "접기" : `답글 ${hiddenCount}개 더보기`}
+          </Button>
+        )}
       </Box>
-    </Flex>
-  ) : (
-    // ✅ 부모 댓글 (카드 UI)
+    );
+  };
+
+  // =======================================================
+  // Case 1. 대댓글 (자식) UI
+  // =======================================================
+  if (comment.replyCommentId) {
+    return (
+      <Box mt={3}>
+        <Flex align="flex-start">
+          {comment.profileImage ? (
+            <Image
+              src={comment.profileImage}
+              alt={comment.nickname}
+              boxSize="24px"
+              borderRadius="full"
+              mr={2}
+            />
+          ) : (
+            <Avatar name={comment.nickname} size="xs" mr={2} />
+          )}
+          <Box w="100%">
+            <Text fontSize="sm">
+              <Text as="span" fontWeight="bold" mr={2}>
+                {comment.nickname}
+              </Text>
+              {comment.comment}
+            </Text>
+            <Flex gap={3} mt={1} align="center">
+              <Text fontSize="xs" color="gray.500">
+                {formattedDate}
+              </Text>
+              <Text
+                as="button"
+                fontSize="xs"
+                color="blue.400"
+                cursor="pointer"
+                onClick={() => setShowReply(!showReply)}
+                _hover={{ textDecoration: "underline" }}
+              >
+                {showReply ? "취소" : "답글"}
+              </Text>
+            </Flex>
+            {showReply && (
+              <ReplyWrite
+                diaryId={comment.diaryId}
+                replyCommentId={comment.id}
+                onReplyAdded={(newReply) => {
+                  onCommentAdded?.(newReply);
+                  setShowReply(false);
+                  setShowAllReplies(true);
+                }}
+              />
+            )}
+          </Box>
+        </Flex>
+        {/* 자식의 자식 렌더링 */}
+        {renderChildrenSection()}
+      </Box>
+    );
+  }
+
+  // =======================================================
+  // Case 2. 부모 댓글 (카드) UI
+  // =======================================================
+  return (
     <Box
       bg={cardBg}
       border="1px solid"
       borderColor={border}
       rounded="lg"
-      shadow="sm"
       p={4}
       mt={3}
+      shadow="sm"
       _hover={{
         shadow: "md",
         transform: "translateY(-2px)",
@@ -176,7 +238,6 @@ export function DiaryCommentItem({ comment, allComments, onCommentAdded }) {
             {formattedDate}
           </Text>
         </Flex>
-
         <Menu>
           <MenuButton
             as={IconButton}
@@ -189,7 +250,7 @@ export function DiaryCommentItem({ comment, allComments, onCommentAdded }) {
               icon={<FontAwesomeIcon icon={faHouseUser} />}
               onClick={() => goToMiniHome(comment.memberId)}
             >
-              미니홈피 이동
+              다이어리
             </MenuItem>
             <MenuItem
               icon={<FontAwesomeIcon icon={faMagnifyingGlass} />}
@@ -219,7 +280,9 @@ export function DiaryCommentItem({ comment, allComments, onCommentAdded }) {
         fontSize="xs"
         color="blue.400"
         mt={2}
+        cursor="pointer"
         onClick={() => setShowReply(!showReply)}
+        _hover={{ textDecoration: "underline" }}
       >
         {showReply ? "취소" : "댓글 달기"}
       </Text>
@@ -229,50 +292,22 @@ export function DiaryCommentItem({ comment, allComments, onCommentAdded }) {
           diaryId={comment.diaryId}
           replyCommentId={comment.id}
           onReplyAdded={(newReply) => {
-            console.log("대댓글 작성 완료 → onCommentAdded 호출", newReply);
-            onCommentAdded?.(newReply); // ✅ 새 대댓글 객체 전달
+            onCommentAdded?.(newReply);
             setShowReply(false);
+            setShowAllReplies(true);
           }}
         />
       )}
 
-      {childComments.map((child) => (
-        <DiaryCommentItem
-          key={child.id}
-          comment={child}
-          allComments={allComments}
-          onCommentAdded={onCommentAdded}
-        />
-      ))}
+      {/* 자식(대댓글) 렌더링 */}
+      {renderChildrenSection()}
     </Box>
   );
 }
 
-// ✅ PropTypes 정의
 DiaryCommentItem.propTypes = {
-  comment: PropTypes.shape({
-    id: PropTypes.number.isRequired,
-    diaryId: PropTypes.number.isRequired,
-    memberId: PropTypes.number.isRequired,
-    nickname: PropTypes.string.isRequired,
-    comment: PropTypes.string.isRequired,
-    inserted: PropTypes.string,
-    profileImage: PropTypes.string,
-    replyCommentId: PropTypes.number,
-    replyCount: PropTypes.number, // ✅ 추가
-  }).isRequired,
-  allComments: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      diaryId: PropTypes.number.isRequired,
-      memberId: PropTypes.number.isRequired,
-      nickname: PropTypes.string.isRequired,
-      comment: PropTypes.string.isRequired,
-      inserted: PropTypes.string,
-      profileImage: PropTypes.string,
-      replyCommentId: PropTypes.number,
-      replyCount: PropTypes.number, // ✅ 여기도 추가
-    }),
-  ).isRequired,
+  comment: PropTypes.object.isRequired,
+  allComments: PropTypes.array.isRequired,
   onCommentAdded: PropTypes.func,
+  depth: PropTypes.number, // depth propType
 };

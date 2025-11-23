@@ -3,16 +3,20 @@ import {
   Avatar,
   Box,
   Button,
+  Divider,
   Flex,
+  HStack,
+  Icon,
   Image,
   Text,
   Textarea,
+  useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
 import axios from "@api/axiosConfig";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { faPaperPlane, faPenNib } from "@fortawesome/free-solid-svg-icons";
 
 export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   const [comment, setComment] = useState("");
@@ -21,12 +25,21 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   const { memberInfo } = useContext(LoginContext);
   const nickname = memberInfo.nickname;
 
+  // 🎨 스타일 변수
+  const containerBg = useColorModeValue("gray.50", "gray.700");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const inputBg = useColorModeValue("white", "gray.800");
+  const titleColor = "blue.600";
+
+  // 프로필 이미지 가져오기 (로컬스토리지 or 기본)
+  const profileSrc = localStorage.getItem(`profileImage_${memberInfo.id}`);
+
   const handleDiaryCommentSubmitClick = () => {
     if (!comment.trim()) return;
 
     setLoading(true);
     const payload = {
-      diaryId, // 부모에서 받은 PK 그대로 사용
+      diaryId,
       nickname,
       memberId: memberInfo.id,
       comment,
@@ -37,84 +50,117 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
         headers: { "Content-Type": "application/json" },
       })
       .then((res) => {
-        console.log("서버 응답:", res.data); // ✅ 여기서 확인
-        const newComment = res.data; // 서버가 내려준 새 댓글 객체
-
+        const newComment = res.data;
         toast({
           status: "success",
           position: "top",
           description: "방명록이 등록되었습니다.",
+          duration: 2000,
         });
-
-        setComment(""); // 입력창 초기화
-        onCommentAdded(newComment); // ✅ 부모에 새 댓글 전달
+        setComment("");
+        onCommentAdded(newComment);
       })
       .catch(() => {
         toast({
           status: "error",
           position: "top",
-          description: "방명록 등록 중 오류가 발생했습니다.",
+          description: "등록 중 오류가 발생했습니다.",
         });
       })
       .finally(() => setLoading(false));
   };
 
   return (
-    <Box>
-      <Box mb={2}>
-        <Text fontWeight="bold" fontSize="large">
-          {nickname}님!
+    <Box
+      p={3}
+      bg={containerBg}
+      borderRadius="md"
+      border="1px solid"
+      borderColor={borderColor}
+      fontFamily="'Gulim', sans-serif"
+    >
+      {/* 1. 상단 문구 */}
+      <HStack mb={2} spacing={2}>
+        <Icon
+          as={FontAwesomeIcon}
+          icon={faPenNib}
+          color={titleColor}
+          size="xs"
+        />
+        <Text fontSize="sm" fontWeight="bold" color="gray.600">
+          <Text as="span" color={titleColor}>
+            {nickname}
+          </Text>
+          님, 흔적을 남겨주세요!
         </Text>
-      </Box>
+      </HStack>
 
-      {/* ✅ 전체 입력 영역을 하나의 칸처럼 */}
+      {/* 2. 입력 영역 (흰색 박스) */}
       <Flex
         align="center"
+        bg={inputBg}
         border="1px solid"
         borderColor="gray.300"
-        rounded="md"
+        borderRadius="md"
         p={2}
-        bg="white"
         gap={3}
+        boxShadow="sm"
+        transition="all 0.2s"
+        _focusWithin={{
+          borderColor: "blue.400",
+          boxShadow: "0 0 0 1px #4299e1",
+        }}
       >
-        {/* ✅ 로그인한 사용자 프로필 */}
-        {localStorage.getItem(`profileImage_${memberInfo.id}`) ? (
+        {/* 프로필 사진 */}
+        {profileSrc ? (
           <Image
-            src={localStorage.getItem(`profileImage_${memberInfo.id}`)}
-            alt={memberInfo.nickname}
-            boxSize="40px"
+            src={profileSrc}
+            alt={nickname}
+            boxSize="32px"
             borderRadius="full"
+            border="1px solid"
+            borderColor="gray.200"
           />
         ) : (
-          <Avatar name={memberInfo.nickname} size="md" />
+          <Avatar name={nickname} size="xs" />
         )}
 
-        {/* ✅ 구분선 */}
-        <Box h="40px" borderLeft="1px solid" borderColor="gray.300" />
+        {/* 세로 구분선 */}
+        <Divider orientation="vertical" h="20px" borderColor="gray.300" />
 
-        {/* ✅ 입력창 + 버튼 */}
+        {/* 입력창 + 버튼 */}
         <Flex flex="1" align="center" gap={2}>
           <Textarea
-            placeholder="방명록을 남겨보세요"
+            placeholder="방명록을 입력하세요..."
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             resize="none"
+            rows={1}
+            minH="32px" // 높이 살짝 확보
             flex="1"
             border="none"
+            bg="transparent"
+            fontSize="sm"
+            p={1}
             _focus={{ boxShadow: "none" }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault(); // 줄바꿈 방지
+                e.preventDefault();
                 handleDiaryCommentSubmitClick();
               }
             }}
           />
+
           <Button
-            type="button" // ✅ 기본 submit 동작 방지
+            type="button"
+            size="xs" // 버튼 작게
+            colorScheme="blue"
+            variant="solid" // 꽉 찬 버튼
             isLoading={loading}
             isDisabled={!comment.trim()}
-            colorScheme="blue"
             onClick={handleDiaryCommentSubmitClick}
+            borderRadius="sm"
+            px={3}
           >
             <FontAwesomeIcon icon={faPaperPlane} />
           </Button>

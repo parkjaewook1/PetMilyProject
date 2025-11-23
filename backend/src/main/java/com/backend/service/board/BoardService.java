@@ -1,6 +1,7 @@
 package com.backend.service.board;
 
-
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
 import com.backend.domain.board.Board;
 import com.backend.domain.board.BoardFile;
 import com.backend.domain.board.BoardReport;
@@ -12,11 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -30,46 +26,42 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BoardService {
     private final BoardMapper mapper;
-    private final S3Client s3Client;
+    // AWS S3Client 대신 Azure BlobContainerClient 주입
+    private final BlobContainerClient blobContainerClient;
     private final BoardCommentMapper boardCommentMapper;
 
-    // session의
     private static String PAGE_INFO_SESSION_KEY = "pageInfo";
-    // private static final String PAGE_INFO_SESSION_KEY = null;
 
-    // aws.s3.bucket.name의 프로퍼티 값 주입
-    @Value("${aws.s3.bucket.name}")
-    private String bucketName;
+    // bucketName은 이제 필요 없습니다. (BlobContainerClient가 이미 알고 있음)
 
+    // 중요: application.properties에서 이 경로가 Azure 주소로 변경되어야 합니다.
     @Value("${image.src.prefix}")
     private String srcPrefix;
 
-    public void add(Board board, MultipartFile[] files) throws Exception {
-
-
+    public void add(Board board, MultipartFile[] files) throws IOException {
         mapper.insert(board);
 
         if (files != null && files.length > 0) {
             for (MultipartFile file : files) {
                 mapper.insertFileName(board.getId(), file.getOriginalFilename());
 
-                // 실제 파일 저장 (s3)
-                // 부모 디렉토리 만들기
-                String key = String.format("prj3/board/%d/%s", board.getId(), file.getOriginalFilename());
-                s3Client.putObject(builder -> builder.bucket(bucketName).key(key).acl(ObjectCannedACL.PUBLIC_READ),
-                        RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+                // 파일 경로 생성 (예: prj3/board/1/image.jpg)
+                String fileName = String.format("prj3/board/%d/%s", board.getId(), file.getOriginalFilename());
+
+                // Azure에 업로드
+                BlobClient blobClient = blobContainerClient.getBlobClient(fileName);
+                blobClient.upload(file.getInputStream(), file.getSize(), true); // true = 덮어쓰기 허용
             }
         }
     }
 
-    public boolean validate(Board board) throws Exception {
+    public boolean validate(Board board) {
         return board.getTitle() != null && !board.getTitle().isBlank() &&
                 board.getContent() != null && !board.getContent().isBlank();
     }
 
     public Map<String, Object> list(Integer page, Integer pageAmount, Boolean offsetReset, HttpSession session, String boardType,
-                                    String searchType, String keyword)
-            throws Exception {
+                                    String searchType, String keyword) {
         if (page <= 0) {
             throw new IllegalArgumentException("page must be greater than 0");
         }
@@ -94,14 +86,8 @@ public class BoardService {
             throw new IllegalStateException("Invalid type for session attribute");
         }
 
-        // 페이지에 따른 offset 계산
-
-        // 세션에 새로운 offset 저장
         session.setAttribute(PAGE_INFO_SESSION_KEY, offset);
 
-
-//        System.out.println("이것은 서비스의 boardType = " + boardType);
-        // 페이지 정보 계산
         Map<String, Object> pageInfo = new HashMap<>();
         if (offsetReset) {
             offset = 0;
@@ -114,10 +100,8 @@ public class BoardService {
 
         Integer countByBoardType;
         if (boardType.equals("전체") && searchType.equals("전체") && keyword.equals("")) {
-
             countByBoardType = mapper.selectAllCount();
         } else {
-//            System.out.println("이것은 서비스의 boardType = " + boardType);
             countByBoardType = mapper.selectByBoardType(boardType, searchType, keyword);
         }
 
@@ -141,24 +125,13 @@ public class BoardService {
 
         List<Board> boardList = mapper.selectAllPaging(offset, pageAmount, boardType, searchType, keyword);
 
-        // 각각의 Board 객체에 fileList 추가
         for (Board board : boardList) {
-//            System.out.println("Board ID: " + board.getId());
-
-            // getFileImageByboardId 메서드 호출
             String firstImageName = mapper.getFileImageByboardId(board.getId().toString());
-//            System.out.println("File Name: " + firstImageName);
-
             if (firstImageName != null) {
-                String thumbnailUrl = srcPrefix + "board/" + board.getId() + "/" + firstImageName;
-
-//                System.out.println("First Image Name: " + firstImageName);
-//                System.out.println("Thumbnail URL: " + thumbnailUrl);
-
-                List<BoardFile> files = Collections.singletonList(new BoardFile(firstImageName, thumbnailUrl));
-                board.setFileList(files);
-
-//                System.out.println("Updated FileList: " + board.getFileList());
+                // Azure URL 형식에 맞춰짐 (srcPrefix가 정확해야 함)
+                String thumbnailUrl = srcPrefix + "prj3/board/" + board.getId() + "/" + firstImageName;
+                List<BoardFile> fileList = Collections.singletonList(new BoardFile(firstImageName, thumbnailUrl));
+                board.setFileList(fileList);
             }
         }
 
@@ -172,12 +145,15 @@ public class BoardService {
         Map<String, Object> result = new HashMap<>();
         Board board = mapper.selectById(id);
         List<String> fileNames = mapper.selectFileNameByBoardId(id);
+
+        // Azure 경로로 매핑 (중간에 prj3 경로가 빠져있었던 것 같아 추가함, 확인 필요)
         List<BoardFile> files = fileNames.stream()
-                .map(name -> new BoardFile(name, srcPrefix + "board/" + +id + "/" + name)).collect(Collectors.toList());
+                .map(name -> new BoardFile(name, srcPrefix + "prj3/board/" + id + "/" + name))
+                .collect(Collectors.toList());
+
         board.setFileList(files);
         Map<String, Object> like = new HashMap<>();
-//        System.out.println("files = " + files);
-//        System.out.println("fileNames = " + fileNames);
+
         if (memberId == null) {
             like.put("like", false);
         } else {
@@ -188,38 +164,34 @@ public class BoardService {
         result.put("board", board);
         result.put("like", like);
 
-
         return result;
     }
 
     public void delete(Integer id) {
-        //file명 조회
         List<String> fileNames = mapper.selectFileNameByBoardId(id);
-        //s3에 있는 file
+
+        // Azure Blob 삭제
         for (String fileName : fileNames) {
+            // Java 21 Template String 사용 (기존 코드 유지)
             String key = STR."prj3/board/\{id}/\{fileName}";
-            DeleteObjectRequest objectRequest = DeleteObjectRequest.builder().bucket(bucketName).key(key).build();
-            s3Client.deleteObject(objectRequest);
+            BlobClient blobClient = blobContainerClient.getBlobClient(key);
+            blobClient.deleteIfExists();
         }
-        //board_file
+
         mapper.deleteFileByBoardId(id);
-        //board_like
         mapper.deleteLikeByBoardId(id);
-        //board_comment
         boardCommentMapper.deleteByBoardId(id);
-        //board
         mapper.deleteById(id);
     }
 
     public void edit(Board board, List<String> removeFileList, MultipartFile[] addFileList) throws IOException {
         if (removeFileList != null && removeFileList.size() > 0) {
             for (String fileName : removeFileList) {
-                //s3파일 삭제
+                // Azure 파일 삭제
                 String key = STR."prj3/board/\{board.getId()}/\{fileName}";
-                DeleteObjectRequest objectRequest = DeleteObjectRequest.builder().bucket(bucketName).key(key).build();
-                s3Client.deleteObject(objectRequest);
+                BlobClient blobClient = blobContainerClient.getBlobClient(key);
+                blobClient.deleteIfExists();
 
-                //db 레코드 삭제
                 mapper.deleteFileByBoardIdAndName(board.getId(), fileName);
             }
         }
@@ -228,14 +200,13 @@ public class BoardService {
             for (MultipartFile file : addFileList) {
                 String fileName = file.getOriginalFilename();
                 if (!fileNameList.contains(fileName)) {
-                    //새 파일이 기존에 없을때만 db에 추가
                     mapper.insertFileName(board.getId(), fileName);
                 }
-                //s3에 쓰기
-                String key = STR."prj3/board/\{board.getId()}/\{fileName}";
-                PutObjectRequest objectRequest = PutObjectRequest.builder().bucket(bucketName).key(key).acl(ObjectCannedACL.PUBLIC_READ).build();
 
-                s3Client.putObject(objectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+                // Azure 파일 업로드
+                String key = STR."prj3/board/\{board.getId()}/\{fileName}";
+                BlobClient blobClient = blobContainerClient.getBlobClient(key);
+                blobClient.upload(file.getInputStream(), file.getSize(), true);
             }
         }
         mapper.update(board);
@@ -243,13 +214,7 @@ public class BoardService {
 
     public boolean hasAccess(Integer id, Integer memberId) {
         Board board = mapper.selectById(id);
-
-        if (board.getMemberId().equals(memberId) || memberId == 1) {
-            return true;
-        } else {
-            return false;
-        }
-
+        return board.getMemberId().equals(memberId) || memberId == 1;
     }
 
     public Map<String, Object> like(Map<String, Object> req) {
@@ -270,11 +235,7 @@ public class BoardService {
             throw new IllegalArgumentException("Invalid boardId or memberId format");
         }
 
-//        System.out.println("이것은 서비스의 req = " + req);
-
-        // 이미 했으면
         int count = mapper.deleteLikeByBoardIdAndMemberId(boardId, memberId);
-        // 안 했으면 (삭제된 행이 없으면)
         if (count == 0) {
             mapper.insertLikeByBoardIdAndMemberId(boardId, memberId);
             result.put("like", true);
@@ -295,8 +256,8 @@ public class BoardService {
         boardReport.setBoardId((Integer) req.get("boardId"));
         boardReport.setMemberId((Integer) req.get("memberId"));
         boardReport.setContent((String) req.get("reason"));
-        boardReport.setReportType((String) req.get("reportType")); // 새로운 필드 추가
-        //신고 안 했으면
+        boardReport.setReportType((String) req.get("reportType"));
+
         int count = mapper.selectCountReportWithPrimaryKey(boardReport);
         if (count == 0) {
             mapper.insertReport(boardReport);
@@ -306,18 +267,14 @@ public class BoardService {
         }
     }
 
-    public Map<String, Object> reportList(Integer page, Integer pageAmount, Boolean offsetReset, HttpSession session, String boardType, String searchType, String keyword)
-            throws Exception {
-
+    public Map<String, Object> reportList(Integer page, Integer pageAmount, Boolean offsetReset, HttpSession session, String boardType, String searchType, String keyword) {
         if (page <= 0) {
             throw new IllegalArgumentException("page must be greater than 0");
         }
 
-        // 세션에서 값 가져오기
         Object sessionValue = session.getAttribute(PAGE_INFO_SESSION_KEY);
         Integer offset;
 
-        // 세션 값이 없을 때 초기화
         if (sessionValue == null) {
             offset = 1;
             session.setAttribute(PAGE_INFO_SESSION_KEY, offset);
@@ -333,14 +290,8 @@ public class BoardService {
             throw new IllegalStateException("Invalid type for session attribute");
         }
 
-        // 페이지에 따른 offset 계산
-
-        // 세션에 새로운 offset 저장
         session.setAttribute(PAGE_INFO_SESSION_KEY, offset);
 
-
-//        System.out.println("이것은 서비스의 boardType = " + boardType);
-        // 페이지 정보 계산
         Map<String, Object> pageInfo = new HashMap<>();
         if (offsetReset) {
             offset = 0;
@@ -353,10 +304,8 @@ public class BoardService {
 
         Integer countByBoardType;
         if (boardType.equals("전체") && searchType.equals("전체") && keyword.equals("")) {
-
             countByBoardType = mapper.selectAllCountWithReportBoard();
         } else {
-//            System.out.println("이것은 서비스의 boardType = " + boardType);
             countByBoardType = mapper.selectByBoardTypeWithReportBoard(boardType, searchType, keyword);
         }
 
@@ -383,14 +332,9 @@ public class BoardService {
 
     public Map<String, Object> reportContent(Integer boardId) {
         Map<String, Object> response = new HashMap<>();
-
-        // 게시글 정보 조회
         Board board = mapper.selectBoardById(boardId);
-
-        // 신고 내용 조회
         List<BoardReport> reports = mapper.selectReportsByBoardId(boardId);
 
-        // 응답 데이터 구성
         response.put("board", board);
         response.put("reports", reports);
         return response;
@@ -410,7 +354,8 @@ public class BoardService {
                 .peek(image -> {
                     String imageUrl = (String) image.get("imageUrl");
                     Integer id = (Integer) image.get("id");
-                    image.put("imageUrl", srcPrefix + "board/" + id + "/" + imageUrl);
+                    // Azure 경로 반영
+                    image.put("imageUrl", srcPrefix + "prj3/board/" + id + "/" + imageUrl);
                 })
                 .collect(Collectors.toList());
     }
@@ -421,7 +366,8 @@ public class BoardService {
                 .peek(image -> {
                     String imageUrl = (String) image.get("imageUrl");
                     Integer id = (Integer) image.get("id");
-                    image.put("imageUrl", srcPrefix + "board/" + id + "/" + imageUrl);
+                    // Azure 경로 반영
+                    image.put("imageUrl", srcPrefix + "prj3/board/" + id + "/" + imageUrl);
                 })
                 .collect(Collectors.toList());
     }

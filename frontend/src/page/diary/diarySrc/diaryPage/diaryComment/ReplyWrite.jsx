@@ -1,7 +1,7 @@
 import axios from "@api/axiosConfig";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 import { useContext, useState } from "react";
-import { Button, Flex, Textarea, useToast } from "@chakra-ui/react";
+import { Box, Button, Flex, Input, useToast } from "@chakra-ui/react"; // Textarea -> Input (한 줄 입력)
 
 export function ReplyWrite({ diaryId, replyCommentId, onReplyAdded }) {
   const [reply, setReply] = useState("");
@@ -22,9 +22,7 @@ export function ReplyWrite({ diaryId, replyCommentId, onReplyAdded }) {
     };
 
     axios
-      .post("/api/diaryComment/add", payload, {
-        headers: { "Content-Type": "application/json" },
-      })
+      .post("/api/diaryComment/add", payload)
       .then((res) => {
         const newReply = res.data;
         setReply("");
@@ -35,39 +33,48 @@ export function ReplyWrite({ diaryId, replyCommentId, onReplyAdded }) {
         toast({
           status: "error",
           position: "top",
-          description: "대댓글 등록 중 오류가 발생했습니다.",
+          description: "오류가 발생했습니다.",
         });
       })
       .finally(() => setLoading(false));
   };
 
   return (
-    <Flex mt={2} gap={2} align="center">
-      <Textarea
-        size="sm"
-        value={reply}
-        onChange={(e) => setReply(e.target.value)}
-        placeholder="댓글을 입력하세요"
-        resize="none"
-        rows={1}
-        flex="1"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleReplySubmit();
-          }
-        }}
-      />
-      <Button
-        type="button"
-        size="sm"
-        colorScheme="blue"
-        isLoading={loading}
-        isDisabled={!reply.trim()}
-        onClick={handleReplySubmit}
-      >
-        등록
-      </Button>
-    </Flex>
+    <Box
+      bg="gray.50"
+      p={2}
+      borderRadius="md"
+      mt={2}
+      border="1px solid"
+      borderColor="gray.200"
+    >
+      <Flex gap={2} align="center">
+        <Input
+          size="sm"
+          value={reply}
+          onChange={(e) => setReply(e.target.value)}
+          placeholder="댓글을 입력하세요."
+          bg="white"
+          fontSize="xs"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleReplySubmit();
+            }
+          }}
+        />
+        <Button
+          size="sm"
+          colorScheme="blue" //
+          isLoading={loading}
+          isDisabled={!reply.trim()}
+          onClick={handleReplySubmit}
+          fontSize="xs"
+          px={4}
+        >
+          확인
+        </Button>
+      </Flex>
+    </Box>
   );
 }

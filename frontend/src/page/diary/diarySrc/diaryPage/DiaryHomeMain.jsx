@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import {
+  Avatar,
   Box,
   Button,
   Card,
@@ -7,18 +8,33 @@ import {
   CardHeader,
   Center,
   Fade,
+  Flex,
   Heading,
+  HStack,
+  Icon,
   Image,
   SimpleGrid,
   Spinner,
   Text,
   useColorModeValue,
+  VStack,
 } from "@chakra-ui/react";
-import { useNavigate, useOutletContext, useParams } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import axios from "@api/axiosConfig";
 import { LoginContext } from "../../../../component/LoginProvider.jsx";
 import { format } from "date-fns";
+import { ko } from "date-fns/locale";
 import { DiaryContext } from "../diaryComponent/DiaryContext.jsx";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faBookOpen,
+  faCamera,
+  faChevronRight,
+  faComments,
+  faList,
+  faPen,
+} from "@fortawesome/free-solid-svg-icons";
+import { generateDiaryId } from "../../../../util/util.jsx";
 
 export function DiaryHomeMain() {
   const { memberInfo } = useContext(LoginContext);
@@ -26,29 +42,29 @@ export function DiaryHomeMain() {
   const [diaryCommentList, setDiaryCommentList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const { diaryId } = useParams();
   const [bannerImage, setBannerImage] = useState(null);
 
-  const bg = useColorModeValue("gray.50", "gray.900");
-  const cardBg = useColorModeValue("white", "gray.700");
-  const borderColor = useColorModeValue("gray.200", "gray.600");
-  const hoverBg = useColorModeValue("gray.100", "gray.600");
-  const sectionBg = useColorModeValue("gray.100", "gray.800");
+  // 🎨 디자인 컬러
+  const bgGradient = useColorModeValue(
+    "linear(to-br, #fdfbfb, #ebedee)",
+    "linear(to-br, gray.800, gray.900)",
+  );
+  const cardBg = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue("gray.100", "gray.700");
 
   const { numericDiaryId, ownerId, ownerNickname } = useOutletContext();
-  // 항상 5줄 맞추기 위한 헬퍼
-  const normalizeList = (list, type) => {
+  const diaryId = generateDiaryId(ownerId);
+
+  // 5줄 채우기 (빈칸 유지)
+  const normalizeList = (list) => {
     const arr = Array.isArray(list) ? list.slice(0, 5) : [];
     while (arr.length < 5) {
-      arr.push({
-        id: `placeholder-${type}-${arr.length}`,
-        __placeholder: true,
-      });
+      arr.push(null);
     }
     return arr;
   };
 
-  // ✅ numericDiaryId로 데이터 불러오기
+  // 데이터 로딩
   useEffect(() => {
     if (!numericDiaryId) return;
     const fetchData = async () => {
@@ -67,14 +83,14 @@ export function DiaryHomeMain() {
           Array.isArray(diaryCommentRes.data) ? diaryCommentRes.data : [],
         );
       } catch (err) {
-        console.error("데이터를 가져오는 중 오류 발생:", err.response || err);
+        console.error("데이터 오류:", err);
       } finally {
         setIsLoading(false);
       }
     };
     fetchData();
   }, [numericDiaryId, setDiaryBoardList]);
-  // ✅ 새로고침 시 localStorage에서 불러오기
+
   useEffect(() => {
     const savedBanner = localStorage.getItem("bannerImage");
     if (savedBanner) {
@@ -82,261 +98,329 @@ export function DiaryHomeMain() {
     }
   }, []);
 
-  const handleBoardClick = (id) => {
-    navigate(`/diary/${diaryId}/board/view/${id}`);
+  const handleBoardClick = (boardId) => {
+    navigate(`/diary/${diaryId}/board/view/${boardId}`);
   };
 
-  const handleCommentClick = (id) => {
-    navigate(`/diary/${diaryId}/comment/view/${id}`);
+  const handleCommentClick = (commentId) => {
+    navigate(`/diary/${diaryId}/comment/view/${commentId}`);
+  };
+
+  const handleBannerChange = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        localStorage.setItem("bannerImage", reader.result);
+        setBannerImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
   };
 
   if (isLoading) {
     return (
-      <Center mt={10}>
-        <Spinner size="xl" />
+      <Center mt={20}>
+        <Spinner size="xl" color="purple.400" thickness="4px" />
       </Center>
     );
   }
 
-  const normalizedBoards = normalizeList(diaryBoardList, "board");
-  const normalizedComments = normalizeList(diaryCommentList, "comment");
+  const normalizedBoards = normalizeList(diaryBoardList);
+  const normalizedComments = normalizeList(diaryCommentList);
+  const todayDate = format(new Date(), "M월 d일 EEEE", { locale: ko });
+  const itemHeight = "72px"; // 리스트 아이템 높이 통일
 
   return (
-    <Box minH="100vh" bg={bg} p={7}>
-      <Center>
-        <Box mb={7} w="60%" maxW="800px" position="relative">
-          <Image
-            src={bannerImage || "/img/diary_main_minimi.jpg"}
-            alt="Diary Banner"
-            width="100%"
-            h="auto"
-            borderRadius="lg"
-            boxShadow="lg"
-          />
+    <Box minH="100vh" bgGradient={bgGradient} pb={20}>
+      {/* 🌟 1. 커버 화면 (Hero Section) */}
+      <Box
+        position="relative"
+        w="100%"
+        h={{ base: "280px", md: "380px" }}
+        overflow="hidden"
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        bg="gray.900"
+      >
+        <Image
+          src={bannerImage || "/img/diary_main_minimi.jpg"}
+          alt="Diary Banner"
+          position="absolute"
+          top="0"
+          left="0"
+          w="100%"
+          h="100%"
+          objectFit="cover"
+          opacity={0.6}
+          transition="transform 0.3s"
+          _hover={{ transform: "scale(1.02)" }}
+        />
+        {Number(memberInfo?.id) === ownerId && (
+          <Button
+            position="absolute"
+            top={4}
+            right={4}
+            size="sm"
+            leftIcon={<FontAwesomeIcon icon={faCamera} />}
+            bg="whiteAlpha.300"
+            color="white"
+            _hover={{ bg: "whiteAlpha.500" }}
+            onClick={handleBannerChange}
+            backdropFilter="blur(5px)"
+          >
+            배경 변경
+          </Button>
+        )}
+      </Box>
 
-          {/* ✅ 주인만 보이는 업로드 버튼 */}
-          {Number(memberInfo.id) === ownerId && (
-            <Button
-              size="sm"
-              colorScheme="teal"
-              position="absolute"
-              bottom="10px"
-              right="10px"
-              onClick={() => {
-                const input = document.createElement("input");
-                input.type = "file";
-                input.accept = "image/*";
-                input.onchange = (e) => {
-                  const file = e.target.files[0];
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    // ✅ 개발 테스트용: localStorage 저장
-                    localStorage.setItem("bannerImage", reader.result);
-                    setBannerImage(reader.result);
-
-                    // ✅ 배포용: S3 업로드 + DB 저장 로직으로 교체 예정
-                  };
-                  reader.readAsDataURL(file);
-                };
-                input.click();
-              }}
+      {/* 📜 2. 메인 콘텐츠 (일기 & 방명록) */}
+      {/* 📌 수정됨: mt를 양수(10)로 주어 배너 아래로 여유 있게 배치 */}
+      <Box maxW="1200px" mx="auto" px={{ base: 4, md: 8 }} mt={10}>
+        <Fade in={true}>
+          <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
+            {/* 🟦 2-1. 일기장 (Diary) */}
+            <Card
+              bg={cardBg}
+              borderRadius="2xl"
+              boxShadow="xl"
+              overflow="hidden"
             >
-              배너 이미지 변경
-            </Button>
-          )}
-        </Box>
-      </Center>
-
-      {/* 최근 게시물 */}
-      <Fade in={true}>
-        <Box bg={sectionBg} borderRadius="xl" p={5} mt={8}>
-          <Heading size="md" mb={4} textAlign="center">
-            최근 게시물
-          </Heading>
-          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} align="stretch">
-            {/* 일기장 카드 */}
-            <Card bg={cardBg} shadow="none" borderRadius="xl" h="full">
-              <CardHeader p={1}>
-                <Heading
-                  fontSize="xs"
-                  color="gray.800"
-                  _dark={{ color: "gray.100" }}
-                >
-                  일기장
-                </Heading>
-              </CardHeader>
-              <CardBody
-                p={1}
-                display="flex"
-                flexDirection="column"
-                justifyContent="flex-start"
+              <CardHeader
+                borderBottom="1px solid"
+                borderColor={borderColor}
+                py={5}
               >
-                <Box w="100%">
-                  {normalizedBoards.every((b) => b.__placeholder) ? (
-                    <Fade in={true}>
-                      <Box h="100%" textAlign="center" pt={20}>
-                        <Text fontSize="2xl" mb={2}>
-                          📝
-                        </Text>
-                        <Text fontWeight="bold" color="gray.600">
-                          아직 작성된 게시물이 없습니다
-                        </Text>
-                        {Number(memberInfo.id) === ownerId && (
-                          <Button
-                            mt={2}
-                            size="sm"
-                            colorScheme="blue"
-                            onClick={() =>
-                              navigate(`/diary/${diaryId}/board/write`)
-                            }
-                          >
-                            ✍️ 첫 글 작성하기
-                          </Button>
-                        )}
-                      </Box>
-                    </Fade>
+                <Flex justify="space-between" align="center">
+                  <HStack spacing={3}>
+                    <Center
+                      w="40px"
+                      h="40px"
+                      bg="purple.50"
+                      color="purple.500"
+                      borderRadius="lg"
+                    >
+                      <Icon as={FontAwesomeIcon} icon={faBookOpen} />
+                    </Center>
+                    <VStack align="start" spacing={0}>
+                      <Heading size="md" color="gray.700">
+                        일기
+                      </Heading>
+                    </VStack>
+                  </HStack>
+
+                  {Number(memberInfo?.id) === ownerId ? (
+                    <Button
+                      size="sm"
+                      colorScheme="purple"
+                      borderRadius="full"
+                      onClick={() => navigate(`/diary/${diaryId}/board/write`)}
+                    >
+                      <Icon as={FontAwesomeIcon} icon={faPen} mr={1} /> 글쓰기
+                    </Button>
                   ) : (
-                    normalizedBoards.map((board, idx) => (
-                      <Box
-                        key={`board-${idx}`}
-                        h="64px"
-                        display="flex"
-                        flexDirection="column"
-                        justifyContent="space-between"
-                        p={1}
-                        borderBottom={idx === 4 ? "none" : "1px solid"}
-                        borderColor={borderColor}
-                        _hover={
-                          !board.__placeholder
-                            ? {
-                                bg: hoverBg,
-                                cursor: "pointer",
-                                transition: "all 0.2s ease-in-out",
-                              }
-                            : {}
-                        }
-                        onClick={() =>
-                          !board.__placeholder && handleBoardClick(board.id)
-                        }
-                      >
-                        {!board.__placeholder && (
-                          <>
-                            <Text fontWeight="bold" fontSize="xs" noOfLines={1}>
-                              제목: {board.title}
-                            </Text>
-                            <Text fontSize="2xs" noOfLines={1}>
-                              {board.content}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      color="gray.500"
+                      onClick={() => navigate(`/diary/${diaryId}/board/list`)}
+                    >
+                      전체보기{" "}
+                      <Icon
+                        as={FontAwesomeIcon}
+                        icon={faChevronRight}
+                        ml={1}
+                        size="xs"
+                      />
+                    </Button>
+                  )}
+                </Flex>
+              </CardHeader>
+
+              <CardBody p={0}>
+                <VStack spacing={0} align="stretch">
+                  {normalizedBoards.map((board, idx) => (
+                    <Box
+                      key={idx}
+                      h={itemHeight}
+                      borderBottom={idx < 4 ? "1px solid" : "none"}
+                      borderColor={borderColor}
+                    >
+                      {board ? (
+                        <Flex
+                          h="100%"
+                          align="center"
+                          px={6}
+                          cursor="pointer"
+                          _hover={{ bg: "purple.50" }}
+                          onClick={() => handleBoardClick(board.id)}
+                          transition="background 0.2s"
+                        >
+                          <VStack
+                            spacing={0}
+                            mr={5}
+                            bg="gray.50"
+                            minW="45px"
+                            h="45px"
+                            justify="center"
+                            borderRadius="md"
+                            color="gray.600"
+                          >
+                            <Text
+                              fontSize="xs"
+                              fontWeight="bold"
+                              lineHeight="1"
+                            >
+                              {format(new Date(board.inserted), "MM")}
                             </Text>
                             <Text
-                              fontSize="2xs"
-                              color="gray.500"
-                              textAlign="right"
+                              fontSize="lg"
+                              fontWeight="extrabold"
+                              lineHeight="1"
+                              color="purple.500"
                             >
-                              작성일:{" "}
-                              {format(new Date(board.inserted), "yyyy.MM.dd")}
+                              {format(new Date(board.inserted), "dd")}
                             </Text>
-                          </>
-                        )}
-                      </Box>
-                    ))
-                  )}
-                </Box>
+                          </VStack>
+                          <VStack
+                            align="start"
+                            spacing={0}
+                            flex={1}
+                            overflow="hidden"
+                          >
+                            <Text
+                              fontWeight="bold"
+                              color="gray.700"
+                              fontSize="sm"
+                              noOfLines={1}
+                            >
+                              {board.title}
+                            </Text>
+                            <Text fontSize="xs" color="gray.400" noOfLines={1}>
+                              {board.content}
+                            </Text>
+                          </VStack>
+                        </Flex>
+                      ) : (
+                        <Box w="100%" h="100%" />
+                      )}
+                    </Box>
+                  ))}
+                </VStack>
               </CardBody>
             </Card>
 
-            {/* 방명록 카드 */}
-            <Card bg={cardBg} shadow="none" borderRadius="xl" h="full">
-              <CardHeader p={1}>
-                <Heading
-                  fontSize="xs"
-                  color="gray.800"
-                  _dark={{ color: "gray.100" }}
-                >
-                  방명록
-                </Heading>
-              </CardHeader>
-              <CardBody
-                p={1}
-                display="flex"
-                flexDirection="column"
-                justifyContent="flex-start"
+            {/* 🟩 2-2. 방명록 (Guest Book) */}
+            <Card
+              bg={cardBg}
+              borderRadius="2xl"
+              boxShadow="xl"
+              overflow="hidden"
+            >
+              <CardHeader
+                borderBottom="1px solid"
+                borderColor={borderColor}
+                py={5}
               >
-                <Box w="100%">
-                  {normalizedComments.every((c) => c.__placeholder) ? (
-                    <Fade in={true}>
-                      <Box h="100%" textAlign="center" pt={20}>
-                        <Text fontSize="2xl" mb={2}>
-                          💬
-                        </Text>
-                        <Text fontWeight="bold" color="gray.600">
-                          아직 방명록이 없습니다
-                        </Text>
-                        {Number(memberInfo.id) === ownerId && (
-                          <Button
-                            mt={2}
+                <Flex justify="space-between" align="center">
+                  <HStack spacing={3}>
+                    <Center
+                      w="40px"
+                      h="40px"
+                      bg="teal.50"
+                      color="teal.500"
+                      borderRadius="lg"
+                    >
+                      <Icon as={FontAwesomeIcon} icon={faComments} />
+                    </Center>
+                    <VStack align="start" spacing={0}>
+                      <Heading size="md" color="gray.700">
+                        방명록
+                      </Heading>
+                    </VStack>
+                  </HStack>
+
+                  {/* 📌 수정됨: 일기장 '글쓰기' 버튼 스타일(Solid, Rounded)로 변경 */}
+                  <Button
+                    size="sm"
+                    colorScheme="teal"
+                    borderRadius="full"
+                    onClick={() => navigate(`/diary/${diaryId}/comment`)}
+                  >
+                    <Icon as={FontAwesomeIcon} icon={faList} mr={1} /> 전체보기
+                  </Button>
+                </Flex>
+              </CardHeader>
+
+              <CardBody p={0}>
+                <VStack spacing={0} align="stretch">
+                  {normalizedComments.map((comment, idx) => (
+                    <Box
+                      key={idx}
+                      h={itemHeight}
+                      borderBottom={idx < 4 ? "1px solid" : "none"}
+                      borderColor={borderColor}
+                    >
+                      {comment ? (
+                        <Flex
+                          h="100%"
+                          align="center"
+                          px={6}
+                          cursor="pointer"
+                          _hover={{ bg: "teal.50" }}
+                          onClick={() => handleCommentClick(comment.id)}
+                          transition="background 0.2s"
+                        >
+                          <Avatar
                             size="sm"
-                            colorScheme="blue"
-                            onClick={() =>
-                              navigate(`/diary/${diaryId}/comment`)
-                            }
+                            src={comment.profileImage}
+                            name={comment.nickname}
+                            mr={5}
+                          />
+                          <VStack
+                            align="start"
+                            spacing={0}
+                            flex={1}
+                            overflow="hidden"
                           >
-                            ✍️ 첫 방명록 남기기
-                          </Button>
-                        )}
-                      </Box>
-                    </Fade>
-                  ) : (
-                    normalizedComments.map((comment, idx) => (
-                      <Box
-                        key={`comment-${idx}`}
-                        h="64px"
-                        display="flex"
-                        flexDirection="column"
-                        justifyContent="space-between"
-                        p={1}
-                        borderBottom={idx === 4 ? "none" : "1px solid"}
-                        borderColor={borderColor}
-                        _hover={
-                          !comment.__placeholder
-                            ? {
-                                bg: hoverBg,
-                                cursor: "pointer",
-                                transition: "all 0.2s ease-in-out",
-                              }
-                            : {}
-                        }
-                        onClick={() =>
-                          !comment.__placeholder &&
-                          handleCommentClick(comment.id)
-                        }
-                      >
-                        {!comment.__placeholder && (
-                          <>
-                            <Text fontWeight="bold" fontSize="xs" noOfLines={1}>
-                              작성자: {comment.nickname}
-                            </Text>
-                            <Text fontSize="2xs" noOfLines={1}>
+                            <HStack w="100%" justify="space-between">
+                              <Text
+                                fontSize="sm"
+                                fontWeight="bold"
+                                color="gray.700"
+                              >
+                                {comment.nickname}
+                              </Text>
+                              <Text fontSize="xs" color="gray.400">
+                                {format(new Date(comment.inserted), "MM.dd")}
+                              </Text>
+                            </HStack>
+                            <Text
+                              fontSize="xs"
+                              color="gray.500"
+                              noOfLines={1}
+                              mt={0.5}
+                            >
                               {comment.comment}
                             </Text>
-                            <Text
-                              fontSize="2xs"
-                              color="gray.500"
-                              textAlign="right"
-                            >
-                              작성일:{" "}
-                              {format(new Date(comment.inserted), "yyyy.MM.dd")}
-                            </Text>
-                          </>
-                        )}
-                      </Box>
-                    ))
-                  )}
-                </Box>
+                          </VStack>
+                        </Flex>
+                      ) : (
+                        <Box w="100%" h="100%" />
+                      )}
+                    </Box>
+                  ))}
+                </VStack>
               </CardBody>
             </Card>
           </SimpleGrid>
-        </Box>
-      </Fade>
+        </Fade>
+      </Box>
     </Box>
   );
 }

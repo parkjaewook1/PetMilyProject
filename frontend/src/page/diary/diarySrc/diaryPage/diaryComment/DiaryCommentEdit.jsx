@@ -2,9 +2,11 @@ import {
   Box,
   Button,
   Center,
+  Flex,
   FormControl,
   FormLabel,
   HStack,
+  Icon,
   Input,
   Modal,
   ModalBody,
@@ -15,15 +17,24 @@ import {
   Spinner,
   Text,
   Textarea,
+  useColorModeValue,
   useDisclosure,
   useToast,
+  VStack,
 } from "@chakra-ui/react";
 import React, { useContext, useEffect, useState } from "react";
 import axios from "@api/axiosConfig";
 import { useNavigate, useParams } from "react-router-dom";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
-
-// import { generateDiaryId } from "../../../../../util/util.jsx";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faCheck,
+  faPen,
+  faQuoteLeft,
+  faQuoteRight,
+  faTrashCan,
+  faXmark,
+} from "@fortawesome/free-solid-svg-icons";
 
 export function DiaryCommentEdit() {
   const { encodedId, id } = useParams();
@@ -32,6 +43,11 @@ export function DiaryCommentEdit() {
   const toast = useToast();
   const { memberInfo } = useContext(LoginContext);
   const navigate = useNavigate();
+
+  // 🎨 스타일 변수
+  const titleColor = "blue.600";
+  const borderColor = useColorModeValue("gray.300", "gray.600");
+  const inputBg = useColorModeValue("gray.50", "gray.700");
 
   useEffect(() => {
     axios
@@ -59,7 +75,7 @@ export function DiaryCommentEdit() {
       .then(() => {
         toast({
           status: "success",
-          description: "댓글이 수정되었습니다.",
+          description: "방명록이 수정되었습니다.",
           position: "top",
         });
         navigate(`/diary/${encodedId}/comment/view/${id}`);
@@ -68,7 +84,7 @@ export function DiaryCommentEdit() {
         if (err.response?.status === 400) {
           toast({
             status: "error",
-            description: "댓글이 수정되지 않았습니다.",
+            description: "수정되지 않았습니다.",
             position: "top",
           });
         }
@@ -84,16 +100,15 @@ export function DiaryCommentEdit() {
       .then(() => {
         toast({
           status: "success",
-          description: "댓글이 삭제되었습니다.",
+          description: "삭제되었습니다.",
           position: "top",
         });
-        // 삭제 후 목록 페이지로 이동
-        navigate(`/diary/${encodedId}/comment/list`);
+        navigate(`/diary/${encodedId}/comment`);
       })
       .catch((err) => {
         toast({
           status: "error",
-          description: "댓글 삭제 중 오류가 발생했습니다.",
+          description: "삭제 중 오류가 발생했습니다.",
           position: "top",
         });
       });
@@ -101,67 +116,150 @@ export function DiaryCommentEdit() {
 
   if (diaryComment === null) {
     return (
-      <Center>
-        <Spinner size="xl" />
+      <Center h="300px">
+        <Spinner size="xl" color="blue.400" />
       </Center>
     );
   }
 
   return (
-    <Box
-      maxW="600px"
-      mx="auto"
-      mt={10}
-      p={5}
-      boxShadow="md"
-      borderRadius="md"
-      bg="white"
-    >
-      <Box mb={10}>
-        <Text fontSize="xl" fontWeight="bold">
+    <Box h="100%" p={4} display="flex" flexDirection="column">
+      {/* 1. 헤더 영역 */}
+      <Flex
+        align="center"
+        mb={6}
+        pb={2}
+        borderBottom="2px solid"
+        borderColor={titleColor}
+      >
+        <Icon as={FontAwesomeIcon} icon={faPen} color={titleColor} mr={2} />
+        <Text
+          fontSize="lg"
+          fontWeight="bold"
+          fontFamily="'Gulim', sans-serif"
+          color="#333"
+        >
           방명록 수정
         </Text>
-      </Box>
-      <Box>
-        <Box mb={7}>
-          <FormControl>
-            <FormLabel>작성자</FormLabel>
-            <Input value={memberInfo.nickname} readOnly />
-          </FormControl>
-        </Box>
-        <Box mb={7}>
-          <FormControl>
-            <FormLabel>방명록 작성글</FormLabel>
+      </Flex>
+
+      {/* 2. 입력 폼 영역 */}
+      <VStack
+        spacing={5}
+        align="stretch"
+        flex={1}
+        fontFamily="'Gulim', sans-serif"
+      >
+        <FormControl>
+          <FormLabel fontSize="sm" fontWeight="bold" color="gray.600">
+            작성자
+          </FormLabel>
+          <Input
+            value={memberInfo.nickname}
+            readOnly
+            bg="gray.100"
+            border="none"
+            size="sm"
+            fontWeight="bold"
+            color="gray.700"
+          />
+        </FormControl>
+
+        <FormControl flex={1} display="flex" flexDirection="column">
+          <FormLabel fontSize="sm" fontWeight="bold" color="gray.600">
+            내용
+          </FormLabel>
+          <Box position="relative" flex={1}>
+            {/* 장식용 따옴표 */}
+            <Icon
+              as={FontAwesomeIcon}
+              icon={faQuoteLeft}
+              color="gray.300"
+              position="absolute"
+              top={3}
+              left={3}
+              zIndex={1}
+            />
+
             <Textarea
               value={diaryComment.comment}
               onChange={(e) =>
                 setDiaryComment({ ...diaryComment, comment: e.target.value })
               }
+              h="100%"
+              resize="none"
+              bg={inputBg}
+              pl={8} // 아이콘 공간 확보
+              pt={8}
+              lineHeight="1.8"
+              borderColor={borderColor}
+              focusBorderColor={titleColor}
             />
-            <HStack mt={4} spacing={3}>
-              <Button onClick={onOpen} colorScheme="blue">
-                저장
-              </Button>
-              <Button onClick={handleDelete} colorScheme="red">
-                삭제
-              </Button>
-            </HStack>
-          </FormControl>
-        </Box>
-        <Modal isOpen={isOpen} onClose={onClose}>
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>확인</ModalHeader>
-            <ModalBody>저장하시겠습니까?</ModalBody>
-            <ModalFooter>
-              <Button onClick={handleCommentSubmit} colorScheme="blue">
-                확인
-              </Button>
-              <Button onClick={onClose}>취소</Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      </Box>
+
+            <Icon
+              as={FontAwesomeIcon}
+              icon={faQuoteRight}
+              color="gray.300"
+              position="absolute"
+              bottom={3}
+              right={3}
+              zIndex={1}
+            />
+          </Box>
+        </FormControl>
+      </VStack>
+
+      {/* 3. 하단 버튼 영역 */}
+      <Flex justify="space-between" mt={6}>
+        {/* 삭제 버튼 (왼쪽 배치) */}
+        <Button
+          leftIcon={<FontAwesomeIcon icon={faTrashCan} />}
+          colorScheme="red"
+          variant="ghost"
+          size="sm"
+          onClick={handleDelete}
+        >
+          삭제
+        </Button>
+
+        <HStack spacing={2}>
+          <Button
+            leftIcon={<FontAwesomeIcon icon={faXmark} />}
+            onClick={() => navigate(-1)}
+            variant="ghost"
+            colorScheme="gray"
+            size="sm"
+          >
+            취소
+          </Button>
+          <Button
+            leftIcon={<FontAwesomeIcon icon={faCheck} />}
+            onClick={onOpen}
+            colorScheme="blue"
+            size="sm"
+            boxShadow="md"
+          >
+            저장
+          </Button>
+        </HStack>
+      </Flex>
+
+      {/* 저장 확인 모달 */}
+      <Modal isOpen={isOpen} onClose={onClose} isCentered size="sm">
+        <ModalOverlay />
+        <ModalContent fontFamily="'Gulim', sans-serif">
+          <ModalHeader fontSize="md">수정 확인</ModalHeader>
+          <ModalBody fontSize="sm">정말 수정하시겠습니까?</ModalBody>
+          <ModalFooter>
+            <Button size="sm" onClick={onClose} mr={2}>
+              취소
+            </Button>
+            <Button size="sm" onClick={handleCommentSubmit} colorScheme="blue">
+              확인
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }

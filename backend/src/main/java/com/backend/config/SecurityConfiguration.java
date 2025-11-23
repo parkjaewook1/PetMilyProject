@@ -70,7 +70,7 @@ public class SecurityConfiguration {
 
         System.out.println("=== SecurityFilterChain Bean 실행됨 ===");
 
-        // ✅ CORS 설정
+        // 1. CORS 설정
         http.cors(corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource() {
             @Override
             public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
@@ -88,35 +88,36 @@ public class SecurityConfiguration {
             }
         }));
 
-        // ✅ 인증 실패 시 처리
+        // 2. 에러 핸들링 (리다이렉트 방지 수정)
         http.exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {
+                    System.out.println("⛔ 인증 실패 (401) - 요청 경로: " + request.getRequestURI());
+
+                    // [수정] /api/ 로 시작하는 모든 요청은 절대 리다이렉트 하지 않고 401 에러만 보냄
                     if (request.getRequestURI().startsWith("/api/")) {
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                         response.setContentType("application/json;charset=UTF-8");
                         response.getWriter().write("{\"error\":\"unauthorized\"}");
                     } else {
-                        response.sendRedirect("/oauth2/authorization/test");
+                        // API가 아닌 경우에만 로그인 페이지로 보냄 (test 프로바이더가 없다면 이 줄도 지우는 게 좋습니다)
+                        response.sendRedirect("/member/login");
                     }
                 })
         );
 
-        // ✅ CSRF, 폼 로그인, HTTP Basic 비활성화
+        // 3. 보안 필터 해제
         http.csrf(csrf -> csrf.disable());
         http.formLogin(form -> form.disable());
         http.httpBasic(basic -> basic.disable());
-
-        // ✅ 기본 로그아웃 기능 비활성화 → CustomLogoutFilter만 사용
         http.logout(logout -> logout.disable());
 
-        // ✅ 필터 등록 순서
+        // 4. JWT 필터 등록
         http.addFilterBefore(new JWTFilter(jwtUtil), CustomLoginFilter.class);
         http.addFilterBefore(
                 new CustomLogoutFilter(jwtUtil, refreshMapper, loginCheckMapper),
                 LogoutFilter.class
         );
 
-        // ✅ 로그인 URL만 처리하도록 CustomLoginFilter 등록
         CustomLoginFilter loginFilter =
                 new CustomLoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, refreshMapper, loginCheckMapper);
         loginFilter.setRequiresAuthenticationRequestMatcher(
@@ -124,22 +125,40 @@ public class SecurityConfiguration {
         );
         http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // ✅ OAuth2 로그인 설정
         http.oauth2Login(oauth2 -> oauth2
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                 .successHandler(customSuccessHandler));
 
-        // ✅ 경로별 권한 설정
+        // =========================================================
+        // 👇👇 [핵심 수정] API 경로 권한 설정 (여기가 제일 중요!) 👇👇
+        // =========================================================
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, "/api/member/signup").permitAll() // 회원가입 허용
+                // [OPTIONS 요청 허용] 프리플라이트 요청(CORS)이 막히지 않도록 허용
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                // [인증 관련]
+                .requestMatchers(HttpMethod.POST, "/api/member/signup", "/api/member/login", "/api/member/reissue").permitAll()
                 .requestMatchers("/api/member/logout").permitAll()
-                .requestMatchers("/reissue").permitAll()
+                .requestMatchers("/reissue", "/api/reissue").permitAll()
+
+                // [게시판 조회 - GET 요청은 모두 허용]
+                // ** 나중에 컨트롤러 경로가 바뀌어도 문제 없도록 패턴으로 허용합니다 **
+                .requestMatchers(HttpMethod.GET, "/api/board/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/boards/**").permitAll() // 혹시 s가 붙을 경우 대비
+
+                // [댓글 조회 - GET 요청 허용] (방명록이 안 보인다면 이 줄이 필요합니다)
+                .requestMatchers(HttpMethod.GET, "/api/comment/**", "/api/diaryComment/**").permitAll()
+
+                // [이미지 리소스]
+                .requestMatchers(HttpMethod.GET, "/api/image/**", "/api/images/**").permitAll()
+
+                // [관리자]
                 .requestMatchers("/admin").hasRole("ADMIN")
-                .requestMatchers("/**").permitAll()
+
+                // [그 외] 나머지는 로그인 필요
                 .anyRequest().authenticated()
         );
 
-        // ✅ 세션 정책: STATELESS
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();

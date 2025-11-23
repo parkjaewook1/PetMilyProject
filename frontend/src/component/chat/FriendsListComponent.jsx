@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import Draggable from "react-draggable";
 import {
   Avatar,
@@ -27,6 +27,9 @@ export const FriendsListComponent = ({ onSelectFriend, newMessages = {} }) => {
 
   const { memberInfo } = useContext(LoginContext);
   const memberId = memberInfo ? memberInfo.id : null;
+
+  // Draggable nodeRef 설정
+  const nodeRef = useRef(null);
 
   const toggleMinimize = () => {
     setIsMinimized(!isMinimized);
@@ -93,9 +96,10 @@ export const FriendsListComponent = ({ onSelectFriend, newMessages = {} }) => {
   }, [memberId]);
 
   return (
-    <VStack>
-      <Draggable>
+    <>
+      <Draggable nodeRef={nodeRef} handle=".drag-handle">
         <Box
+          ref={nodeRef}
           position="fixed"
           bottom="20px"
           right="20px"
@@ -103,12 +107,14 @@ export const FriendsListComponent = ({ onSelectFriend, newMessages = {} }) => {
           borderRadius="md"
           p="4"
           bg="white"
-          boxShadow="md"
+          boxShadow="dark-lg"
           width="300px"
           h={isMinimized ? "auto" : "400px"}
           overflow="auto"
+          zIndex="9999"
         >
           <Box
+            className="drag-handle"
             display="flex"
             justifyContent="space-between"
             alignItems="center"
@@ -119,11 +125,13 @@ export const FriendsListComponent = ({ onSelectFriend, newMessages = {} }) => {
             borderBottomWidth="1px"
             p={2}
             h="50px"
+            cursor="move"
           >
             <Text fontSize="xl" fontWeight="bold">
               친구 리스트
             </Text>
             <IconButton
+              onMouseDown={(e) => e.stopPropagation()}
               icon={
                 isMinimized ? <FontAwesomeIcon icon={faPlus} /> : <MinusIcon />
               }
@@ -232,6 +240,6 @@ export const FriendsListComponent = ({ onSelectFriend, newMessages = {} }) => {
           )}
         </Box>
       </Draggable>
-    </VStack>
+    </>
   );
 };

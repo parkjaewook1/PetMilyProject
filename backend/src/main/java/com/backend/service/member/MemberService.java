@@ -1,5 +1,7 @@
 package com.backend.service.member;
 
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
 import com.backend.domain.board.Board;
 import com.backend.domain.diary.Diary;
 import com.backend.domain.member.Member;
@@ -19,11 +21,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -39,15 +36,18 @@ public class MemberService {
     private final ProfileMapper profileMapper;
     private final DiaryBoardMapper diaryBoardMapper;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final S3Client s3Client;
+
+    // AWS S3Client -> Azure BlobContainerClient 변경
+    private final BlobContainerClient blobContainerClient;
+
     private final BoardService boardService;
     private final BoardMapper boardMapper;
     private final BoardCommentMapper boardCommentMapper;
     private final DiaryMapper diaryMapper;
 
-    // s3 설정
-    @Value("${aws.s3.bucket.name}")
-    private String bucketName;
+    // bucketName은 이제 필요 없습니다.
+    // @Value("${aws.s3.bucket.name}")
+    // private String bucketName;
 
     @Value("${image.src.prefix}")
     String srcPrefix;
@@ -85,7 +85,10 @@ public class MemberService {
         }
         Profile profile = profileMapper.selectProfileByMemberId(id);
         if (profile != null) {
-            String imageUrl = srcPrefix + profile.getUploadPath();
+            // 이미지 경로 생성 (Azure Prefix + DB 저장 경로)
+            // 주의: DB에 "profile/..."로 저장되어 있다면 srcPrefix에 "prj3/"가 포함되어 있거나 URL 조정이 필요할 수 있습니다.
+            // 기존 로직 유지: srcPrefix + profile.getUploadPath()
+            String imageUrl = srcPrefix + "prj3/" + profile.getUploadPath();
             member.setImageUrl(imageUrl);
         }
         return member;
@@ -104,20 +107,20 @@ public class MemberService {
     @Transactional
     public void saveProfileImage(Integer memberId, MultipartFile file) throws IOException {
         String fileName = memberId + "_" + file.getOriginalFilename();
-        String key = "profile/" + memberId + "/" + fileName;
+        // DB에 저장될 경로 (기존 로직 유지)
+        String dbUploadPath = "profile/" + memberId + "/" + fileName;
 
-        PutObjectRequest objectRequest = PutObjectRequest.builder()
-                .bucket(bucketName)
-                .key("prj3/" + key)
-                .acl(ObjectCannedACL.PUBLIC_READ)
-                .build();
+        // Azure에 저장될 실제 경로 (prj3/ 접두어 추가)
+        String azureBlobName = "prj3/" + dbUploadPath;
 
-        s3Client.putObject(objectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+        // Azure 업로드 (덮어쓰기 허용)
+        BlobClient blobClient = blobContainerClient.getBlobClient(azureBlobName);
+        blobClient.upload(file.getInputStream(), file.getSize(), true);
 
         Profile profile = new Profile();
         profile.setMemberId(memberId);
         profile.setFileName(fileName);
-        profile.setUploadPath(key);
+        profile.setUploadPath(dbUploadPath); // DB에는 "profile/..." 형태로 저장
 
         Profile existing = profileMapper.selectProfileByMemberId(memberId);
         if (existing != null) {
@@ -134,18 +137,18 @@ public class MemberService {
     public void deleteProfileByMemberId(Integer memberId) {
         Profile profile = profileMapper.selectProfileByMemberId(memberId);
         if (profile != null) {
-            deleteImageFromS3(profile.getUploadPath());
+            deleteImageFromAzure(profile.getUploadPath());
             profileMapper.deleteProfileByMemberId(memberId);
         }
     }
 
-    private void deleteImageFromS3(String uploadPath) {
+    private void deleteImageFromAzure(String uploadPath) {
         try {
-            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key("prj3/" + uploadPath)
-                    .build();
-            s3Client.deleteObject(deleteObjectRequest);
+            // 삭제할 경로도 "prj3/"를 붙여야 함
+            String azureBlobName = "prj3/" + uploadPath;
+
+            BlobClient blobClient = blobContainerClient.getBlobClient(azureBlobName);
+            blobClient.deleteIfExists();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -210,7 +213,7 @@ public class MemberService {
             map.put("id", member.getId());
             map.put("username", member.getUsername());
             map.put("nickname", member.getNickname());
-            map.put("role", member.getRole().name()); // ✅ role 추가
+            map.put("role", member.getRole().name());
         }
         return map;
     }

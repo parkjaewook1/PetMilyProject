@@ -4,13 +4,16 @@ import {
   Center,
   Flex,
   Heading,
+  HStack,
   Input,
   InputGroup,
   InputRightElement,
   Select,
+  Spinner,
   Table,
   Tbody,
   Td,
+  Text,
   Th,
   Thead,
   Tr,
@@ -18,7 +21,11 @@ import {
 } from "@chakra-ui/react";
 import React, { useContext, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBookOpen,
+  faMagnifyingGlass,
+  faPenNib,
+} from "@fortawesome/free-solid-svg-icons";
 import axios from "@api/axiosConfig";
 import {
   useLocation,
@@ -30,13 +37,15 @@ import {
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 import { DiaryContext } from "../../diaryComponent/DiaryContext.jsx";
 import { format } from "date-fns";
-import Pagination from "../../../../../component/Pagination.jsx";
+
+// ✅ 경로 확인 필수! (방명록 폴더에 있는 페이지네이션을 가져옵니다)
+import DiaryPagination from "../diaryComment/DiaryPagination.jsx";
 
 export function DiaryBoardList() {
   const { memberInfo } = useContext(LoginContext);
-  const { diaryBoardList, setDiaryBoardList } = useContext(DiaryContext); // DiaryContext 사용
+  const { diaryBoardList, setDiaryBoardList } = useContext(DiaryContext);
   const [pageInfo, setPageInfo] = useState({});
-  const { numericDiaryId, ownerId } = useOutletContext(); // ✅ 부모에서 받은 값
+  const { numericDiaryId, ownerId } = useOutletContext();
   const [searchType, setSearchType] = useState("all");
   const [searchKeyword, setSearchKeyword] = useState("");
   const navigate = useNavigate();
@@ -46,66 +55,83 @@ export function DiaryBoardList() {
   const location = useLocation();
   const newPostId = location.state?.newPostId;
 
+  // ✅ 로딩 상태 (데이터 가져오기 전까지 true)
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 🎨 스타일 변수 (Hook은 항상 최상단에!)
+  const titleColor = "blue.600";
+  const tableHeadBg = useColorModeValue("gray.50", "gray.700");
+  const hoverBg = useColorModeValue("gray.50", "gray.600");
+  const dateColor = useColorModeValue("gray.500", "gray.400");
+
   function getMoodIcon(mood) {
-    if (!mood) return "❓";
+    if (!mood) return "-";
     switch (mood.toUpperCase()) {
       case "HAPPY":
-        return "😊";
+        return "🥰";
       case "SAD":
-        return "😢";
+        return "😭";
       case "ANGRY":
         return "😡";
       case "NEUTRAL":
         return "😐";
       default:
-        return "❓";
+        return "🤔";
     }
   }
+
+  // 데이터 조회
   useEffect(() => {
     if (!numericDiaryId) return;
+
+    setIsLoading(true); // 로딩 시작
+
     const params = new URLSearchParams(searchParams);
-    params.set("diaryId", numericDiaryId); // ✅ 이제 numericDiaryId 사용
-    axios.get(`/api/diaryBoard/list?${params.toString()}`).then((res) => {
-      setDiaryBoardList(res.data.diaryBoardList);
-      setPageInfo(res.data.pageInfo);
-    });
+    params.set("diaryId", numericDiaryId);
+
+    axios
+      .get(`/api/diaryBoard/list?${params.toString()}`)
+      .then((res) => {
+        setDiaryBoardList(res.data.diaryBoardList || []);
+        setPageInfo(res.data.pageInfo || {});
+      })
+      .catch((err) => {
+        console.error("일기장 불러오기 실패:", err);
+      })
+      .finally(() => {
+        setIsLoading(false); // 로딩 종료
+      });
 
     setSearchType("all");
     setSearchKeyword("");
 
     const typeParam = searchParams.get("type");
     const keywordParam = searchParams.get("keyword");
-    if (typeParam) {
-      setSearchType(typeParam);
-    }
-    if (keywordParam) {
-      setSearchKeyword(keywordParam);
-    }
-  }, [searchParams, encodedId, setDiaryBoardList]);
+    if (typeParam) setSearchType(typeParam);
+    if (keywordParam) setSearchKeyword(keywordParam);
+  }, [searchParams, encodedId, setDiaryBoardList, numericDiaryId]);
 
+  // 페이지 번호 계산
   const pageNumbers = [];
-  for (let i = pageInfo.leftPageNumber; i <= pageInfo.rightPageNumber; i++) {
-    pageNumbers.push(i);
+  if (pageInfo && pageInfo.leftPageNumber) {
+    for (let i = pageInfo.leftPageNumber; i <= pageInfo.rightPageNumber; i++) {
+      pageNumbers.push(i);
+    }
   }
 
   function handleSearchClick() {
-    // 현재 URL의 쿼리 파라미터를 가져옵니다.
     const params = new URLSearchParams(searchParams);
-
-    // 새로운 파라미터를 설정합니다.
     params.set("type", searchType);
     params.set("keyword", searchKeyword);
-    params.set("diaryId", numericDiaryId); // ✅ numericDiaryId 사용
-
-    // 수정된 쿼리 파라미터로 페이지를 이동합니다.
-    console.log(params.toString());
+    params.set("diaryId", numericDiaryId);
+    params.set("page", 1);
     navigate(`?${params.toString()}`);
   }
 
   function handlePageButtonClick(pageNumber) {
     const params = new URLSearchParams(searchParams);
     params.set("page", pageNumber);
-    params.set("diaryId", numericDiaryId); // ✅ numericDiaryId 사용
+    params.set("diaryId", numericDiaryId);
     navigate(`?${params.toString()}`);
   }
 
@@ -117,45 +143,82 @@ export function DiaryBoardList() {
     navigate(`/diary/${encodedId}/board/write`);
   }
 
-  const hoverBg = useColorModeValue("gray.100", "gray.700");
-
+  // 새 글 하이라이트 스크롤
   useEffect(() => {
-    if (newPostId) {
+    if (newPostId && !isLoading) {
       const el = document.getElementById(`post-${newPostId}`);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
-  }, [newPostId]);
+  }, [newPostId, isLoading]);
+
+  // -------------------------------------------------------
+  // 🚫 조건부 리턴 (반드시 Hook 선언들보다 아래에 있어야 함)
+  // -------------------------------------------------------
+  if (isLoading) {
+    return (
+      <Center h="300px">
+        <Spinner color="blue.400" thickness="4px" />
+      </Center>
+    );
+  }
 
   return (
-    <>
-      <Box mb={5}></Box>
-      <Center mb={4}>
-        <Heading size="lg" color="dark" _dark={{ color: "teal.300" }}>
-          일기장
-        </Heading>
-      </Center>
-      <Flex justify="flex-end" mb={4}>
-        {isOwner && <Button onClick={handleWriteClick}>✍️</Button>}
+    <Box h="100%" display="flex" flexDirection="column" p={2}>
+      {/* 1. 헤더 영역 */}
+      <Flex
+        justify="space-between"
+        align="flex-end"
+        mb={2}
+        pb={2}
+        borderBottom="1px dashed"
+        borderColor="gray.300"
+      >
+        <HStack>
+          <FontAwesomeIcon icon={faBookOpen} color="#3182ce" />
+          <Heading
+            size="md"
+            color={titleColor}
+            fontFamily="'Gulim', sans-serif"
+          >
+            일기장
+          </Heading>
+        </HStack>
+        {isOwner && (
+          <Button
+            size="xs"
+            leftIcon={<FontAwesomeIcon icon={faPenNib} />}
+            colorScheme="blue"
+            variant="outline"
+            onClick={handleWriteClick}
+          >
+            일기쓰기
+          </Button>
+        )}
       </Flex>
-      <Box>
-        {diaryBoardList.length === 0 && <Center>조회 결과가 없습니다.</Center>}
-        {diaryBoardList.length > 0 && (
-          <Table w="100%" sx={{ tableLayout: "fixed" }}>
-            <Thead>
+
+      {/* 2. 게시판 리스트 (스크롤 영역) */}
+      <Box flex={1} overflowY="auto">
+        {!diaryBoardList || diaryBoardList.length === 0 ? (
+          <Center h="200px" color="gray.500" fontSize="sm">
+            작성된 일기가 없습니다.
+          </Center>
+        ) : (
+          <Table size="sm" variant="simple">
+            <Thead bg={tableHeadBg}>
               <Tr>
-                <Th w="15%" textAlign="center">
-                  N번째 일기
+                <Th w="10%" textAlign="center" fontFamily="'Gulim', sans-serif">
+                  No
                 </Th>
-                <Th w="45%" textAlign="center">
+                <Th w="50%" textAlign="center" fontFamily="'Gulim', sans-serif">
                   제목
                 </Th>
-                <Th w="10%" textAlign="center">
+                <Th w="15%" textAlign="center" fontFamily="'Gulim', sans-serif">
                   기분
                 </Th>
-                <Th w="30%" textAlign="center">
-                  작성일자
+                <Th w="25%" textAlign="center" fontFamily="'Gulim', sans-serif">
+                  날짜
                 </Th>
               </Tr>
             </Thead>
@@ -164,30 +227,29 @@ export function DiaryBoardList() {
                 <Tr
                   key={diaryBoard.id}
                   id={`post-${diaryBoard.id}`}
-                  bg={diaryBoard.id === newPostId ? "yellow.50" : "transparent"} // ✅ 하이라이트
+                  bg={diaryBoard.id === newPostId ? "yellow.50" : "transparent"}
                   _hover={{ bg: hoverBg }}
                   cursor="pointer"
                   onClick={handleSelectedDiaryBoard(diaryBoard.id)}
+                  transition="all 0.2s"
                 >
-                  <Td w="15%" textAlign="center">
-                    {diaryBoardList.length - index}
+                  <Td textAlign="center" fontSize="xs" color="gray.500">
+                    {diaryBoard.id}
                   </Td>
-                  <Td w="55%" textAlign="center">
-                    {diaryBoard.title}
-                    {/*{diaryBoard.numberOfImages > 0 && (*/}
-                    {/*  <Badge ml={2} colorScheme="teal">*/}
-                    {/*    <FontAwesomeIcon icon={faImages} />*/}
-                    {/*    {diaryBoard.numberOfImages}*/}
-                    {/*  </Badge>*/}
-                    {/*)}*/}
+                  <Td>
+                    <Text fontSize="sm" noOfLines={1} fontWeight="medium">
+                      {diaryBoard.title}
+                    </Text>
                   </Td>
-                  {/*<Td w="50%" textAlign="center">*/}
-                  {/*  {diaryBoard.content}*/}
-                  {/*</Td>*/}
-                  <Td textAlign="center">
-                    {getMoodIcon(diaryBoard.mood)} {/* ✅ mood 표시 */}
+                  <Td textAlign="center" fontSize="lg">
+                    {getMoodIcon(diaryBoard.mood)}
                   </Td>
-                  <Td w="30%" textAlign="center">
+                  <Td
+                    textAlign="center"
+                    fontSize="xs"
+                    color={dateColor}
+                    fontFamily="'Gulim', sans-serif"
+                  >
                     {format(new Date(diaryBoard.inserted), "yyyy.MM.dd")}
                   </Td>
                 </Tr>
@@ -196,53 +258,55 @@ export function DiaryBoardList() {
           </Table>
         )}
       </Box>
-      <Pagination
-        pageInfo={pageInfo}
-        pageNumbers={pageNumbers}
-        handlePageButtonClick={handlePageButtonClick}
-      />
 
-      <Center mb={10}>
-        <Flex gap={2}>
-          <Box>
+      {/* 3. 하단 검색 및 페이징 */}
+      <Box mt={4}>
+        {/* ✅ 방명록용 작은 페이지네이션 사용 */}
+        <DiaryPagination
+          pageInfo={{
+            currentPageNumber: pageInfo.currentPageNumber || 1,
+            nextPageNumber: pageInfo.nextPageNumber,
+            prevPageNumber: pageInfo.prevPageNumber,
+            lastPageNumber: pageInfo.lastPageNumber || 1,
+          }}
+          pageNumbers={pageNumbers}
+          handlePageButtonClick={handlePageButtonClick}
+          maxPageButtons={5}
+          size="xs" // 버튼 사이즈 작게
+        />
+
+        {/* 검색창 */}
+        <Center mt={2}>
+          <HStack spacing={1}>
             <Select
               value={searchType}
               onChange={(e) => setSearchType(e.target.value)}
-              boxShadow="md"
-              _hover={{ boxShadow: "lg" }}
+              size="xs"
+              w="80px"
+              bg="white"
             >
               <option value="all">전체</option>
               <option value="text">제목</option>
-              <option value="nickname">작성자</option>
             </Select>
-          </Box>
-          <InputGroup
-            size="md"
-            w="300px"
-            boxShadow="md"
-            _hover={{ boxShadow: "lg" }}
-          >
-            <Input
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              placeholder="검색어를 입력하세요"
-              borderRadius="full" // 둥근 검색창 느낌
-              pr="3rem" // 버튼 공간 확보
-            />
-            <InputRightElement width="3rem">
-              <Button
-                h="1.75rem"
-                size="sm"
-                onClick={handleSearchClick}
-                colorScheme="teal"
-                borderRadius="full"
-              >
-                <FontAwesomeIcon icon={faMagnifyingGlass} />
-              </Button>
-            </InputRightElement>
-          </InputGroup>
-        </Flex>
-      </Center>
-    </>
+            <InputGroup size="xs" w="150px">
+              <Input
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                placeholder="검색어"
+                bg="white"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearchClick();
+                }}
+              />
+              <InputRightElement>
+                <Button size="xs" variant="ghost" onClick={handleSearchClick}>
+                  <FontAwesomeIcon icon={faMagnifyingGlass} />
+                </Button>
+              </InputRightElement>
+            </InputGroup>
+          </HStack>
+        </Center>
+      </Box>
+    </Box>
   );
 }

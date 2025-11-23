@@ -2,12 +2,13 @@ import {
   Box,
   Button,
   Center,
-  Flex,
+  HStack,
   Input,
   InputGroup,
   InputRightElement,
   Select,
   Spinner,
+  useColorModeValue,
   VStack,
 } from "@chakra-ui/react";
 import React, { useContext, useEffect, useState } from "react";
@@ -18,7 +19,7 @@ import { DiaryCommentWrite } from "./DiaryCommentWrite.jsx";
 import { DiaryCommentList } from "./DiaryCommentList.jsx";
 import DiaryPagination from "./DiaryPagination.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { faList, faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 
 export function DiaryComment() {
   const { encodedId } = useParams();
@@ -29,12 +30,14 @@ export function DiaryComment() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [numericDiaryId, setNumericDiaryId] = useState(0);
-
-  // 검색 상태
   const [searchType, setSearchType] = useState("all");
   const [searchKeyword, setSearchKeyword] = useState("");
 
-  // 다이어리 PK 조회
+  const searchBg = useColorModeValue("white", "gray.700");
+  const borderColor = useColorModeValue("gray.300", "gray.600");
+  const bottomAreaBg = useColorModeValue("gray.50", "gray.800");
+
+  // ... (useEffect 및 fetch 함수들 기존 동일) ...
   useEffect(() => {
     if (!encodedId || !memberInfo?.id) return;
     const fetchDiaryId = async () => {
@@ -42,13 +45,12 @@ export function DiaryComment() {
         const res = await axios.get(`/api/diary/byMember/${encodedId}`);
         setNumericDiaryId(res.data.id);
       } catch (err) {
-        console.error("다이어리 ID 조회 실패:", err);
+        console.error(err);
       }
     };
     fetchDiaryId();
   }, [encodedId, memberInfo]);
 
-  // 부모 댓글 페이징
   const fetchParentComments = async (
     page,
     type = searchType,
@@ -63,13 +65,12 @@ export function DiaryComment() {
       setParentComments(res.data.comments || []);
       setTotalPages(res.data.totalPages || 1);
     } catch (err) {
-      console.error("Error fetching parent comments:", err);
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 전체 댓글 (대댓글 포함)
   const fetchAllComments = async () => {
     if (!numericDiaryId) return;
     try {
@@ -78,11 +79,10 @@ export function DiaryComment() {
       });
       setAllComments(res.data || []);
     } catch (err) {
-      console.error("Error fetching all comments:", err);
+      console.error(err);
     }
   };
 
-  // numericDiaryId 세팅된 뒤에만 호출
   useEffect(() => {
     if (!numericDiaryId) return;
     fetchParentComments(currentPage);
@@ -92,20 +92,10 @@ export function DiaryComment() {
   const handleCommentAdded = (newComment) => {
     if (!newComment || !newComment.id) return;
     setAllComments((prev) => [...prev, newComment]);
-    if (!newComment.replyCommentId) {
+    if (!newComment.replyCommentId)
       setParentComments((prev) => [newComment, ...prev]);
-    } else {
-      setParentComments((prev) =>
-        prev.map((c) =>
-          c.id === newComment.replyCommentId
-            ? { ...c, replyCount: (c.replyCount || 0) + 1 }
-            : c,
-        ),
-      );
-    }
   };
 
-  // ✅ 검색 실행 핸들러
   const handleSearch = ({ type, keyword }) => {
     setSearchType(type);
     setSearchKeyword(keyword);
@@ -113,85 +103,108 @@ export function DiaryComment() {
     fetchParentComments(1, type, keyword);
   };
 
-  if (isLoading) {
+  if (isLoading)
     return (
-      <Center>
-        <Spinner />
+      <Center h="200px">
+        <Spinner color="blue.400" thickness="4px" />
       </Center>
     );
-  }
 
   return (
-    <Box>
-      <DiaryCommentWrite
-        diaryId={numericDiaryId}
-        onCommentAdded={handleCommentAdded}
-      />
-      <DiaryCommentList
-        parentComments={parentComments}
-        allComments={allComments}
-        diaryId={numericDiaryId}
-        onCommentAdded={handleCommentAdded}
-        onSearch={handleSearch} // ✅ 검색 연결
-      />
+    <Box h="100%" display="flex" flexDirection="column" p={1}>
+      {" "}
+      {/* 전체 패딩 축소 */}
+      {/* 1. 작성창 (여백 mb=1로 축소) */}
+      <Box mb={1} flexShrink={0}>
+        <DiaryCommentWrite
+          diaryId={numericDiaryId}
+          onCommentAdded={handleCommentAdded}
+        />
+      </Box>
+      {/* 2. 리스트 (남은 공간 100% 활용) */}
+      <Box flex={1} overflowY="hidden" mb={1}>
+        <DiaryCommentList
+          parentComments={parentComments}
+          allComments={allComments}
+          onCommentAdded={handleCommentAdded}
+        />
+      </Box>
+      {/* 3. 하단 페이징/검색 (납작하게) */}
+      <VStack
+        spacing={0} // 간격 0
+        py={1} // 상하 패딩 최소화
+        borderTop="1px dashed"
+        borderColor={borderColor}
+        bg={bottomAreaBg}
+        borderRadius="md"
+        flexShrink={0}
+      >
+        <DiaryPagination
+          pageInfo={{
+            currentPageNumber: currentPage,
+            nextPageNumber: currentPage < totalPages ? currentPage + 1 : null,
+            prevPageNumber: currentPage > 1 ? currentPage - 1 : null,
+            lastPageNumber: totalPages,
+          }}
+          pageNumbers={Array.from({ length: totalPages }, (_, i) => i + 1)}
+          handlePageButtonClick={setCurrentPage}
+          maxPageButtons={5}
+          size="xs"
+        />
 
-      <Center my={6}>
-        <VStack spacing={4} align="center">
-          {/* ✅ 검색창 */}
-          <Flex gap={2}>
-            <Select
-              value={searchType}
-              onChange={(e) => setSearchType(e.target.value)}
-              w="120px"
-            >
-              <option value="all">전체</option>
-              <option value="writer">작성자</option>
-              <option value="content">내용</option>
-            </Select>
-            <InputGroup w="250px">
-              <Input
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                placeholder="검색어 입력"
-              />
-              <InputRightElement>
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    handleSearch({ type: searchType, keyword: searchKeyword })
-                  }
-                  colorScheme="teal"
-                >
-                  <FontAwesomeIcon icon={faMagnifyingGlass} />
-                </Button>
-              </InputRightElement>
-            </InputGroup>
-          </Flex>
-
-          {/* ✅ 목록으로 버튼 (검색창과 페이징 사이) */}
-          <Button
-            size="sm"
-            variant="outline"
-            colorScheme="gray"
-            onClick={() => handleSearch({ type: "all", keyword: "" })}
+        <HStack gap={1} justify="center" w="100%" px={2} mt={1}>
+          <Select
+            value={searchType}
+            onChange={(e) => setSearchType(e.target.value)}
+            size="xs"
+            w="70px"
+            bg={searchBg}
+            fontSize="xs"
           >
-            목록
-          </Button>
-
-          {/* ✅ 페이지네이션 */}
-          <DiaryPagination
-            pageInfo={{
-              currentPageNumber: currentPage,
-              nextPageNumber: currentPage < totalPages ? currentPage + 1 : null,
-              prevPageNumber: currentPage > 1 ? currentPage - 1 : null,
-              lastPageNumber: totalPages,
-            }}
-            pageNumbers={Array.from({ length: totalPages }, (_, i) => i + 1)}
-            handlePageButtonClick={setCurrentPage}
-            maxPageButtons={5}
-          />
-        </VStack>
-      </Center>
+            <option value="all">전체</option>
+            <option value="writer">이름</option>
+            <option value="content">내용</option>
+          </Select>
+          <InputGroup size="xs" w="140px">
+            <Input
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              placeholder="검색"
+              bg={searchBg}
+              fontSize="xs"
+              onKeyDown={(e) => {
+                if (e.key === "Enter")
+                  handleSearch({ type: searchType, keyword: searchKeyword });
+              }}
+            />
+            <InputRightElement width="1.5rem">
+              <Button
+                h="100%"
+                size="xs"
+                onClick={() =>
+                  handleSearch({ type: searchType, keyword: searchKeyword })
+                }
+                variant="ghost"
+              >
+                <FontAwesomeIcon icon={faMagnifyingGlass} />
+              </Button>
+            </InputRightElement>
+          </InputGroup>
+          {(searchKeyword || searchType !== "all") && (
+            <Button
+              size="xs"
+              fontSize="xs"
+              leftIcon={<FontAwesomeIcon icon={faList} />}
+              onClick={() => {
+                setSearchKeyword("");
+                handleSearch({ type: "all", keyword: "" });
+              }}
+            >
+              목록
+            </Button>
+          )}
+        </HStack>
+      </VStack>
     </Box>
   );
 }

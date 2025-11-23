@@ -10,21 +10,26 @@ import {
   AlertDialogOverlay,
   Box,
   Button,
-  Card,
-  CardBody,
   Center,
-  FormControl,
-  FormLabel,
+  Flex,
   HStack,
-  Input,
+  Icon,
   Spinner,
   Text,
-  Textarea,
+  useColorModeValue,
   useDisclosure,
   useToast,
-  VStack,
 } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faArrowLeft,
+  faPen,
+  faQuoteLeft,
+  faQuoteRight,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
+import dayjs from "dayjs";
 
 export function DiaryCommentView() {
   const { encodedId, id } = useParams();
@@ -36,6 +41,11 @@ export function DiaryCommentView() {
   const params = memberId ? { memberId } : {};
   const { onOpen, onClose, isOpen } = useDisclosure();
   const cancelRef = useRef();
+
+  // 🎨 스타일 변수
+  const contentBg = useColorModeValue("gray.50", "gray.700");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const titleColor = "blue.600";
 
   useEffect(() => {
     axios
@@ -59,7 +69,7 @@ export function DiaryCommentView() {
       .then(() => {
         toast({
           status: "success",
-          description: "댓글이 삭제되었습니다.",
+          description: "삭제되었습니다.",
           position: "top",
         });
         navigate(`/diary/${encodedId}/comment`);
@@ -67,7 +77,7 @@ export function DiaryCommentView() {
       .catch(() => {
         toast({
           status: "error",
-          description: "댓글 삭제 중 오류가 발생했습니다.",
+          description: "오류가 발생했습니다.",
           position: "top",
         });
       })
@@ -79,15 +89,13 @@ export function DiaryCommentView() {
   function handleCommentEdit() {
     if (id !== null) {
       navigate(`/diary/${encodedId}/comment/edit/${id}`);
-    } else {
-      console.error("ID is null, cannot navigate.");
     }
   }
 
   if (diaryComment === null) {
     return (
-      <Center>
-        <Spinner size="xl" />
+      <Center h="300px">
+        <Spinner size="xl" color="blue.400" />
       </Center>
     );
   }
@@ -96,87 +104,164 @@ export function DiaryCommentView() {
   const isDiaryOwner = Number(diaryComment?.ownerId) === Number(memberInfo?.id);
 
   return (
-    <Center bg="gray.100" py={20}>
-      <Box w="800px" bg="white" boxShadow="lg" borderRadius="md" p={6}>
-        <Card w="100%" variant="outline">
-          <CardBody>
-            <VStack spacing={4} align="stretch">
-              <Box>
-                <Text fontWeight="bold" fontSize="2xl" color="teal.500">
-                  방명록
-                </Text>
-              </Box>
-              <Box>
-                <Text fontWeight="bold" fontSize="lg" color="gray.600">
-                  {diaryComment.nickname} 님이 남긴 방명록이에요!
-                </Text>
-              </Box>
-              <Box>
-                <FormControl>
-                  <FormLabel fontWeight="bold">방명록</FormLabel>
-                  <Textarea value={diaryComment.comment} readOnly />
-                </FormControl>
-              </Box>
-              <Box>
-                <FormControl>
-                  <FormLabel fontWeight="bold">작성일시</FormLabel>
-                  <Input
-                    type="datetime-local"
-                    value={diaryComment.inserted}
-                    readOnly
-                  />
-                </FormControl>
-              </Box>
-              <HStack spacing={4} justifyContent="flex-end">
-                {isWriter && (
-                  <>
-                    <Button colorScheme="purple" onClick={handleCommentEdit}>
-                      수정
-                    </Button>
-                    <Button colorScheme="red" onClick={onOpen}>
-                      삭제
-                    </Button>
-                  </>
-                )}
+    <Box h="100%" p={4} display="flex" flexDirection="column">
+      {/* 1. 헤더 영역 */}
+      <Flex
+        justify="space-between"
+        align="center"
+        mb={4}
+        pb={2}
+        borderBottom="2px solid"
+        borderColor={titleColor}
+      >
+        <HStack spacing={2}>
+          <Icon
+            as={FontAwesomeIcon}
+            icon={faQuoteLeft}
+            color={titleColor}
+            size="sm"
+            mb={2}
+          />
+          <Text
+            fontSize="lg"
+            fontWeight="bold"
+            fontFamily="'Gulim', sans-serif"
+            color="#333"
+          >
+            방명록 상세
+          </Text>
+          <Icon
+            as={FontAwesomeIcon}
+            icon={faQuoteRight}
+            color={titleColor}
+            size="sm"
+            mb={2}
+          />
+        </HStack>
+        <Button
+          size="xs"
+          variant="outline"
+          leftIcon={<FontAwesomeIcon icon={faArrowLeft} />}
+          onClick={() => navigate(-1)}
+        >
+          목록
+        </Button>
+      </Flex>
 
-                {!isWriter && isDiaryOwner && (
-                  <Button colorScheme="red" onClick={onOpen}>
-                    삭제
-                  </Button>
-                )}
-              </HStack>
-            </VStack>
-          </CardBody>
-        </Card>
+      {/* 2. 본문 내용 */}
+      <Box fontFamily="'Gulim', sans-serif">
+        {/* 작성자 & 날짜 info */}
+        <Flex justify="space-between" align="center" mb={4}>
+          <HStack>
+            <Text fontWeight="bold" color="gray.700">
+              {diaryComment.nickname}
+            </Text>
+            <Text fontSize="sm" color="gray.500">
+              님의 방명록
+            </Text>
+          </HStack>
+          <Text fontSize="xs" color="gray.400">
+            {dayjs(diaryComment.inserted).format("YYYY.MM.DD HH:mm")}
+          </Text>
+        </Flex>
+
+        {/* 내용 박스 */}
+        <Box
+          bg={contentBg}
+          p={6}
+          borderRadius="md"
+          border="1px solid"
+          borderColor={borderColor}
+          minH="150px"
+          fontSize="md"
+          lineHeight="1.8"
+          color="gray.800"
+          whiteSpace="pre-wrap"
+          position="relative"
+        >
+          <Icon
+            as={FontAwesomeIcon}
+            icon={faQuoteLeft}
+            color="gray.300"
+            position="absolute"
+            top={2}
+            left={2}
+            opacity={0.5}
+          />
+          {diaryComment.comment}
+          <Icon
+            as={FontAwesomeIcon}
+            icon={faQuoteRight}
+            color="gray.300"
+            position="absolute"
+            bottom={2}
+            right={2}
+            opacity={0.5}
+          />
+        </Box>
+
+        {/* 3. 버튼 영역 (스타일 수정됨) */}
+        <HStack justify="flex-end" mt={4} spacing={2}>
+          {isWriter && (
+            <Button
+              size="xs" // ✅ 작게
+              variant="outline" // ✅ 깔끔하게
+              colorScheme="blue"
+              leftIcon={<FontAwesomeIcon icon={faPen} />}
+              onClick={handleCommentEdit}
+            >
+              수정
+            </Button>
+          )}
+
+          {(isWriter || isDiaryOwner) && (
+            <Button
+              size="xs" // ✅ 작게
+              variant="outline" // ✅ 깔끔하게
+              colorScheme="red"
+              leftIcon={<FontAwesomeIcon icon={faTrash} />}
+              onClick={onOpen}
+            >
+              삭제
+            </Button>
+          )}
+        </HStack>
       </Box>
 
-      {/* ✅ 삭제 확인 모달 */}
+      {/* 삭제 확인 모달 */}
       <AlertDialog
         isOpen={isOpen}
         leastDestructiveRef={cancelRef}
         onClose={onClose}
+        isCentered
+        size="sm"
       >
         <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+          <AlertDialogContent fontFamily="'Gulim', sans-serif">
+            <AlertDialogHeader fontSize="md" fontWeight="bold">
               댓글 삭제
             </AlertDialogHeader>
 
-            <AlertDialogBody>
+            <AlertDialogBody fontSize="sm">
               정말로 이 댓글을 삭제하시겠습니까?
             </AlertDialogBody>
 
             <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onClose}>
+              <Button ref={cancelRef} onClick={onClose} size="sm">
                 취소
               </Button>
-              <Button colorScheme="red" onClick={handleClickRemove} ml={3}>
+              <Button
+                colorScheme="red"
+                onClick={handleClickRemove}
+                ml={3}
+                size="sm"
+              >
                 삭제
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-    </Center>
+    </Box>
   );
 }

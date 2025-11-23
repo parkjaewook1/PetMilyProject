@@ -5,14 +5,16 @@ import {
   Box,
   Button,
   Center,
+  Divider,
   Flex,
-  HStack,
-  Image,
+  Icon,
+  IconButton,
   Input,
   Spinner,
   Text,
   Textarea,
   useColorMode,
+  useColorModeValue,
   useToast,
   VStack,
 } from "@chakra-ui/react";
@@ -21,10 +23,16 @@ import { LoginContext } from "../../../../component/LoginProvider.jsx";
 import axios from "@api/axiosConfig";
 import { DiaryProvider } from "../diaryComponent/DiaryContext.jsx";
 import { Chart } from "chart.js/auto";
-import { palettes } from "../diaryComponent/themePalettes.js";
 import { useTheme } from "../diaryComponent/ThemeContext.jsx";
 import { ThemeSwitcher } from "../diaryComponent/ThemeSwitcher.jsx";
 import DiaryVisitorCounter from "../diaryComponent/DiaryVisitorCounter.jsx";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faCamera,
+  faMusic,
+  faPen,
+  faSave,
+} from "@fortawesome/free-solid-svg-icons";
 
 export function DiaryHome() {
   const { memberInfo } = useContext(LoginContext);
@@ -39,60 +47,74 @@ export function DiaryHome() {
   const [ownerId, setOwnerId] = useState(null);
   const [isOwner, setIsOwner] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
+
+  // ✅ 초기값 설정 (Uncontrolled Input 에러 방지)
   const [profileData, setProfileData] = useState({
     statusMessage: "",
     introduction: "",
   });
+  const [isProfileExists, setIsProfileExists] = useState(false);
+
   const [numericDiaryId, setNumericDiaryId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [moodStats, setMoodStats] = useState([]);
   const chartRef = useRef(null);
-  const { theme, setTheme } = useTheme(); // 프리셋
+  const { theme, setTheme } = useTheme();
   const { colorMode, toggleColorMode } = useColorMode();
 
-  // ✅ Chakra UI 다크모드 훅
-  // ✅ 현재 프리셋 + 다크모드에 맞는 색상 선택
-  const currentPalette =
-    palettes[theme]?.[colorMode] || palettes["default"]["light"];
-  const {
-    pageBg,
-    containerBg,
-    sidebarBg,
-    sidebarBorder,
-    sidebarText,
-    inputBg,
-    inputText,
-  } = currentPalette;
-  // ✅ 다이어리 PK 조회 (원래 DiaryHomeMain에 있던 로직을 끌어올림)
+  // 🎨 스타일 변수 (Hook은 조건부 리턴보다 위에!)
+  const outerBg = useColorModeValue("#aebfd3", "#2d3748");
+  const dotColor = useColorModeValue("#cbd5e0", "#4a5568");
+  const skinMainBg = useColorModeValue("#b2cce5", "#2d3748");
+  const skinBg = useColorModeValue("white", "gray.700");
+  const dashedLineColor = useColorModeValue("gray.400", "gray.500");
+  const textColor = useColorModeValue("gray.700", "gray.200");
+  const subTextColor = useColorModeValue("gray.500", "gray.400");
+  const chartBorderColor = useColorModeValue("white", "gray.700");
+  const contentBorderColor = useColorModeValue("gray.300", "gray.600");
+  const paperBorderColor = useColorModeValue("gray.400", "gray.600");
+  const leftProfileBg = useColorModeValue("white", "gray.700");
+  const leftProfileBorder = useColorModeValue("gray.300", "gray.600");
+  const profileBoxBorder = useColorModeValue("gray.200", "gray.600");
+  const profileBoxBg = useColorModeValue("gray.50", "gray.800");
+  const navButtonBorderColor = useColorModeValue("#b2cce5", "gray.600");
+  const mobileNavBg = useColorModeValue("white", "gray.900");
+  const stickyNoteBg = useColorModeValue("#fffce0", "#4A5568");
+  const stickyNoteBorderColor = useColorModeValue("#FFD700", "#5A677D");
+  const inputFieldBg = useColorModeValue("whiteAlpha.900", "gray.600");
+  const inputFieldBorder = useColorModeValue("orange.200", "gray.500");
+
+  // ✅ 모바일 홈 화면 체크
+  const currentPath = location.pathname.replace(/\/$/, "");
+  const homePath = `/diary/${encodedId}`;
+  const isRootPath = currentPath === homePath;
+
+  // 1. 다이어리 정보 조회
   useEffect(() => {
     if (!encodedId) return;
-
     const validateDiaryId = async () => {
       try {
         const res = await axios.get(`/api/diary/byMember/${encodedId}`);
         setIsValidDiaryId(res.data.isValid);
-        console.log(res.data);
         if (res.data.isValid) {
           setNumericDiaryId(res.data.id);
           setOwnerId(res.data.memberId);
           setOwnerNickname(res.data.nickname);
           setIsOwner(res.data.isOwner);
-          console.log("encodedId:", encodedId);
-          console.log(res.data.ownerId);
         }
       } catch (err) {
-        console.error("다이어리 ID 확인 실패:", err.response || err);
+        console.error("ID 확인 실패:", err);
         setIsValidDiaryId(false);
       } finally {
         setIsLoading(false);
       }
     };
-
     validateDiaryId();
   }, [encodedId]);
 
-  // ✅ 통계 조회 함수
+  // 2. 기분 통계 조회
   const fetchMoodStats = async () => {
+    if (!ownerId) return;
     const yearMonth = new Date().toISOString().slice(0, 7);
     try {
       const res = await axios.get(`/api/diary/mood-stats`, {
@@ -100,23 +122,15 @@ export function DiaryHome() {
       });
       setMoodStats(res.data);
     } catch (err) {
-      console.error("mood-stats error:", err);
+      console.error(err);
     }
   };
 
-  // 로그인 여부 체크
+  // 3. 로그인 체크
   useEffect(() => {
-    if (memberInfo === null) {
-      return; // 초기 로딩 중에는 아무 것도 안 함
-    }
+    if (memberInfo === null) return;
     if (!memberInfo) {
-      toast({
-        title: "로그인 회원만 가능합니다",
-        description: "로그인 후 이용해주세요.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
+      toast({ title: "로그인 필요", status: "error", duration: 3000 });
       navigate("/member/login", {
         replace: true,
         state: { from: location.pathname },
@@ -124,16 +138,16 @@ export function DiaryHome() {
     }
   }, [memberInfo, toast, navigate, location.pathname]);
 
-  // ownerId 변경 시 프로필/통계 로드
+  // 4. 초기 데이터 로드
   useEffect(() => {
     if (ownerId) {
-      fetchProfileImage(ownerId);
+      fetchProfileImage();
       fetchDiaryProfile(ownerId);
       fetchMoodStats();
     }
   }, [ownerId]);
 
-  // moodStats 변경 시 차트 렌더링
+  // 5. 차트 렌더링
   useEffect(() => {
     if (moodStats.length > 0 && chartRef.current) {
       if (chartRef.current._chartInstance) {
@@ -141,7 +155,7 @@ export function DiaryHome() {
       }
       const ctx = chartRef.current.getContext("2d");
       const newChart = new Chart(ctx, {
-        type: "pie",
+        type: "doughnut",
         data: {
           labels: moodStats.map((s) => s.mood),
           datasets: [
@@ -154,312 +168,406 @@ export function DiaryHome() {
                 "#E53E3E",
                 "#805AD5",
               ],
+              borderColor: chartBorderColor,
+              borderWidth: 2,
             },
           ],
         },
-        options: { plugins: { legend: { position: "bottom" } } },
+        options: {
+          cutout: "65%",
+          plugins: { legend: { display: false }, tooltip: { enabled: true } },
+        },
       });
       chartRef.current._chartInstance = newChart;
     }
-  }, [moodStats]);
+  }, [moodStats, chartBorderColor]);
 
-  // // 프로필 데이터 로드
-  // const fetchDiaryProfile = async (ownerId) => {
-  //   try {
-  //     const response = await axios.get(`/api/diary/profile/${ownerId}`);
-  //     const { statusMessage, introduction } = response.data;
-  //     setProfileData({
-  //       statusMessage: statusMessage || "",
-  //       introduction: introduction || "",
-  //     });
-  //   } catch (error) {
-  //     setProfileData({ statusMessage: "", introduction: "" });
-  //   }
-  // };
-  //
-  // // 프로필 저장
-  // const handleSaveProfileData = async () => {
-  //   try {
-  //     const res = await axios.get(`/api/diary/profile/${ownerId}`);
-  //     if (res.status === 200) {
-  //       await axios.put(`/api/diary/profile/${ownerId}`, {
-  //         status_message: profileData.statusMessage,
-  //         introduction: profileData.introduction,
-  //       });
-  //     }
-  //     setIsEditing(false);
-  //   } catch (error) {
-  //     await axios.post(`/api/diary/profile`, {
-  //       ownerId,
-  //       status_message: profileData.statusMessage,
-  //       introduction: profileData.introduction,
-  //     });
-  //     setIsEditing(false);
-  //   }
-  // };
-  //
-  // // 프로필 이미지 로드
-  // async function fetchProfileImage(ownerId) {
-  //   try {
-  //     const res = await axios.get(`/api/member/${ownerId}`);
-  //     setProfileImage(res.data.imageUrl);
-  //   } catch (error) {
-  //     console.error("Error fetching profile image:", error);
-  //   }
-  // }
-  // ✅ 프로필 데이터 로드 (localStorage 기반)
-  // ✅ 상태메시지/소개는 기존 서버 방식 그대로
+  // 프로필 조회
   const fetchDiaryProfile = async (ownerId) => {
     try {
       const response = await axios.get(`/api/diary/profile/${ownerId}`);
-      const { statusMessage, introduction } = response.data;
       setProfileData({
-        statusMessage: statusMessage || "",
-        introduction: introduction || "",
+        statusMessage: response.data.statusMessage || "",
+        introduction: response.data.introduction || "",
       });
+      setIsProfileExists(true);
     } catch (error) {
       setProfileData({ statusMessage: "", introduction: "" });
+      setIsProfileExists(false);
     }
   };
 
+  // 프로필 저장
   const handleSaveProfileData = async () => {
     try {
-      const res = await axios.get(`/api/diary/profile/${ownerId}`);
-      if (res.status === 200) {
+      if (isProfileExists) {
         await axios.put(`/api/diary/profile/${ownerId}`, {
           status_message: profileData.statusMessage,
           introduction: profileData.introduction,
         });
+      } else {
+        await axios.post(`/api/diary/profile`, {
+          ownerId,
+          status_message: profileData.statusMessage,
+          introduction: profileData.introduction,
+        });
+        setIsProfileExists(true);
       }
       setIsEditing(false);
-    } catch (error) {
-      await axios.post(`/api/diary/profile`, {
-        ownerId,
-        status_message: profileData.statusMessage,
-        introduction: profileData.introduction,
+      toast({
+        title: "저장되었습니다.",
+        status: "success",
+        duration: 1000,
+        position: "top",
       });
-      setIsEditing(false);
+    } catch (error) {
+      toast({
+        title: "저장 실패",
+        status: "error",
+        duration: 1000,
+        position: "top",
+      });
     }
   };
 
-  // ✅ 프로필 이미지만 로컬스토리지 기반
+  // 프로필 이미지
   async function fetchProfileImage() {
     try {
       const savedImage = localStorage.getItem("profileImage");
-      if (savedImage) {
-        setProfileImage(savedImage);
-      } else {
-        setProfileImage(null); // 기본 아바타 표시
-      }
+      if (savedImage) setProfileImage(savedImage);
+      else setProfileImage(memberInfo?.profileImage);
     } catch (error) {
-      console.error("로컬 프로필 이미지 불러오기 실패:", error);
       setProfileImage(null);
     }
   }
 
-  // 로딩 처리
-  if (isLoading) {
+  // ------------------------------------------------------
+  // 🚫 조건부 리턴 (이 위쪽에서 모든 Hook 선언 끝내야 함)
+  // ------------------------------------------------------
+  if (isLoading)
     return (
-      <Center mt={10}>
+      <Center minH="100vh" bg={outerBg}>
         <Spinner size="xl" />
       </Center>
     );
-  }
-
-  // 잘못된 접근 처리
-  if (!isValidDiaryId) {
+  if (!isValidDiaryId)
     return (
-      <Center mt={10}>
-        <Text>잘못된 접근입니다.</Text>
+      <Center minH="100vh" bg={outerBg}>
+        <Text>존재하지 않는 다이어</Text>
       </Center>
     );
-  }
 
-  // 정상 UI
   return (
     <DiaryProvider>
-      <Center bg={pageBg} minH="100vh">
+      <Center
+        // PC: 100vh 고정, Mobile: auto (내용만큼 늘어남)
+        h={{ base: "auto", md: "100vh" }}
+        minH="100vh"
+        bg={outerBg}
+        sx={{
+          backgroundImage: `radial-gradient(${dotColor} 1px, transparent 1px)`,
+          backgroundSize: "20px 20px",
+        }}
+        p={{ base: 0, md: 8 }}
+        alignItems={{ base: "flex-start", md: "center" }}
+        // 세로 스크롤: PC 숨김 / 모바일 허용
+        overflowY={{ base: "visible", md: "hidden" }}
+        // 가로 스크롤: 무조건 방지
+        overflowX="hidden"
+      >
         <Flex
           w="100%"
-          h="100%"
-          p={6}
-          bg={pageBg}
-          boxShadow="lg"
-          borderRadius="md"
+          maxW="1280px"
+          // PC: 720px 고정 / 모바일: auto (늘어남)
+          h={{ base: "auto", md: "720px" }}
+          bg={skinMainBg}
+          borderRadius={{ base: "0", md: "20px" }}
+          p={{ base: 2, md: 5 }}
+          boxShadow="xl"
           position="relative"
-          overflow="hidden"
-          justify="center"
-          gap={0} // 메인 박스와 네브바 사이 간격
+          direction={{ base: "column", md: "row" }}
+          // 모바일 하단바 여유 공간
+          pb={{ base: "80px", md: "5" }}
+          // 탭이 밖으로 튀어나오게 하려면 visible 필수
+          overflow="visible"
         >
-          {/* 메인 다이어리 박스 */}
+          {/* 내부 흰색 종이 영역 */}
           <Box
-            w={{ base: "100%", md: "100%", lg: "100%" }}
-            maxW="2000px"
-            h={{ base: "600px", md: "650px", lg: "700px" }}
-            border="2px solid"
-            borderColor={sidebarBorder}
-            borderRadius="md"
-            display="flex"
+            flex={1}
+            bg={skinBg}
+            borderRadius="15px"
+            border="1px solid"
+            borderColor={paperBorderColor}
+            p={{ base: 3, md: 5 }}
             position="relative"
-            bg={containerBg}
+            boxShadow="inset 0 0 10px rgba(0,0,0,0.05)"
+            h={{ base: "auto", md: "100%" }}
           >
-            <Flex w="100%" h="100%" flexDirection="row">
-              {/* 왼쪽 사이드바 */}
+            <Flex
+              direction={{ base: "column", md: "row" }}
+              gap={{ base: 4, md: 6 }}
+              h="100%"
+            >
+              {/* 👈 [좌측] 프로필 영역 */}
               <VStack
-                w="25%"
-                h="100%"
-                flexShrink={0}
-                bg={sidebarBg}
-                borderRight="2px solid"
-                borderColor={sidebarBorder}
+                // 모바일: 홈일 때만 보임
+                display={{ base: isRootPath ? "flex" : "none", md: "flex" }}
+                w={{ base: "100%", md: "250px" }}
+                h={{ base: "auto", md: "100%" }}
+                bg={leftProfileBg}
+                border="1px solid"
+                borderColor={leftProfileBorder}
+                borderRadius="10px"
                 p={3}
-                spacing={4}
-                alignItems="center"
+                spacing={3}
+                align="stretch"
+                justify="flex-start"
+                flexShrink={0}
+                // PC에서는 내부 스크롤, 모바일은 전체 스크롤
+                overflowY={{ base: "visible", md: "auto" }}
               >
-                {/* ✅ 방문자 카운터 */}
-                {numericDiaryId && (
-                  <DiaryVisitorCounter diaryId={numericDiaryId} />
-                )}
-                <Box>
-                  <Text fontSize="md" fontWeight="bold" color={sidebarText}>
-                    {ownerNickname} 님
-                  </Text>
-                </Box>
-                <Box>
-                  {profileImage ? (
-                    <Image
-                      borderRadius="full"
-                      boxSize="120px"
-                      src={profileImage}
-                      alt="Profile Image"
-                    />
-                  ) : (
-                    <Avatar name={ownerNickname} size={"sm"} mr={2} />
+                <Box
+                  textAlign="center"
+                  fontSize="xs"
+                  color="red.400"
+                  fontWeight="bold"
+                  mb={1}
+                >
+                  {numericDiaryId && (
+                    <DiaryVisitorCounter diaryId={numericDiaryId} />
                   )}
                 </Box>
 
-                {/* ✅ 임시 업로드 버튼 (개발용) */}
-                {Number(memberInfo.id) === ownerId && (
-                  <Button
-                    size="xs"
-                    colorScheme="teal"
-                    variant="outline"
-                    onClick={() => {
-                      const input = document.createElement("input");
-                      input.type = "file";
-                      input.accept = "image/*";
-                      input.onchange = (e) => {
-                        const file = e.target.files[0];
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          localStorage.setItem(
-                            `profileImage_${memberInfo.id}`,
-                            reader.result,
-                          );
-                          setProfileImage(reader.result);
-                        };
-                        reader.readAsDataURL(file);
-                      };
-                      input.click();
-                    }}
+                <Box
+                  border="1px solid"
+                  borderColor={profileBoxBorder}
+                  bg={profileBoxBg}
+                  p={1}
+                  flex={1}
+                  display="flex"
+                  flexDirection="column"
+                  alignItems="center"
+                >
+                  <Box
+                    w="100%"
+                    h="200px"
+                    bg="gray.200"
+                    mb={3}
+                    overflow="hidden"
+                    position="relative"
+                    role="group"
                   >
-                    프로필 이미지 업로드
-                  </Button>
-                )}
+                    <Avatar
+                      src={profileImage}
+                      name={ownerNickname}
+                      w="100%"
+                      h="100%"
+                      borderRadius="0"
+                      icon={<Icon as={FontAwesomeIcon} icon={faCamera} />}
+                    />
+                    {Number(memberInfo?.id) === ownerId && (
+                      <Flex
+                        position="absolute"
+                        inset={0}
+                        bg="blackAlpha.500"
+                        justify="center"
+                        align="center"
+                        opacity={0}
+                        _groupHover={{ opacity: 1 }}
+                        transition="0.2s"
+                        cursor="pointer"
+                        onClick={() => {
+                          const input = document.createElement("input");
+                          input.type = "file";
+                          input.accept = "image/*";
+                          input.onchange = (e) => {
+                            const file = e.target.files[0];
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              localStorage.setItem(
+                                "profileImage",
+                                reader.result,
+                              );
+                              setProfileImage(reader.result);
+                            };
+                            reader.readAsDataURL(file);
+                          };
+                          input.click();
+                        }}
+                      >
+                        <Icon
+                          as={FontAwesomeIcon}
+                          icon={faCamera}
+                          color="white"
+                          boxSize={6}
+                        />
+                      </Flex>
+                    )}
+                  </Box>
 
-                {isEditing ? (
-                  <>
-                    <Input
-                      value={profileData.statusMessage}
-                      onChange={(e) =>
-                        setProfileData({
-                          ...profileData,
-                          statusMessage: e.target.value,
-                        })
-                      }
-                      placeholder="상태메시지를 입력하세요"
-                      size="sm"
-                      h="28px"
-                      bg={inputBg}
-                      color={inputText}
-                    />
-                    <Textarea
-                      value={profileData.introduction}
-                      onChange={(e) =>
-                        setProfileData({
-                          ...profileData,
-                          introduction: e.target.value,
-                        })
-                      }
-                      placeholder="자기소개를 입력하세요"
-                      size="sm"
-                      height="200px"
-                      bg={inputBg}
-                      color={inputText}
-                      maxLength={255}
-                    />
-                    <HStack spacing={2} alignSelf="flex-end">
-                      {Number(memberInfo.id) === ownerId && (
-                        <Button
-                          colorScheme="yellow"
+                  <Text
+                    fontSize="xs"
+                    color={subTextColor}
+                    mb={4}
+                    w="full"
+                    textAlign="left"
+                  >
+                    <Icon as={FontAwesomeIcon} icon={faMusic} mr={1} /> New
+                    Jeans - Hype Boy
+                  </Text>
+                  <Divider
+                    my={1}
+                    borderColor={dashedLineColor}
+                    borderStyle="dashed"
+                  />
+
+                  <Box
+                    w="100%"
+                    p={3}
+                    bg={stickyNoteBg}
+                    borderRadius="md"
+                    boxShadow="sm"
+                    border="1px solid"
+                    borderColor={stickyNoteBorderColor}
+                    mt={2}
+                    position="relative"
+                  >
+                    {isEditing ? (
+                      <VStack spacing={2}>
+                        {/* ✅ value || "" 처리로 에러 방지 */}
+                        <Input
                           size="sm"
+                          value={profileData.statusMessage || ""}
+                          onChange={(e) =>
+                            setProfileData({
+                              ...profileData,
+                              statusMessage: e.target.value,
+                            })
+                          }
+                          bg={inputFieldBg}
+                          borderColor={inputFieldBorder}
+                          placeholder="상태메시지"
+                        />
+                        <Textarea
+                          size="sm"
+                          rows={4}
+                          value={profileData.introduction || ""}
+                          onChange={(e) =>
+                            setProfileData({
+                              ...profileData,
+                              introduction: e.target.value,
+                            })
+                          }
+                          bg={inputFieldBg}
+                          borderColor={inputFieldBorder}
+                          placeholder="자기소개"
+                        />
+                        <Button
+                          size="xs"
+                          w="full"
+                          colorScheme="orange"
                           onClick={handleSaveProfileData}
+                          leftIcon={<FontAwesomeIcon icon={faSave} />}
                         >
                           저장
                         </Button>
-                      )}
-                    </HStack>
-                  </>
-                ) : (
-                  <>
-                    <Text color={sidebarText}>{profileData.statusMessage}</Text>
-                    <Textarea
-                      value={profileData.introduction || "자기소개가 없습니다."}
-                      fontSize="sm"
-                      h="200px"
-                      readOnly
-                      bg={inputBg}
-                      color={inputText}
-                    />
-                    <HStack spacing={2} alignSelf="flex-end">
-                      {Number(memberInfo.id) === ownerId && (
-                        <Button
-                          colorScheme="yellow"
-                          size="sm"
-                          onClick={() => setIsEditing(true)}
+                      </VStack>
+                    ) : (
+                      <VStack align="stretch" spacing={2}>
+                        <Flex
+                          justify="space-between"
+                          align="center"
+                          borderBottom="1px dashed"
+                          borderColor={stickyNoteBorderColor}
+                          pb={1}
                         >
-                          수정
-                        </Button>
-                      )}
-                    </HStack>
-                  </>
-                )}
+                          <Text
+                            fontSize="sm"
+                            fontWeight="bold"
+                            color={textColor}
+                          >
+                            {profileData.statusMessage || "오늘의 기분은?"}
+                          </Text>
+                          {Number(memberInfo?.id) === ownerId && (
+                            <IconButton
+                              size="xs"
+                              icon={<FontAwesomeIcon icon={faPen} />}
+                              variant="ghost"
+                              color="gray.500"
+                              onClick={() => setIsEditing(true)}
+                              aria-label="edit"
+                            />
+                          )}
+                        </Flex>
+                        <Text
+                          fontSize="xs"
+                          color={textColor}
+                          minH="60px"
+                          whiteSpace="pre-wrap"
+                        >
+                          {profileData.introduction ||
+                            "작성된 자기소개가 없습니다."}
+                        </Text>
+                      </VStack>
+                    )}
+                  </Box>
 
-                {/* 이번 달 기분 */}
-                <Box w="70%" mt={4}>
-                  <Text fontWeight="bold" mb={2} color={sidebarText}>
-                    이번 달 기분
-                  </Text>
-                  <canvas ref={chartRef} width="180" height="180"></canvas>
+                  <Box
+                    w="full"
+                    mt="auto"
+                    pt={2}
+                    borderTop="1px dashed"
+                    borderColor={dashedLineColor}
+                  >
+                    <Text
+                      fontSize="2xs"
+                      fontWeight="bold"
+                      mb={1}
+                      color={subTextColor}
+                    >
+                      Emotion History
+                    </Text>
+                    <Box w="60px" h="60px" mx="auto">
+                      <canvas ref={chartRef}></canvas>
+                    </Box>
+                  </Box>
                 </Box>
               </VStack>
 
-              {/* 오른쪽 메인 컨텐츠 */}
-              <Box w="75%" h="100%" position="relative">
+              {/* 👉 [우측] 콘텐츠 영역 */}
+              <VStack
+                display="flex" // 모바일에서도 항상 렌더링
+                flex={1}
+                h={{ base: "auto", md: "100%" }}
+                align="stretch"
+                spacing={0}
+                overflow="hidden"
+                minH={{ base: "400px", md: "400px" }}
+              >
+                <Flex justify="flex-start" align="flex-end" mb={2} px={2}>
+                  <Text
+                    fontSize="lg"
+                    fontWeight="bold"
+                    color="blue.600"
+                    fontFamily="'Gulim', sans-serif"
+                  >
+                    {ownerNickname}님의 다이어리
+                  </Text>
+                </Flex>
+
                 <Box
-                  w="100%"
-                  h="100%"
+                  flex={1}
+                  bg="white"
+                  borderRadius="10px"
                   border="1px solid"
-                  borderColor={sidebarBorder}
-                  borderRadius="md"
-                  overflowY="auto"
-                  bg={containerBg}
-                  pt={4}
-                  pb={4}
-                  pr={6}
-                  pl={6}
+                  borderColor={contentBorderColor}
+                  p={4}
+                  // 모바일 홈: 전체 스크롤 사용(visible), PC: 박스 스크롤(auto)
+                  overflowY={{
+                    base: isRootPath ? "visible" : "auto",
+                    md: "auto",
+                  }}
                 >
-                  {/* ✅ Outlet에 context 전달 */}
                   <Outlet
                     context={{
                       numericDiaryId,
@@ -469,26 +577,82 @@ export function DiaryHome() {
                     }}
                   />
                 </Box>
-              </Box>
+              </VStack>
             </Flex>
           </Box>
 
-          {/* 네비게이션 바 → 독립형으로 메인 박스 옆에 붙임 */}
-          <Box w="90px">
-            <Flex direction="column" align="flex-end" h="100%">
-              <DiaryNavbar isOwner={isOwner} />
-              <Box mt="auto" mb={10}>
-                <VStack spacing={2} align="flex-end">
-                  <ThemeSwitcher
-                    theme={theme}
-                    setTheme={setTheme}
-                    size="sm"
-                    w="75px"
-                  />
-                  <Button size="sm" onClick={toggleColorMode}>
-                    {colorMode === "light" ? "🌙 Dark" : "☀️ Light"}
-                  </Button>
-                </VStack>
+          {/* 🔖 [우측 사이드] 탭 메뉴 (PC용) */}
+          <VStack
+            display={{ base: "none", md: "flex" }}
+            position="absolute"
+            // ✅ [수정됨] 위치 조정 (-38px)
+            right={{ base: "10px", md: "-38px" }}
+            top="80px"
+            spacing={1}
+            align="flex-start"
+            zIndex={100}
+          >
+            <Box
+              sx={{
+                "& button": {
+                  // ✅ [수정됨] 탭 크기 작게 (70x32)
+                  width: "70px",
+                  height: "45px",
+                  borderTopLeftRadius: "0",
+                  borderBottomLeftRadius: "0",
+                  borderTopRightRadius: "8px",
+                  borderBottomRightRadius: "8px",
+                  border: "1px solid",
+                  borderColor: navButtonBorderColor,
+                  mb: "2px",
+                  boxShadow: "1px 1px 3px rgba(0,0,0,0.1)",
+                  fontSize: "xs", // 글자 작게
+                  _hover: { transform: "translateX(3px)" },
+                },
+              }}
+            >
+              <DiaryNavbar isOwner={isOwner} type="desktop" />
+            </Box>
+
+            {/* 테마 버튼도 작게 */}
+            <VStack mt={4} spacing={1}>
+              <Box bg="white" p={1} borderRadius="md" boxShadow="sm">
+                <ThemeSwitcher theme={theme} setTheme={setTheme} size="xs" />
+              </Box>
+              <Button
+                size="xs"
+                h="24px"
+                fontSize="10px"
+                onClick={toggleColorMode}
+                borderRadius="full"
+                colorScheme="gray"
+                bg="white"
+                border="1px solid"
+                borderColor="gray.300"
+              >
+                {colorMode === "light" ? "🌙" : "☀️"}
+              </Button>
+            </VStack>
+          </VStack>
+
+          {/* 모바일 하단 바 */}
+          <Box
+            display={{ base: "block", md: "none" }}
+            position="fixed"
+            bottom={0}
+            left={0}
+            right={0}
+            bg={mobileNavBg}
+            borderTop="1px solid"
+            borderColor="gray.200"
+            zIndex={1000}
+            h="60px"
+            px={2}
+            pb="safe"
+          >
+            <Flex justify="space-around" align="center" h="100%">
+              <Box w="100%">
+                <DiaryNavbar isOwner={isOwner} type="mobile" />
               </Box>
             </Flex>
           </Box>
