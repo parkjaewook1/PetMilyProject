@@ -70,14 +70,16 @@ public class SecurityConfiguration {
 
         System.out.println("=== SecurityFilterChain Bean 실행됨 ===");
 
-        // 1. CORS 설정
+        // 1. CORS 설정 (Vercel 도메인 추가됨)
         http.cors(corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource() {
             @Override
             public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
                 CorsConfiguration configuration = new CorsConfiguration();
                 configuration.setAllowedOrigins(Arrays.asList(
                         "http://52.79.251.74:8080",
-                        "http://localhost:5173"
+                        "http://localhost:5173",
+                        "http://150.230.249.131:8080", // 내 오라클 서버 IP
+                        "https://pet-mily-project.vercel.app" // 🚨 [추가됨] Vercel 도메인 (https 필수)
                 ));
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 configuration.setAllowCredentials(true);
@@ -88,18 +90,16 @@ public class SecurityConfiguration {
             }
         }));
 
-        // 2. 에러 핸들링 (리다이렉트 방지 수정)
+        // 2. 에러 핸들링 (API 요청 시 리다이렉트 방지)
         http.exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {
                     System.out.println("⛔ 인증 실패 (401) - 요청 경로: " + request.getRequestURI());
 
-                    // [수정] /api/ 로 시작하는 모든 요청은 절대 리다이렉트 하지 않고 401 에러만 보냄
                     if (request.getRequestURI().startsWith("/api/")) {
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                         response.setContentType("application/json;charset=UTF-8");
                         response.getWriter().write("{\"error\":\"unauthorized\"}");
                     } else {
-                        // API가 아닌 경우에만 로그인 페이지로 보냄 (test 프로바이더가 없다면 이 줄도 지우는 게 좋습니다)
                         response.sendRedirect("/member/login");
                     }
                 })
@@ -129,11 +129,8 @@ public class SecurityConfiguration {
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                 .successHandler(customSuccessHandler));
 
-        // =========================================================
-        // 👇👇 [핵심 수정] API 경로 권한 설정 (여기가 제일 중요!) 👇👇
-        // =========================================================
+        // 5. 권한 설정
         http.authorizeHttpRequests(auth -> auth
-                // [OPTIONS 요청 허용] 프리플라이트 요청(CORS)이 막히지 않도록 허용
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 // [인증 관련]
@@ -141,12 +138,10 @@ public class SecurityConfiguration {
                 .requestMatchers("/api/member/logout").permitAll()
                 .requestMatchers("/reissue", "/api/reissue").permitAll()
 
-                // [게시판 조회 - GET 요청은 모두 허용]
-                // ** 나중에 컨트롤러 경로가 바뀌어도 문제 없도록 패턴으로 허용합니다 **
-                .requestMatchers(HttpMethod.GET, "/api/board/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/boards/**").permitAll() // 혹시 s가 붙을 경우 대비
+                // [게시판 조회]
+                .requestMatchers(HttpMethod.GET, "/api/board/**", "/api/boards/**").permitAll()
 
-                // [댓글 조회 - GET 요청 허용] (방명록이 안 보인다면 이 줄이 필요합니다)
+                // [댓글 조회] (방명록 등)
                 .requestMatchers(HttpMethod.GET, "/api/comment/**", "/api/diaryComment/**").permitAll()
 
                 // [이미지 리소스]
@@ -155,7 +150,7 @@ public class SecurityConfiguration {
                 // [관리자]
                 .requestMatchers("/admin").hasRole("ADMIN")
 
-                // [그 외] 나머지는 로그인 필요
+                // [그 외]
                 .anyRequest().authenticated()
         );
 
