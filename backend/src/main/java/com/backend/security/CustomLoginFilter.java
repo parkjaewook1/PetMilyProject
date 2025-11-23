@@ -96,7 +96,7 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
         deleteCookie.setMaxAge(0);
         deleteCookie.setPath("/");
         deleteCookie.setHttpOnly(true);
-        deleteCookie.setSecure(false); // 로컬 테스트 시 false, 운영 HTTPS면 true
+        deleteCookie.setSecure(true); // 로컬 테스트 시 false, 운영 HTTPS면 true
         deleteCookie.setAttribute("SameSite", "None");
         response.addCookie(deleteCookie);
 
@@ -153,13 +153,11 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
         cookie.setPath("/");
 
         // 로컬 테스트 시 HTTPS가 아니므로 false
-        cookie.setSecure(false);
+        cookie.setSecure(true);
 
-        // Java 11+에서 SameSite 설정
-        cookie.setAttribute("SameSite", "None");
+        //배포
+        cookie.setAttribute("SameSite", "None");  //(운영,배포 할 때 수정)
 
-        //cookie.setSecure(true); // HTTPS에서만 전송
-        //cookie.setAttribute("SameSite", "None");  (운영,배포 할 때 수정)
 
         return cookie;
     }
