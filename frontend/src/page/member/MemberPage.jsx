@@ -73,7 +73,7 @@ export function MemberPage() {
 
   async function handleProfileImageDelete() {
     try {
-      await axios.delete(`/api/member/profile/${id}`);
+      await axios.delete(`/api/member/profile`);
       setProfileImage(null);
       setImageFile(null);
       setHasProfileImage(false);
