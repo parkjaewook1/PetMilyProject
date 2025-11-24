@@ -47,9 +47,6 @@ export function DiaryCommentItem({
   const [showReply, setShowReply] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
 
-  // ✅ [핵심 설정] 깊이에 따라 보여줄 개수 다르게 설정
-  // depth 0 (최상위 부모): 3개까지 보여줌
-  // depth 1 이상 (대댓글, 손자...): 0개 보여줌 (무조건 버튼만 뜸)
   const REPLY_LIMIT = depth === 0 ? 3 : 0;
 
   const cardBg = useColorModeValue("white", "gray.700");
@@ -65,6 +62,15 @@ export function DiaryCommentItem({
     insertedDate && isValid(insertedDate)
       ? format(insertedDate, "yyyy.MM.dd")
       : "Unknown date";
+
+  // ✅ [추가] 프로필 이미지 경로 처리 함수
+  const getProfileUrl = (profileImage) => {
+    if (!profileImage) return null;
+    // http로 시작하면 그대로 쓰고, 아니면 /api/uploads/ 붙이기
+    return profileImage.startsWith("http")
+      ? profileImage
+      : `/api/uploads/${profileImage}`;
+  };
 
   function goToMiniHome(authorId) {
     const targetDiaryId = generateDiaryId(authorId);
@@ -114,13 +120,10 @@ export function DiaryCommentItem({
             comment={child}
             allComments={allComments}
             onCommentAdded={onCommentAdded}
-            // ✅ 재귀 호출 시 깊이(depth)를 1씩 늘려줌
             depth={depth + 1}
           />
         ))}
 
-        {/* 더보기 버튼 */}
-        {/* 대댓글(depth>=1)은 LIMIT이 0이므로, 1개만 있어도 버튼이 뜸 */}
         {childComments.length > REPLY_LIMIT && (
           <Button
             size="xs"
@@ -148,20 +151,25 @@ export function DiaryCommentItem({
   // Case 1. 대댓글 (자식) UI
   // =======================================================
   if (comment.replyCommentId) {
+    const profileUrl = getProfileUrl(comment.profileImage);
+
     return (
       <Box mt={3}>
         <Flex align="flex-start">
-          {comment.profileImage ? (
+          {/* ✅ [수정] 이미지 처리 */}
+          {profileUrl ? (
             <Image
-              src={comment.profileImage}
+              src={profileUrl}
               alt={comment.nickname}
               boxSize="24px"
               borderRadius="full"
               mr={2}
+              objectFit="cover"
             />
           ) : (
             <Avatar name={comment.nickname} size="xs" mr={2} />
           )}
+
           <Box w="100%">
             <Text fontSize="sm">
               <Text as="span" fontWeight="bold" mr={2}>
@@ -197,7 +205,6 @@ export function DiaryCommentItem({
             )}
           </Box>
         </Flex>
-        {/* 자식의 자식 렌더링 */}
         {renderChildrenSection()}
       </Box>
     );
@@ -206,6 +213,8 @@ export function DiaryCommentItem({
   // =======================================================
   // Case 2. 부모 댓글 (카드) UI
   // =======================================================
+  const profileUrl = getProfileUrl(comment.profileImage);
+
   return (
     <Box
       bg={cardBg}
@@ -223,12 +232,14 @@ export function DiaryCommentItem({
     >
       <Flex justify="space-between" align="center" mb={2}>
         <Flex gap={2} align="center">
-          {comment.profileImage ? (
+          {/* ✅ [수정] 이미지 처리 */}
+          {profileUrl ? (
             <Image
-              src={comment.profileImage}
+              src={profileUrl}
               alt={comment.nickname}
               boxSize="32px"
               borderRadius="full"
+              objectFit="cover"
             />
           ) : (
             <Avatar name={comment.nickname} size="sm" />
@@ -299,7 +310,6 @@ export function DiaryCommentItem({
         />
       )}
 
-      {/* 자식(대댓글) 렌더링 */}
       {renderChildrenSection()}
     </Box>
   );

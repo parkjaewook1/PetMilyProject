@@ -23,7 +23,7 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   const [loading, setLoading] = useState(false);
   const toast = useToast();
   const { memberInfo } = useContext(LoginContext);
-  const nickname = memberInfo.nickname;
+  const nickname = memberInfo?.nickname || "";
 
   // 🎨 스타일 변수
   const containerBg = useColorModeValue("gray.50", "gray.700");
@@ -31,8 +31,15 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   const inputBg = useColorModeValue("white", "gray.800");
   const titleColor = "blue.600";
 
-  // 프로필 이미지 가져오기 (로컬스토리지 or 기본)
-  const profileSrc = localStorage.getItem(`profileImage_${memberInfo.id}`);
+  // ✅ [수정] localStorage 대신 memberInfo 사용 + URL 처리
+  const getProfileSrc = () => {
+    const img = memberInfo?.profileImage;
+    if (!img) return null;
+    // http로 시작하면 그대로, 아니면 서버 경로 붙이기
+    return img.startsWith("http") ? img : `/api/uploads/${img}`;
+  };
+
+  const profileSrc = getProfileSrc();
 
   const handleDiaryCommentSubmitClick = () => {
     if (!comment.trim()) return;
@@ -55,7 +62,7 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
           status: "success",
           position: "top",
           description: "방명록이 등록되었습니다.",
-          duration: 2000,
+          duration: 1000,
         });
         setComment("");
         onCommentAdded(newComment);
@@ -91,11 +98,11 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
           <Text as="span" color={titleColor}>
             {nickname}
           </Text>
-          님, 흔적을 남겨주세요!
+          님, 한마디 남겨주세요!
         </Text>
       </HStack>
 
-      {/* 2. 입력 영역 (흰색 박스) */}
+      {/* 2. 입력 영역 */}
       <Flex
         align="center"
         bg={inputBg}
@@ -120,12 +127,12 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
             borderRadius="full"
             border="1px solid"
             borderColor="gray.200"
+            objectFit="cover" // ✅ 이미지 찌그러짐 방지
           />
         ) : (
           <Avatar name={nickname} size="xs" />
         )}
 
-        {/* 세로 구분선 */}
         <Divider orientation="vertical" h="20px" borderColor="gray.300" />
 
         {/* 입력창 + 버튼 */}
@@ -136,7 +143,7 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
             onChange={(e) => setComment(e.target.value)}
             resize="none"
             rows={1}
-            minH="32px" // 높이 살짝 확보
+            minH="32px"
             flex="1"
             border="none"
             bg="transparent"
@@ -153,9 +160,9 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
 
           <Button
             type="button"
-            size="xs" // 버튼 작게
+            size="xs"
             colorScheme="blue"
-            variant="solid" // 꽉 찬 버튼
+            variant="solid"
             isLoading={loading}
             isDisabled={!comment.trim()}
             onClick={handleDiaryCommentSubmitClick}
