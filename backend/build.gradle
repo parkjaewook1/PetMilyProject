@@ -25,11 +25,12 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
-    // AWS S3 제거
-// implementation 'software.amazon.awssdk:s3:2.25.60'
 
-    // Azure Blob Storage 추가
-    implementation 'com.azure.spring:spring-cloud-azure-starter-storage-blob:5.13.0'
+    // ❌ [삭제] AWS S3 제거 (이미 주석처리 됨 -> 삭제 추천)
+    // implementation 'software.amazon.awssdk:s3:2.25.60'
+
+    // ❌ [삭제] Azure Blob Storage 제거 (이제 서버 로컬 폴더를 쓰므로 삭제!)
+    // implementation 'com.azure.spring:spring-cloud-azure-starter-storage-blob:5.13.0'
 
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
@@ -41,7 +42,7 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     testImplementation 'org.springframework.security:spring-security-test'
-    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    // implementation 'org.springframework.boot:spring-boot-starter-websocket' // (중복이라 하나 지워도 됨)
 
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
@@ -63,8 +64,6 @@ tasks.named('bootRun') {
     jvmArgs += '--enable-preview'
 }
 
-
 compileJava {
     options.compilerArgs += ['--enable-preview']
 }
-
