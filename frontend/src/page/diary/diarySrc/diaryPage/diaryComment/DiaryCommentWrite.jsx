@@ -53,9 +53,7 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   // 이미지 경로 변환 함수
   const getProfileSrc = (imageName) => {
     if (!imageName) return null;
-    return imageName.startsWith("http")
-      ? imageName
-      : `/api/uploads/${imageName}`;
+    return imageName.startsWith("http") ? imageName : `/uploads/${imageName}`;
   };
 
   // ✅ 최종 이미지 소스 (state 사용)
