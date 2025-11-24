@@ -22,7 +22,7 @@ import {
   faMagnifyingGlass,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react"; // useEffect 추가
 import { useNavigate, useParams } from "react-router-dom";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 import { generateDiaryId } from "../../../../../util/util.jsx";
@@ -31,7 +31,6 @@ import { ReplyWrite } from "./ReplyWrite";
 import { format, isValid, parseISO } from "date-fns";
 import PropTypes from "prop-types";
 
-// ✅ depth(깊이) props 추가 (기본값 0)
 export function DiaryCommentItem({
   comment,
   allComments,
@@ -47,9 +46,6 @@ export function DiaryCommentItem({
   const [showReply, setShowReply] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
 
-  // ✅ [핵심 설정] 깊이에 따라 보여줄 개수 다르게 설정
-  // depth 0 (최상위 부모): 3개까지 보여줌
-  // depth 1 이상 (대댓글, 손자...): 0개 보여줌 (무조건 버튼만 뜸)
   const REPLY_LIMIT = depth === 0 ? 3 : 0;
 
   const cardBg = useColorModeValue("white", "gray.700");
@@ -66,14 +62,24 @@ export function DiaryCommentItem({
       ? format(insertedDate, "yyyy.MM.dd")
       : "Unknown date";
 
-  // ✅ [추가] 프로필 이미지 경로 처리 함수
-  const getProfileUrl = (profileImage) => {
-    if (!profileImage) return null;
-    // http로 시작하면 그대로 쓰고, 아니면 /api/uploads/ 붙이기
-    return profileImage.startsWith("http")
-      ? profileImage
-      : `/api/uploads/${profileImage}`;
+  // ✅ [디버깅용] 이미지 URL 변환 함수 + 로그 출력
+  const getProfileUrl = (imageName) => {
+    if (!imageName) return null;
+    const finalUrl = imageName.startsWith("http")
+      ? imageName
+      : `/api/uploads/${imageName}`;
+
+    return finalUrl;
   };
+
+  // 🔴 [진단] 렌더링 될 때마다 이미지 경로 로그 찍기
+  useEffect(() => {
+    if (comment.profileImage) {
+      console.log(`[댓글 ID: ${comment.id}] 작성자: ${comment.nickname}`);
+      console.log(`- 원본 DB값:`, comment.profileImage);
+      console.log(`- 변환된 URL:`, getProfileUrl(comment.profileImage));
+    }
+  }, [comment]);
 
   function goToMiniHome(authorId) {
     const targetDiaryId = generateDiaryId(authorId);
@@ -123,12 +129,10 @@ export function DiaryCommentItem({
             comment={child}
             allComments={allComments}
             onCommentAdded={onCommentAdded}
-            // ✅ [핵심] 재귀 호출 시 depth를 1 증가시켜서 전달
             depth={depth + 1}
           />
         ))}
 
-        {/* 더보기 버튼 (LIMIT보다 많으면 무조건 표시) */}
         {childComments.length > REPLY_LIMIT && (
           <Button
             size="xs"
@@ -170,6 +174,13 @@ export function DiaryCommentItem({
               borderRadius="full"
               mr={2}
               objectFit="cover"
+              // 🔴 이미지 로드 실패 시 로그 출력
+              onError={(e) => {
+                console.error(
+                  `[이미지 로드 실패] ID: ${comment.id}, URL: ${profileUrl}`,
+                );
+                e.target.style.display = "none"; // 엑박 숨김
+              }}
             />
           ) : (
             <Avatar name={comment.nickname} size="xs" mr={2} />
@@ -245,6 +256,13 @@ export function DiaryCommentItem({
               boxSize="32px"
               borderRadius="full"
               objectFit="cover"
+              // 🔴 이미지 로드 실패 시 로그 출력
+              onError={(e) => {
+                console.error(
+                  `[이미지 로드 실패] ID: ${comment.id}, URL: ${profileUrl}`,
+                );
+                e.target.style.display = "none";
+              }}
             />
           ) : (
             <Avatar name={comment.nickname} size="sm" />
@@ -266,7 +284,7 @@ export function DiaryCommentItem({
               icon={<FontAwesomeIcon icon={faHouseUser} />}
               onClick={() => goToMiniHome(comment.memberId)}
             >
-              미니홈피
+              다이어리
             </MenuItem>
             <MenuItem
               icon={<FontAwesomeIcon icon={faMagnifyingGlass} />}
@@ -324,5 +342,5 @@ DiaryCommentItem.propTypes = {
   comment: PropTypes.object.isRequired,
   allComments: PropTypes.array.isRequired,
   onCommentAdded: PropTypes.func,
-  depth: PropTypes.number, // depth propType
+  depth: PropTypes.number,
 };
