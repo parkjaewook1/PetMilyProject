@@ -70,7 +70,7 @@ public class SecurityConfiguration {
 
         System.out.println("=== SecurityFilterChain Bean 실행됨 ===");
 
-        // 1. CORS 설정 (Vercel 도메인 추가됨)
+        // 1. CORS 설정
         http.cors(corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource() {
             @Override
             public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
@@ -78,8 +78,8 @@ public class SecurityConfiguration {
                 configuration.setAllowedOrigins(Arrays.asList(
                         "http://52.79.251.74:8080",
                         "http://localhost:5173",
-                        "http://150.230.249.131:8080", // 내 오라클 서버 IP
-                        "https://pet-mily-project.vercel.app" // 🚨 [추가됨] Vercel 도메인 (https 필수)
+                        "http://150.230.249.131:8080",
+                        "https://pet-mily-project.vercel.app" // Vercel 도메인
                 ));
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 configuration.setAllowCredentials(true);
@@ -90,7 +90,7 @@ public class SecurityConfiguration {
             }
         }));
 
-        // 2. 에러 핸들링 (API 요청 시 리다이렉트 방지)
+        // 2. 에러 핸들링 (API는 401 JSON 반환, 나머지는 리다이렉트)
         http.exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {
                     System.out.println("⛔ 인증 실패 (401) - 요청 경로: " + request.getRequestURI());
@@ -129,28 +129,28 @@ public class SecurityConfiguration {
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                 .successHandler(customSuccessHandler));
 
-        // 5. 권한 설정
+        // 5. 권한 설정 (여기가 핵심!)
         http.authorizeHttpRequests(auth -> auth
+                // [Preflight]
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                // ✅ [추가됨] 메인 페이지 및 정적 리소스 허용 (401 방지)
+                .requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.ico", "/assets/**", "/error").permitAll()
 
                 // [인증 관련]
                 .requestMatchers(HttpMethod.POST, "/api/member/signup", "/api/member/login", "/api/member/reissue").permitAll()
                 .requestMatchers("/api/member/logout").permitAll()
                 .requestMatchers("/reissue", "/api/reissue").permitAll()
 
-                // [게시판 조회]
+                // [조회 - GET 허용]
                 .requestMatchers(HttpMethod.GET, "/api/board/**", "/api/boards/**").permitAll()
-
-                // [댓글 조회] (방명록 등)
                 .requestMatchers(HttpMethod.GET, "/api/comment/**", "/api/diaryComment/**").permitAll()
-
-                // [이미지 리소스]
-                .requestMatchers(HttpMethod.GET, "/api/image/**", "/api/images/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/image/**", "/api/images/**", "/uploads/**").permitAll()
 
                 // [관리자]
                 .requestMatchers("/admin").hasRole("ADMIN")
 
-                // [그 외]
+                // [나머지]
                 .anyRequest().authenticated()
         );
 
