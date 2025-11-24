@@ -47,6 +47,9 @@ export function DiaryCommentItem({
   const [showReply, setShowReply] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
 
+  // ✅ [핵심 설정] 깊이에 따라 보여줄 개수 다르게 설정
+  // depth 0 (최상위 부모): 3개까지 보여줌
+  // depth 1 이상 (대댓글, 손자...): 0개 보여줌 (무조건 버튼만 뜸)
   const REPLY_LIMIT = depth === 0 ? 3 : 0;
 
   const cardBg = useColorModeValue("white", "gray.700");
@@ -120,10 +123,12 @@ export function DiaryCommentItem({
             comment={child}
             allComments={allComments}
             onCommentAdded={onCommentAdded}
+            // ✅ [핵심] 재귀 호출 시 depth를 1 증가시켜서 전달
             depth={depth + 1}
           />
         ))}
 
+        {/* 더보기 버튼 (LIMIT보다 많으면 무조건 표시) */}
         {childComments.length > REPLY_LIMIT && (
           <Button
             size="xs"
@@ -261,7 +266,7 @@ export function DiaryCommentItem({
               icon={<FontAwesomeIcon icon={faHouseUser} />}
               onClick={() => goToMiniHome(comment.memberId)}
             >
-              다이어리
+              미니홈피
             </MenuItem>
             <MenuItem
               icon={<FontAwesomeIcon icon={faMagnifyingGlass} />}
