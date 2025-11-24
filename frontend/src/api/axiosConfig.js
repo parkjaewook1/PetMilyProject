@@ -71,9 +71,12 @@ axiosInstance.interceptors.response.use(
 
         // 실패 시 토큰 삭제 및 로그아웃 처리
         localStorage.removeItem("accessToken");
+        delete axios.defaults.headers.common["Authorization"];
 
+        // 2. [핵심 수정] 현재 페이지가 "로그인", "회원가입", "홈(/)"이 아닐 때만 튕겨내기!
         const currentPath = window.location.pathname;
         if (
+          currentPath !== "/" &&
           currentPath !== "/member/login" &&
           currentPath !== "/member/signup"
         ) {
