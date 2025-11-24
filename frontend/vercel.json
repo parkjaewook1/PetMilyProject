@@ -4,6 +4,11 @@
       "source": "/api/(.*)",
       "destination": "http://150.230.249.131:8080/api/$1"
     },
+
+    {
+      "source": "/uploads/(.*)",
+      "destination": "http://150.230.249.131:8080/uploads/$1"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
