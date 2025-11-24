@@ -2,7 +2,7 @@ import axios from "axios";
 
 // 1. Axios 인스턴스 생성
 const axiosInstance = axios.create({
-  baseURL: "/api",
+  baseURL: "",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
