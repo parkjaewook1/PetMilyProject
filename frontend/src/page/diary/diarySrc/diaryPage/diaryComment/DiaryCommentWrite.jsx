@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Avatar,
   Box,
@@ -21,6 +21,10 @@ import { faPaperPlane, faPenNib } from "@fortawesome/free-solid-svg-icons";
 export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // ✅ 내 프로필 사진 상태 추가
+  const [myProfileImage, setMyProfileImage] = useState(null);
+
   const toast = useToast();
   const { memberInfo } = useContext(LoginContext);
   const nickname = memberInfo?.nickname || "";
@@ -31,17 +35,31 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   const inputBg = useColorModeValue("white", "gray.800");
   const titleColor = "blue.600";
 
-  // ✅ [핵심 수정] 프로필 이미지 경로 변환 함수
+  // ✅ [핵심] 컴포넌트 로딩 시 내 프로필 사진 서버에서 가져오기
+  useEffect(() => {
+    if (memberInfo?.id) {
+      axios
+        .get(`/api/member/${memberInfo.id}`)
+        .then((res) => {
+          // 서버에서 받은 이미지 파일명 (또는 URL)
+          // (컨트롤러 응답 구조에 따라 profileImage 또는 imageUrl을 씁니다)
+          const img = res.data.profileImage || res.data.imageUrl;
+          setMyProfileImage(img);
+        })
+        .catch((err) => console.error("내 프로필 로드 실패:", err));
+    }
+  }, [memberInfo]);
+
+  // 이미지 경로 변환 함수
   const getProfileSrc = (imageName) => {
     if (!imageName) return null;
-    // http로 시작하면(소셜 로그인 등) 그대로, 아니면 서버 경로(/api/uploads/) 붙이기
     return imageName.startsWith("http")
       ? imageName
       : `/api/uploads/${imageName}`;
   };
 
-  // 로그인 정보에서 이미지 가져오기
-  const profileSrc = getProfileSrc(memberInfo?.profileImage);
+  // ✅ 최종 이미지 소스 (state 사용)
+  const profileSrc = getProfileSrc(myProfileImage);
 
   const handleDiaryCommentSubmitClick = () => {
     if (!comment.trim()) return;

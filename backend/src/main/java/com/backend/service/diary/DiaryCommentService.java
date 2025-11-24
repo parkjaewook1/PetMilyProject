@@ -26,14 +26,16 @@ public class DiaryCommentService {
 
 
     public DiaryComment add(DiaryComment diaryComment, Authentication authentication) {
+        // 1. 로그인된 사용자 정보 가져오기
         Member member = memberMapper.selectByUsername(authentication.getName());
         if (member == null) {
             throw new UsernameNotFoundException("로그인한 사용자를 찾을 수 없습니다.");
         }
 
+        // 2. 작성자 ID 세팅
         diaryComment.setMemberId(member.getId());
 
-        // ✅ 대댓글(replyCommentId) 유효성 검증
+        // 3. ✅ 대댓글(replyCommentId) 유효성 검증
         if (diaryComment.getReplyCommentId() != null) {
             DiaryComment parent = mapper.selectById(diaryComment.getReplyCommentId());
             if (parent == null) {
@@ -44,8 +46,11 @@ public class DiaryCommentService {
             }
         }
 
+        // 4. 저장 (이 시점에는 profileImage 정보가 없음)
         mapper.diaryCommentInsert(diaryComment);
-        // ✅ 방금 저장된 댓글 객체를 다시 조회해서 반환
+
+        // 5. ✅ [핵심] 저장된 ID로 다시 조회해서 리턴!
+        // (Mapper의 selectById가 실행되면서 LEFT JOIN profile을 통해 사진 정보를 가져옵니다)
         return mapper.selectById(diaryComment.getId());
     }
 
@@ -60,11 +65,11 @@ public class DiaryCommentService {
         // 부모 댓글만 페이징 조회 (검색 조건 포함)
         List<DiaryComment> comments = mapper.selectParentCommentsBySearch(diaryId, type, keyword, pageSize, offset);
 
-        // 각 부모 댓글에 replyCount만 세팅
+        // 각 부모 댓글에 replyCount만 세팅 (필요하다면 여기서 미리보기 replies 채울 수도 있음)
         for (DiaryComment comment : comments) {
             int replyCount = mapper.countReplies(comment.getId());
             comment.setReplyCount(replyCount);
-            comment.setReplies(null); // ❌ 미리보기 replies는 넣지 않음
+            comment.setReplies(null); // 목록 조회 시에는 무거운 대댓글 리스트를 굳이 안 가져가도 됨 (더보기 버튼으로 해결)
         }
 
         Map<String, Object> result = new HashMap<>();
