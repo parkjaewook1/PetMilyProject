@@ -22,7 +22,7 @@ import {
   faMagnifyingGlass,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
-import { useContext, useEffect, useState } from "react"; // useEffect 추가
+import { useContext, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 import { generateDiaryId } from "../../../../../util/util.jsx";
@@ -62,24 +62,15 @@ export function DiaryCommentItem({
       ? format(insertedDate, "yyyy.MM.dd")
       : "Unknown date";
 
-  // ✅ [디버깅용] 이미지 URL 변환 함수 + 로그 출력
-  const getProfileUrl = (imageName) => {
+  // ✅ [핵심 수정] 프로필 이미지 경로 완성 함수
+  // 백엔드에서 파일명만 오면 앞에 /uploads/를 붙여줍니다.
+  const getProfileSrc = (imageName) => {
     if (!imageName) return null;
-    const finalUrl = imageName.startsWith("http")
-      ? imageName
-      : `/api/uploads/${imageName}`;
-
-    return finalUrl;
+    if (imageName.startsWith("http")) return imageName;
+    return `/uploads/${imageName}`; // Vercel -> Oracle 경로 매핑
   };
 
-  // 🔴 [진단] 렌더링 될 때마다 이미지 경로 로그 찍기
-  useEffect(() => {
-    if (comment.profileImage) {
-      console.log(`[댓글 ID: ${comment.id}] 작성자: ${comment.nickname}`);
-      console.log(`- 원본 DB값:`, comment.profileImage);
-      console.log(`- 변환된 URL:`, getProfileUrl(comment.profileImage));
-    }
-  }, [comment]);
+  const profileUrl = getProfileSrc(comment.profileImage);
 
   function goToMiniHome(authorId) {
     const targetDiaryId = generateDiaryId(authorId);
@@ -160,12 +151,10 @@ export function DiaryCommentItem({
   // Case 1. 대댓글 (자식) UI
   // =======================================================
   if (comment.replyCommentId) {
-    const profileUrl = getProfileUrl(comment.profileImage);
-
     return (
       <Box mt={3}>
         <Flex align="flex-start">
-          {/* ✅ [수정] 이미지 처리 */}
+          {/* ✅ [적용] 프로필 이미지 */}
           {profileUrl ? (
             <Image
               src={profileUrl}
@@ -174,13 +163,6 @@ export function DiaryCommentItem({
               borderRadius="full"
               mr={2}
               objectFit="cover"
-              // 🔴 이미지 로드 실패 시 로그 출력
-              onError={(e) => {
-                console.error(
-                  `[이미지 로드 실패] ID: ${comment.id}, URL: ${profileUrl}`,
-                );
-                e.target.style.display = "none"; // 엑박 숨김
-              }}
             />
           ) : (
             <Avatar name={comment.nickname} size="xs" mr={2} />
@@ -229,8 +211,6 @@ export function DiaryCommentItem({
   // =======================================================
   // Case 2. 부모 댓글 (카드) UI
   // =======================================================
-  const profileUrl = getProfileUrl(comment.profileImage);
-
   return (
     <Box
       bg={cardBg}
@@ -248,7 +228,7 @@ export function DiaryCommentItem({
     >
       <Flex justify="space-between" align="center" mb={2}>
         <Flex gap={2} align="center">
-          {/* ✅ [수정] 이미지 처리 */}
+          {/* ✅ [적용] 프로필 이미지 */}
           {profileUrl ? (
             <Image
               src={profileUrl}
@@ -256,13 +236,6 @@ export function DiaryCommentItem({
               boxSize="32px"
               borderRadius="full"
               objectFit="cover"
-              // 🔴 이미지 로드 실패 시 로그 출력
-              onError={(e) => {
-                console.error(
-                  `[이미지 로드 실패] ID: ${comment.id}, URL: ${profileUrl}`,
-                );
-                e.target.style.display = "none";
-              }}
             />
           ) : (
             <Avatar name={comment.nickname} size="sm" />
@@ -284,7 +257,7 @@ export function DiaryCommentItem({
               icon={<FontAwesomeIcon icon={faHouseUser} />}
               onClick={() => goToMiniHome(comment.memberId)}
             >
-              다이어리
+              미니홈피
             </MenuItem>
             <MenuItem
               icon={<FontAwesomeIcon icon={faMagnifyingGlass} />}
