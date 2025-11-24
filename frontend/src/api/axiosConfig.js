@@ -82,8 +82,6 @@ axiosInstance.interceptors.response.use(
         ) {
           alert("로그인 세션이 만료되었습니다.");
           window.location.href = "/member/login";
-        } else {
-          window.location.reload();
         }
       }
     }
