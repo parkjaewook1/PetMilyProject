@@ -1,7 +1,5 @@
 package com.backend.service.member;
 
-import com.azure.storage.blob.BlobClient;
-import com.azure.storage.blob.BlobContainerClient;
 import com.backend.domain.board.Board;
 import com.backend.domain.diary.Diary;
 import com.backend.domain.member.Member;
@@ -22,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -37,18 +36,16 @@ public class MemberService {
     private final DiaryBoardMapper diaryBoardMapper;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    // AWS S3Client -> Azure BlobContainerClient 변경
-    private final BlobContainerClient blobContainerClient;
-
     private final BoardService boardService;
     private final BoardMapper boardMapper;
     private final BoardCommentMapper boardCommentMapper;
     private final DiaryMapper diaryMapper;
 
-    // bucketName은 이제 필요 없습니다.
-    // @Value("${aws.s3.bucket.name}")
-    // private String bucketName;
+    // ✅ [수정] 오라클 로컬 저장소 경로 (application.properties에서 가져옴)
+    @Value("${file.upload-dir}")
+    private String uploadDir; // 예: /home/ubuntu/uploads/
 
+    // ✅ [수정] 이미지 URL 접두사 (예: http://150...:8080/uploads/)
     @Value("${image.src.prefix}")
     String srcPrefix;
 
@@ -63,12 +60,11 @@ public class MemberService {
         diary.setMemberId(member.getId());
         diary.setTitle(member.getNickname() + "님의 다이어리");
         diary.setContent("");
-        diary.setMood("HAPPY"); // 기본값
+        diary.setMood("HAPPY");
         diary.setVisibility("PUBLIC");
         diaryMapper.insertDiary(diary);
     }
 
-    // 로그인 전 중복 체크 등에 사용
     public Member getByUsername(String username) {
         return memberMapper.selectByUsername(username);
     }
@@ -77,7 +73,7 @@ public class MemberService {
         return memberMapper.selectByNickname(nickname);
     }
 
-    // 회원 단건 조회 (userId 기반)
+    // 회원 단건 조회
     public Member getById(Integer id) {
         Member member = memberMapper.selectByMemberId(id);
         if (member == null) {
@@ -85,10 +81,10 @@ public class MemberService {
         }
         Profile profile = profileMapper.selectProfileByMemberId(id);
         if (profile != null) {
-            // 이미지 경로 생성 (Azure Prefix + DB 저장 경로)
-            // 주의: DB에 "profile/..."로 저장되어 있다면 srcPrefix에 "prj3/"가 포함되어 있거나 URL 조정이 필요할 수 있습니다.
-            // 기존 로직 유지: srcPrefix + profile.getUploadPath()
-            String imageUrl = srcPrefix + "prj3/" + profile.getUploadPath();
+            // ✅ [수정] 로컬 저장소 이미지 URL 생성
+            // 예: http://.../uploads/프로필사진.jpg
+            // (DB에 저장된 fileName만 사용)
+            String imageUrl = srcPrefix + profile.getFileName();
             member.setImageUrl(imageUrl);
         }
         return member;
@@ -103,27 +99,34 @@ public class MemberService {
         return memberMapper.update(member) > 0;
     }
 
-    // 프로필 이미지 저장
+    // ✅ [수정] 프로필 이미지 저장 (로컬 폴더 사용)
     @Transactional
     public void saveProfileImage(Integer memberId, MultipartFile file) throws IOException {
-        String fileName = memberId + "_" + file.getOriginalFilename();
-        // DB에 저장될 경로 (기존 로직 유지)
-        String dbUploadPath = "profile/" + memberId + "/" + fileName;
+        // 1. 파일명 생성 (충돌 방지)
+        String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
 
-        // Azure에 저장될 실제 경로 (prj3/ 접두어 추가)
-        String azureBlobName = "prj3/" + dbUploadPath;
+        // 2. 로컬 저장소에 파일 저장
+        File dest = new File(uploadDir + fileName);
 
-        // Azure 업로드 (덮어쓰기 허용)
-        BlobClient blobClient = blobContainerClient.getBlobClient(azureBlobName);
-        blobClient.upload(file.getInputStream(), file.getSize(), true);
+        // 폴더가 없으면 생성
+        if (!dest.getParentFile().exists()) {
+            dest.getParentFile().mkdirs();
+        }
 
+        file.transferTo(dest);
+
+        // 3. DB 저장 정보 생성
         Profile profile = new Profile();
         profile.setMemberId(memberId);
         profile.setFileName(fileName);
-        profile.setUploadPath(dbUploadPath); // DB에는 "profile/..." 형태로 저장
+        // uploadPath는 로컬 저장 시엔 전체 경로를 굳이 저장 안 해도 됨 (fileName으로 충분)
+        // 필요하다면 상대 경로 저장: "profile/" + fileName
+        profile.setUploadPath(fileName);
 
+        // 4. 기존 프로필 있으면 삭제 (파일도 삭제)
         Profile existing = profileMapper.selectProfileByMemberId(memberId);
         if (existing != null) {
+            deleteLocalImage(existing.getFileName()); // 기존 파일 삭제
             profileMapper.deleteProfileByMemberId(memberId);
         }
 
@@ -137,18 +140,18 @@ public class MemberService {
     public void deleteProfileByMemberId(Integer memberId) {
         Profile profile = profileMapper.selectProfileByMemberId(memberId);
         if (profile != null) {
-            deleteImageFromAzure(profile.getUploadPath());
+            deleteLocalImage(profile.getFileName()); // ✅ 로컬 파일 삭제
             profileMapper.deleteProfileByMemberId(memberId);
         }
     }
 
-    private void deleteImageFromAzure(String uploadPath) {
+    // ✅ [수정] 로컬 파일 삭제 함수
+    private void deleteLocalImage(String fileName) {
         try {
-            // 삭제할 경로도 "prj3/"를 붙여야 함
-            String azureBlobName = "prj3/" + uploadPath;
-
-            BlobClient blobClient = blobContainerClient.getBlobClient(azureBlobName);
-            blobClient.deleteIfExists();
+            File file = new File(uploadDir + fileName);
+            if (file.exists()) {
+                file.delete();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -172,10 +175,10 @@ public class MemberService {
 
         // 다이어리 삭제
         diaryBoardMapper.selectByMemberId(id).forEach(diary -> {
-            // 필요 시 다이어리 관련 삭제 로직 추가
+            // 다이어리 삭제 로직
         });
 
-        // Refresh 토큰 삭제 (username 대신 id 기반 조회 후 username 추출)
+        // Refresh 토큰 삭제
         Member member = memberMapper.selectByMemberId(id);
         if (member != null) {
             refreshMapper.deleteByUsername(member.getUsername());
@@ -218,7 +221,6 @@ public class MemberService {
         return map;
     }
 
-    // diary ID 유효성 검증
     public Member getMemberByDiaryId(String diaryId) {
         try {
             int userId = Integer.parseInt(diaryId.split("-")[1]) / 17;
