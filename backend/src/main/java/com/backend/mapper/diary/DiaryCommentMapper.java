@@ -14,10 +14,9 @@ public interface DiaryCommentMapper {
                 VALUES (#{diaryId}, #{memberId}, #{comment}, #{replyCommentId})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    // ✅ 자동 생성된 PK를 DiaryComment.id에 세팅
     int diaryCommentInsert(DiaryComment diaryComment);
 
-    // ✅ 부모 댓글 목록 (페이징 전용)
+    // ✅ [수정] 부모 댓글 목록 (페이징 전용) + 프로필 사진
     @Select("""
                 SELECT
                     c.comment_id AS id,
@@ -27,10 +26,12 @@ public interface DiaryCommentMapper {
                     c.reply_comment_id AS replyCommentId,
                     c.member_id,
                     c.diary_id,
-                    d.member_id AS ownerId
+                    d.member_id AS ownerId,
+                    p.file_name AS profileImage   -- 📸 추가됨
                 FROM diary_comment c
                 JOIN member m ON c.member_id = m.id
                 JOIN diary d ON c.diary_id = d.id
+                LEFT JOIN profile p ON m.id = p.member_id  -- 🔗 조인 추가
                 WHERE c.diary_id = #{diaryId}
                   AND c.reply_comment_id IS NULL
                 ORDER BY c.comment_id DESC
@@ -42,16 +43,16 @@ public interface DiaryCommentMapper {
             @Param("offset") int offset
     );
 
-    // ✅ 부모 댓글 개수 (페이징 totalPages 계산용)
+    // 부모 댓글 개수 (페이징 totalPages 계산용)
     @Select("""
                 SELECT COUNT(*)
                 FROM diary_comment
                 WHERE diary_id = #{diaryId}
-                  AND reply_comment_id IS NULL   -- ✅ 부모 댓글만
+                  AND reply_comment_id IS NULL
             """)
     int countParentCommentsByDiaryId(@Param("diaryId") Integer diaryId);
 
-    // 단일 댓글 조회
+    // ✅ [수정] 단일 댓글 조회 + 프로필 사진
     @Select("""
                 SELECT
                     c.comment_id AS id,
@@ -61,10 +62,12 @@ public interface DiaryCommentMapper {
                     c.member_id,
                     c.diary_id,
                     d.member_id AS ownerId,
-                    c.reply_comment_id AS replyCommentId
+                    c.reply_comment_id AS replyCommentId,
+                    p.file_name AS profileImage   -- 📸 추가됨
                 FROM diary_comment c
                 JOIN member m ON c.member_id = m.id
                 JOIN diary d ON c.diary_id = d.id
+                LEFT JOIN profile p ON m.id = p.member_id -- 🔗 조인 추가
                 WHERE c.comment_id = #{commentId}
             """)
     DiaryComment selectById(@Param("commentId") Integer commentId);
@@ -92,7 +95,7 @@ public interface DiaryCommentMapper {
             """)
     Integer findDiaryOwnerIdByDiaryId(@Param("diaryId") Integer diaryId);
 
-    // 최근 방명록 (대댓글 제외)
+    // ✅ [수정] 최근 방명록 (대댓글 제외) + 프로필 사진
     @Select("""
                 SELECT
                     c.comment_id AS id,
@@ -100,18 +103,20 @@ public interface DiaryCommentMapper {
                     c.member_id,
                     c.comment,
                     c.inserted,
-                    m.nickname
+                    m.nickname,
+                    p.file_name AS profileImage -- 📸 추가됨
                 FROM diary_comment c
                 JOIN member m ON c.member_id = m.id
+                LEFT JOIN profile p ON m.id = p.member_id -- 🔗 조인 추가
                 WHERE c.diary_id = #{diaryId}
-                  AND c.reply_comment_id IS NULL   -- ✅ 부모 댓글만
+                  AND c.reply_comment_id IS NULL
                 ORDER BY c.inserted DESC
                 LIMIT #{limit}
             """)
     List<DiaryComment> selectRecentComments(@Param("diaryId") Integer diaryId,
                                             @Param("limit") int limit);
 
-    // 특정 부모 댓글의 전체 대댓글
+    // ✅ [수정] 특정 부모 댓글의 전체 대댓글 + 프로필 사진
     @Select("""
                 SELECT
                     c.comment_id AS id,
@@ -120,9 +125,11 @@ public interface DiaryCommentMapper {
                     c.inserted,
                     c.reply_comment_id AS replyCommentId,
                     c.member_id,
-                    c.diary_id
+                    c.diary_id,
+                    p.file_name AS profileImage -- 📸 추가됨
                 FROM diary_comment c
                 JOIN member m ON c.member_id = m.id
+                LEFT JOIN profile p ON m.id = p.member_id -- 🔗 조인 추가
                 WHERE c.reply_comment_id = #{commentId}
                 ORDER BY c.comment_id ASC
             """)
@@ -136,6 +143,7 @@ public interface DiaryCommentMapper {
             """)
     int countReplies(@Param("commentId") Integer commentId);
 
+    // ✅ [수정] 전체 댓글 조회 + 프로필 사진 (여기가 가장 중요!)
     @Select("""
                 SELECT
                     c.comment_id AS id,
@@ -144,15 +152,17 @@ public interface DiaryCommentMapper {
                     c.comment,
                     c.inserted,
                     c.reply_comment_id AS replyCommentId,
-                    m.nickname
+                    m.nickname,
+                    p.file_name AS profileImage -- 📸 추가됨
                 FROM diary_comment c
                 JOIN member m ON c.member_id = m.id
+                LEFT JOIN profile p ON m.id = p.member_id -- 🔗 조인 추가
                 WHERE c.diary_id = #{diaryId}
                 ORDER BY c.comment_id ASC
             """)
     List<DiaryComment> selectAllByDiaryId(@Param("diaryId") Integer diaryId);
 
-    // ✅ 부모 댓글 개수 (검색 조건 포함)
+    // 부모 댓글 개수 (검색 조건 포함)
     @Select("""
                 <script>
                 SELECT COUNT(*)
@@ -178,7 +188,7 @@ public interface DiaryCommentMapper {
             @Param("keyword") String keyword
     );
 
-    // ✅ 부모 댓글 목록 (검색 조건 포함)
+    // ✅ [수정] 부모 댓글 목록 (검색 조건 포함) + 프로필 사진
     @Select("""
                 <script>
                 SELECT
@@ -189,10 +199,12 @@ public interface DiaryCommentMapper {
                     c.reply_comment_id AS replyCommentId,
                     c.member_id,
                     c.diary_id,
-                    d.member_id AS ownerId
+                    d.member_id AS ownerId,
+                    p.file_name AS profileImage   -- 📸 추가됨
                 FROM diary_comment c
                 JOIN member m ON c.member_id = m.id
                 JOIN diary d ON c.diary_id = d.id
+                LEFT JOIN profile p ON m.id = p.member_id -- 🔗 조인 추가
                 WHERE c.diary_id = #{diaryId}
                   AND c.reply_comment_id IS NULL
                 <if test="type == 'writer'">
