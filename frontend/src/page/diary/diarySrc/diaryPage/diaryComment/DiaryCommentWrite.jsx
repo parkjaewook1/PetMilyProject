@@ -31,15 +31,17 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   const inputBg = useColorModeValue("white", "gray.800");
   const titleColor = "blue.600";
 
-  // ✅ [수정] localStorage 대신 memberInfo 사용 + URL 처리
-  const getProfileSrc = () => {
-    const img = memberInfo?.profileImage;
-    if (!img) return null;
-    // http로 시작하면 그대로, 아니면 서버 경로 붙이기
-    return img.startsWith("http") ? img : `/api/uploads/${img}`;
+  // ✅ [핵심 수정] 프로필 이미지 경로 변환 함수
+  const getProfileSrc = (imageName) => {
+    if (!imageName) return null;
+    // http로 시작하면(소셜 로그인 등) 그대로, 아니면 서버 경로(/api/uploads/) 붙이기
+    return imageName.startsWith("http")
+      ? imageName
+      : `/api/uploads/${imageName}`;
   };
 
-  const profileSrc = getProfileSrc();
+  // 로그인 정보에서 이미지 가져오기
+  const profileSrc = getProfileSrc(memberInfo?.profileImage);
 
   const handleDiaryCommentSubmitClick = () => {
     if (!comment.trim()) return;
@@ -98,7 +100,7 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
           <Text as="span" color={titleColor}>
             {nickname}
           </Text>
-          님, 한마디 남겨주세요!
+          님, 흔적을 남겨주세요!
         </Text>
       </HStack>
 
@@ -118,7 +120,7 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
           boxShadow: "0 0 0 1px #4299e1",
         }}
       >
-        {/* 프로필 사진 */}
+        {/* ✅ 프로필 사진 렌더링 */}
         {profileSrc ? (
           <Image
             src={profileSrc}
@@ -127,7 +129,7 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
             borderRadius="full"
             border="1px solid"
             borderColor="gray.200"
-            objectFit="cover" // ✅ 이미지 찌그러짐 방지
+            objectFit="cover"
           />
         ) : (
           <Avatar name={nickname} size="xs" />
