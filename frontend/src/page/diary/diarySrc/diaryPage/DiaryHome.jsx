@@ -41,6 +41,10 @@ export function DiaryHome() {
   const navigate = useNavigate();
   const toast = useToast();
 
+  // ✅ [Hook 에러 방지] Hook은 항상 최상단에 선언
+  const { theme, setTheme } = useTheme();
+  const { colorMode, toggleColorMode } = useColorMode();
+
   const [isValidDiaryId, setIsValidDiaryId] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [ownerNickname, setOwnerNickname] = useState("");
@@ -48,7 +52,6 @@ export function DiaryHome() {
   const [isOwner, setIsOwner] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
 
-  // ✅ 초기값 설정 (Uncontrolled Input 에러 방지)
   const [profileData, setProfileData] = useState({
     statusMessage: "",
     introduction: "",
@@ -59,10 +62,8 @@ export function DiaryHome() {
   const [isEditing, setIsEditing] = useState(false);
   const [moodStats, setMoodStats] = useState([]);
   const chartRef = useRef(null);
-  const { theme, setTheme } = useTheme();
-  const { colorMode, toggleColorMode } = useColorMode();
 
-  // 🎨 스타일 변수 (Hook은 조건부 리턴보다 위에!)
+  // 🎨 스타일 변수
   const outerBg = useColorModeValue("#aebfd3", "#2d3748");
   const dotColor = useColorModeValue("#cbd5e0", "#4a5568");
   const skinMainBg = useColorModeValue("#b2cce5", "#2d3748");
@@ -84,7 +85,7 @@ export function DiaryHome() {
   const inputFieldBg = useColorModeValue("whiteAlpha.900", "gray.600");
   const inputFieldBorder = useColorModeValue("orange.200", "gray.500");
 
-  // ✅ 모바일 홈 화면 체크
+  // ✅ 현재 홈 화면인지 확인 (모바일 화면 전환용)
   const currentPath = location.pathname.replace(/\/$/, "");
   const homePath = `/diary/${encodedId}`;
   const isRootPath = currentPath === homePath;
@@ -230,12 +231,12 @@ export function DiaryHome() {
     }
   };
 
-  // 프로필 이미지
+  // 프로필 이미지 조회 (서버)
   async function fetchProfileImage() {
     try {
-      const savedImage = localStorage.getItem("profileImage");
-      if (savedImage) setProfileImage(savedImage);
-      else setProfileImage(memberInfo?.profileImage);
+      const response = await axios.get(`/api/member/${ownerId}`);
+      const imageUrl = response.data.imageUrl || response.data.profileImage;
+      setProfileImage(imageUrl);
     } catch (error) {
       setProfileImage(null);
     }
@@ -253,7 +254,7 @@ export function DiaryHome() {
   if (!isValidDiaryId)
     return (
       <Center minH="100vh" bg={outerBg}>
-        <Text>존재하지 않는 다이어</Text>
+        <Text>존재하지 않는 미니홈피</Text>
       </Center>
     );
 
@@ -377,30 +378,20 @@ export function DiaryHome() {
                         transition="0.2s"
                         cursor="pointer"
                         onClick={() => {
-                          const input = document.createElement("input");
-                          input.type = "file";
-                          input.accept = "image/*";
-                          input.onchange = (e) => {
-                            const file = e.target.files[0];
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                              localStorage.setItem(
-                                "profileImage",
-                                reader.result,
-                              );
-                              setProfileImage(reader.result);
-                            };
-                            reader.readAsDataURL(file);
-                          };
-                          input.click();
+                          navigate(`/member/page/${ownerId}`);
                         }}
                       >
-                        <Icon
-                          as={FontAwesomeIcon}
-                          icon={faCamera}
-                          color="white"
-                          boxSize={6}
-                        />
+                        <VStack spacing={1}>
+                          <Icon
+                            as={FontAwesomeIcon}
+                            icon={faCamera}
+                            color="white"
+                            boxSize={6}
+                          />
+                          <Text color="white" fontSize="xs">
+                            프로필 변경
+                          </Text>
+                        </VStack>
                       </Flex>
                     )}
                   </Box>
@@ -434,7 +425,7 @@ export function DiaryHome() {
                   >
                     {isEditing ? (
                       <VStack spacing={2}>
-                        {/* ✅ value || "" 처리로 에러 방지 */}
+                        {/* value || "" 처리로 에러 방지 */}
                         <Input
                           size="sm"
                           value={profileData.statusMessage || ""}
@@ -536,7 +527,8 @@ export function DiaryHome() {
 
               {/* 👉 [우측] 콘텐츠 영역 */}
               <VStack
-                display="flex" // 모바일에서도 항상 렌더링
+                // 모바일에서도 항상 렌더링 (홈이면 카드, 메뉴면 메뉴)
+                display="flex"
                 flex={1}
                 h={{ base: "auto", md: "100%" }}
                 align="stretch"
@@ -551,7 +543,7 @@ export function DiaryHome() {
                     color="blue.600"
                     fontFamily="'Gulim', sans-serif"
                   >
-                    {ownerNickname}님의 다이어리
+                    {ownerNickname}님의 미니홈피
                   </Text>
                 </Flex>
 
@@ -585,7 +577,6 @@ export function DiaryHome() {
           <VStack
             display={{ base: "none", md: "flex" }}
             position="absolute"
-            // ✅ [수정됨] 위치 조정 (-38px)
             right={{ base: "10px", md: "-38px" }}
             top="80px"
             spacing={1}
@@ -595,9 +586,8 @@ export function DiaryHome() {
             <Box
               sx={{
                 "& button": {
-                  // ✅ [수정됨] 탭 크기 작게 (70x32)
                   width: "70px",
-                  height: "45px",
+                  height: "32px",
                   borderTopLeftRadius: "0",
                   borderBottomLeftRadius: "0",
                   borderTopRightRadius: "8px",
@@ -606,15 +596,13 @@ export function DiaryHome() {
                   borderColor: navButtonBorderColor,
                   mb: "2px",
                   boxShadow: "1px 1px 3px rgba(0,0,0,0.1)",
-                  fontSize: "xs", // 글자 작게
+                  fontSize: "xs",
                   _hover: { transform: "translateX(3px)" },
                 },
               }}
             >
               <DiaryNavbar isOwner={isOwner} type="desktop" />
             </Box>
-
-            {/* 테마 버튼도 작게 */}
             <VStack mt={4} spacing={1}>
               <Box bg="white" p={1} borderRadius="md" boxShadow="sm">
                 <ThemeSwitcher theme={theme} setTheme={setTheme} size="xs" />
