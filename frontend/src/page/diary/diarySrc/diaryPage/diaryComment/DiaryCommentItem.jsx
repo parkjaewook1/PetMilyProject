@@ -46,7 +46,7 @@ export function DiaryCommentItem({
   const [showReply, setShowReply] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
 
-  // ✅ 이미지 로드 에러 상태 (엑박 방지용)
+  // ✅ 이미지 로드 에러 상태
   const [imageError, setImageError] = useState(false);
 
   const REPLY_LIMIT = depth === 0 ? 3 : 0;
@@ -65,10 +65,15 @@ export function DiaryCommentItem({
       ? format(insertedDate, "yyyy.MM.dd")
       : "Unknown date";
 
-  // ✅ [핵심] 프로필 이미지 경로 완성 함수
+  // ✅ [핵심 수정] 중복 경로 방지 로직
   const getProfileUrl = (imageName) => {
     if (!imageName) return null;
-    return imageName.startsWith("http") ? imageName : `/uploads/${imageName}`;
+    // 1. 외부 링크(http)면 그대로
+    if (imageName.startsWith("http")) return imageName;
+    // 2. 이미 /uploads/로 시작하면 그대로 (백엔드에서 붙여준 경우)
+    if (imageName.startsWith("/uploads/")) return imageName;
+    // 3. 파일명만 있으면 붙여줌
+    return `/uploads/${imageName}`;
   };
 
   const profileUrl = getProfileUrl(comment.profileImage);
@@ -105,7 +110,6 @@ export function DiaryCommentItem({
 
   const hiddenCount = childComments.length - REPLY_LIMIT;
 
-  // 🎨 자식 렌더링 섹션
   const renderChildrenSection = () => {
     if (childComments.length === 0) return null;
 
@@ -144,14 +148,11 @@ export function DiaryCommentItem({
     );
   };
 
-  // -------------------------------------------------------
   // Case 1. 대댓글 (자식) UI
-  // -------------------------------------------------------
   if (comment.replyCommentId) {
     return (
       <Box mt={3}>
         <Flex align="flex-start">
-          {/* ✅ 이미지 에러 처리 적용 */}
           {profileUrl && !imageError ? (
             <Image
               src={profileUrl}
@@ -206,9 +207,7 @@ export function DiaryCommentItem({
     );
   }
 
-  // -------------------------------------------------------
   // Case 2. 부모 댓글 (카드) UI
-  // -------------------------------------------------------
   return (
     <Box
       bg={cardBg}
@@ -226,7 +225,6 @@ export function DiaryCommentItem({
     >
       <Flex justify="space-between" align="center" mb={2}>
         <Flex gap={2} align="center">
-          {/* ✅ 이미지 에러 처리 적용 */}
           {profileUrl && !imageError ? (
             <Image
               src={profileUrl}
