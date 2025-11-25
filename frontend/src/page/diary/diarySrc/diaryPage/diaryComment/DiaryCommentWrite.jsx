@@ -22,10 +22,10 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ 내 프로필 사진 상태
+  // 내 프로필 사진 상태
   const [myProfileImage, setMyProfileImage] = useState(null);
-  // ✅ 이미지 로드 실패 상태 추가 (엑박 방지)
-  const [imageLoadError, setImageLoadError] = useState(false);
+  // 이미지 로드 에러 상태
+  const [imageError, setImageError] = useState(false);
 
   const toast = useToast();
   const { memberInfo } = useContext(LoginContext);
@@ -37,28 +37,27 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   const inputBg = useColorModeValue("white", "gray.800");
   const titleColor = "blue.600";
 
-  // ✅ [1] 컴포넌트 로딩 시 내 프로필 사진 서버에서 최신으로 가져오기
+  // 1. 컴포넌트 로딩 시 내 최신 프로필 사진 가져오기
   useEffect(() => {
     if (memberInfo?.id) {
       axios
         .get(`/api/member/${memberInfo.id}`)
         .then((res) => {
-          // 프로필 이미지가 있으면 상태에 저장
           const img = res.data.profileImage || res.data.imageUrl;
           setMyProfileImage(img);
-          setImageLoadError(false); // 새 이미지 로드 시 에러 상태 초기화
+          setImageError(false); // 새 이미지 로드 시 에러 리셋
         })
         .catch((err) => console.error("내 프로필 로드 실패:", err));
     }
   }, [memberInfo]);
 
-  // ✅ [2] 이미지 경로 완성 함수
+  // ✅ [핵심 수정] 이미지 경로 변환 함수 (/api 제거)
   const getProfileSrc = (imageName) => {
     if (!imageName) return null;
-    return imageName.startsWith("http") ? imageName : `/uploads/${imageName}`; // 🚨 수정됨
+    // http로 시작하면 그대로, 아니면 /uploads/ 붙이기
+    return imageName.startsWith("http") ? imageName : `/uploads/${imageName}`;
   };
 
-  // 최종 이미지 경로
   const profileSrc = getProfileSrc(myProfileImage);
 
   const handleDiaryCommentSubmitClick = () => {
@@ -138,8 +137,8 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
           boxShadow: "0 0 0 1px #4299e1",
         }}
       >
-        {/* ✅ [3] 완성된 경로(profileSrc)로 이미지 렌더링 (에러 시 Avatar) */}
-        {profileSrc && !imageLoadError ? (
+        {/* ✅ 프로필 사진 렌더링 (에러 시 Avatar) */}
+        {profileSrc && !imageError ? (
           <Image
             src={profileSrc}
             alt={nickname}
@@ -148,8 +147,7 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
             border="1px solid"
             borderColor="gray.200"
             objectFit="cover"
-            // 로드 실패 시 에러 상태 업데이트 -> Avatar 표시
-            onError={() => setImageLoadError(true)}
+            onError={() => setImageError(true)}
           />
         ) : (
           <Avatar name={nickname} size="xs" />
