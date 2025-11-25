@@ -55,11 +55,7 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   // ✅ [2] 이미지 경로 완성 함수
   const getProfileSrc = (imageName) => {
     if (!imageName) return null;
-
-    // http로 시작하면(소셜 등) 그대로, 아니면 /uploads/ 붙이기 (Vercel Proxy)
-    if (imageName.startsWith("http")) return imageName;
-
-    return `/uploads/${imageName}`;
+    return imageName.startsWith("http") ? imageName : `/uploads/${imageName}`; // 🚨 수정됨
   };
 
   // 최종 이미지 경로

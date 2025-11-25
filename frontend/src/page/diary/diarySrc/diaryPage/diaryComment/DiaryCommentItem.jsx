@@ -64,13 +64,12 @@ export function DiaryCommentItem({
 
   // ✅ [핵심 수정] 프로필 이미지 경로 완성 함수
   // 백엔드에서 파일명만 오면 앞에 /uploads/를 붙여줍니다.
-  const getProfileSrc = (imageName) => {
+  const getProfileUrl = (imageName) => {
     if (!imageName) return null;
-    if (imageName.startsWith("http")) return imageName;
-    return `/uploads/${imageName}`; // Vercel -> Oracle 경로 매핑
+    return imageName.startsWith("http") ? imageName : `/uploads/${imageName}`; // 🚨 여기가 핵심입니다!
   };
 
-  const profileUrl = getProfileSrc(comment.profileImage);
+  const profileUrl = getProfileUrl(comment.profileImage);
 
   function goToMiniHome(authorId) {
     const targetDiaryId = generateDiaryId(authorId);
@@ -151,13 +150,14 @@ export function DiaryCommentItem({
   // Case 1. 대댓글 (자식) UI
   // =======================================================
   if (comment.replyCommentId) {
+    const childProfileUrl = getProfileUrl(comment.profileImage);
     return (
       <Box mt={3}>
         <Flex align="flex-start">
           {/* ✅ [적용] 프로필 이미지 */}
-          {profileUrl ? (
+          {childProfileUrl ? (
             <Image
-              src={profileUrl}
+              src={childProfileUrl}
               alt={comment.nickname}
               boxSize="24px"
               borderRadius="full"
