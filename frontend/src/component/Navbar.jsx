@@ -87,7 +87,7 @@ export function Navbar() {
           const img = res.data.profileImage || res.data.imageUrl;
           if (img) {
             // http로 시작하면 그대로, 아니면 /uploads/ 붙이기
-            const finalSrc = img.startsWith("http") ? img : `/uploads/${img}`;
+            const finalSrc = img.startsWith("http") ? img : `/${img}`;
             setMyProfileImage(finalSrc);
           } else {
             setMyProfileImage(null);
