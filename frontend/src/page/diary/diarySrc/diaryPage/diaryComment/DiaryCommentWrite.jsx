@@ -24,6 +24,8 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
 
   // ✅ 내 프로필 사진 상태
   const [myProfileImage, setMyProfileImage] = useState(null);
+  // ✅ 이미지 로드 실패 상태 추가 (엑박 방지)
+  const [imageLoadError, setImageLoadError] = useState(false);
 
   const toast = useToast();
   const { memberInfo } = useContext(LoginContext);
@@ -44,12 +46,13 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
           // 프로필 이미지가 있으면 상태에 저장
           const img = res.data.profileImage || res.data.imageUrl;
           setMyProfileImage(img);
+          setImageLoadError(false); // 새 이미지 로드 시 에러 상태 초기화
         })
         .catch((err) => console.error("내 프로필 로드 실패:", err));
     }
   }, [memberInfo]);
 
-  // ✅ [2] 이미지 경로 완성 함수 (리스트와 동일한 로직!)
+  // ✅ [2] 이미지 경로 완성 함수
   const getProfileSrc = (imageName) => {
     if (!imageName) return null;
 
@@ -139,8 +142,8 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
           boxShadow: "0 0 0 1px #4299e1",
         }}
       >
-        {/* ✅ [3] 완성된 경로(profileSrc)로 이미지 렌더링 */}
-        {profileSrc ? (
+        {/* ✅ [3] 완성된 경로(profileSrc)로 이미지 렌더링 (에러 시 Avatar) */}
+        {profileSrc && !imageLoadError ? (
           <Image
             src={profileSrc}
             alt={nickname}
@@ -149,10 +152,8 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
             border="1px solid"
             borderColor="gray.200"
             objectFit="cover"
-            // 혹시 깨지면 아바타 보여주기
-            onError={(e) => {
-              e.target.style.display = "none";
-            }}
+            // 로드 실패 시 에러 상태 업데이트 -> Avatar 표시
+            onError={() => setImageLoadError(true)}
           />
         ) : (
           <Avatar name={nickname} size="xs" />
