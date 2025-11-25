@@ -30,7 +30,6 @@ import {
   faStethoscope,
 } from "@fortawesome/free-solid-svg-icons";
 
-// 메뉴 아이템 스타일 (아이콘 지원하도록 업그레이드)
 const NavButton = ({ icon, children, onClick, to }) => {
   const navigate = useNavigate();
 
@@ -69,7 +68,6 @@ export function Navbar() {
   const [isLargerThan768] = useMediaQuery("(min-width: 768px)");
   const { memberInfo, setMemberInfo } = useContext(LoginContext);
 
-  // ✅ [추가] 프로필 이미지 상태
   const [myProfileImage, setMyProfileImage] = useState(null);
 
   const access = memberInfo?.access || null;
@@ -78,17 +76,27 @@ export function Navbar() {
   const isLoggedIn = Boolean(access);
   const diaryId = isLoggedIn ? generateDiaryId(memberInfo.id) : null;
 
-  // ✅ [핵심] 프로필 이미지 불러오기 (서버 조회 + 경로 완성)
+  // ✅ [핵심 수정] 프로필 이미지 경로 처리 로직 강화
   useEffect(() => {
     if (memberInfo?.id) {
       axios
         .get(`/api/member/${memberInfo.id}`)
         .then((res) => {
           const img = res.data.profileImage || res.data.imageUrl;
+
           if (img) {
-            // http로 시작하면 그대로, 아니면 /uploads/ 붙이기
-            const finalSrc = img.startsWith("http") ? img : `/${img}`;
-            setMyProfileImage(finalSrc);
+            // 1. 외부 링크(http)면 그대로 사용
+            if (img.startsWith("http")) {
+              setMyProfileImage(img);
+            }
+            // 2. 🚨 이미 백엔드에서 '/uploads/'를 붙여줬다면 그대로 사용 (중복 방지)
+            else if (img.startsWith("/uploads/")) {
+              setMyProfileImage(img);
+            }
+            // 3. 파일명만 왔다면 앞에 붙여줌
+            else {
+              setMyProfileImage(`/uploads/${img}`);
+            }
           } else {
             setMyProfileImage(null);
           }
@@ -152,7 +160,6 @@ export function Navbar() {
         alignItems="center"
         justifyContent="space-between"
       >
-        {/* 1. 좌측: 로고 및 메인 메뉴 */}
         <HStack spacing={{ base: 2, md: 6 }} alignItems="center">
           <Box
             cursor="pointer"
@@ -200,7 +207,6 @@ export function Navbar() {
           )}
         </HStack>
 
-        {/* 2. 우측: 글쓰기 버튼 및 사용자 메뉴 */}
         <HStack spacing={3}>
           {isLargerThan768 ? (
             <>
@@ -238,7 +244,7 @@ export function Navbar() {
                     pr={4}
                   >
                     <HStack spacing={2}>
-                      {/* ✅ Avatar에 myProfileImage 적용 */}
+                      {/* ✅ Avatar에 이미지 적용 */}
                       <Avatar
                         size={"sm"}
                         src={myProfileImage}
@@ -306,7 +312,6 @@ export function Navbar() {
               )}
             </>
           ) : (
-            // 모바일 화면 (햄버거 메뉴)
             <>
               <IconButton
                 icon={<FontAwesomeIcon icon={faPencil} />}
