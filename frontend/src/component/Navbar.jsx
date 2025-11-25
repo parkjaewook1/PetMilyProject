@@ -15,7 +15,7 @@ import {
   useDisclosure,
   useMediaQuery,
 } from "@chakra-ui/react";
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { LoginContext } from "./LoginProvider.jsx";
 import { useNavigate } from "react-router-dom";
 import axios from "@api/axiosConfig";
@@ -28,7 +28,7 @@ import {
   faMapLocationDot,
   faPencil,
   faStethoscope,
-} from "@fortawesome/free-solid-svg-icons"; // 🆕 아이콘 추가
+} from "@fortawesome/free-solid-svg-icons";
 
 // 메뉴 아이템 스타일 (아이콘 지원하도록 업그레이드)
 const NavButton = ({ icon, children, onClick, to }) => {
@@ -45,8 +45,8 @@ const NavButton = ({ icon, children, onClick, to }) => {
       leftIcon={icon ? <FontAwesomeIcon icon={icon} /> : null}
       onClick={handleClick}
       px={4}
-      py={5} // 버튼 높이 살짝 키움
-      rounded={"full"} // 둥근 알약 모양
+      py={5}
+      rounded={"full"}
       fontWeight="bold"
       fontSize="md"
       color="gray.600"
@@ -69,12 +69,33 @@ export function Navbar() {
   const [isLargerThan768] = useMediaQuery("(min-width: 768px)");
   const { memberInfo, setMemberInfo } = useContext(LoginContext);
 
+  // ✅ [추가] 프로필 이미지 상태
+  const [myProfileImage, setMyProfileImage] = useState(null);
+
   const access = memberInfo?.access || null;
   const nickname = memberInfo?.nickname || null;
-  const profileImage = memberInfo?.profileImage || null;
 
   const isLoggedIn = Boolean(access);
   const diaryId = isLoggedIn ? generateDiaryId(memberInfo.id) : null;
+
+  // ✅ [핵심] 프로필 이미지 불러오기 (서버 조회 + 경로 완성)
+  useEffect(() => {
+    if (memberInfo?.id) {
+      axios
+        .get(`/api/member/${memberInfo.id}`)
+        .then((res) => {
+          const img = res.data.profileImage || res.data.imageUrl;
+          if (img) {
+            // http로 시작하면 그대로, 아니면 /uploads/ 붙이기
+            const finalSrc = img.startsWith("http") ? img : `/uploads/${img}`;
+            setMyProfileImage(finalSrc);
+          } else {
+            setMyProfileImage(null);
+          }
+        })
+        .catch((err) => console.error("Navbar 프로필 로드 실패:", err));
+    }
+  }, [memberInfo]);
 
   const handleLogout = async () => {
     try {
@@ -148,14 +169,12 @@ export function Navbar() {
             />
           </Box>
 
-          {/* ✨ [업그레이드] 데스크탑 메뉴 아이콘 추가 및 디자인 변경 */}
           {isLargerThan768 && (
             <HStack
               as={"nav"}
               spacing={1}
               display={{ base: "none", md: "flex" }}
             >
-              {/* BoardMenu는 드롭다운이라 별도 유지하되 스타일 통일감을 위해 감쌈 */}
               <Box
                 _hover={{ transform: "translateY(-2px)" }}
                 transition="all 0.2s"
@@ -219,9 +238,10 @@ export function Navbar() {
                     pr={4}
                   >
                     <HStack spacing={2}>
+                      {/* ✅ Avatar에 myProfileImage 적용 */}
                       <Avatar
                         size={"sm"}
-                        src={profileImage}
+                        src={myProfileImage}
                         name={nickname}
                         border="2px solid white"
                         boxShadow="base"
