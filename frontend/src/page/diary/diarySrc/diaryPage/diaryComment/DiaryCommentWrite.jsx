@@ -45,17 +45,24 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
         .then((res) => {
           const img = res.data.profileImage || res.data.imageUrl;
           setMyProfileImage(img);
-          setImageError(false); // 새 이미지 로드 시 에러 리셋
+          setImageError(false);
         })
         .catch((err) => console.error("내 프로필 로드 실패:", err));
     }
   }, [memberInfo]);
 
-  // ✅ [핵심 수정] 이미지 경로 변환 함수 (/api 제거)
+  // ✅ [핵심 수정] 경로 중복 방지 로직 추가!
   const getProfileSrc = (imageName) => {
     if (!imageName) return null;
-    // http로 시작하면 그대로, 아니면 /uploads/ 붙이기
-    return imageName.startsWith("http") ? imageName : `/uploads/${imageName}`;
+
+    // 1. 외부 링크(http)면 그대로 사용
+    if (imageName.startsWith("http")) return imageName;
+
+    // 2. 🚨 이미 '/uploads/'로 시작하면 그대로 사용 (중복 방지)
+    if (imageName.startsWith("/uploads/")) return imageName;
+
+    // 3. 파일명만 있으면 앞에 붙여줌
+    return `/uploads/${imageName}`;
   };
 
   const profileSrc = getProfileSrc(myProfileImage);
@@ -137,7 +144,7 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
           boxShadow: "0 0 0 1px #4299e1",
         }}
       >
-        {/* ✅ 프로필 사진 렌더링 (에러 시 Avatar) */}
+        {/* ✅ 프로필 사진 렌더링 */}
         {profileSrc && !imageError ? (
           <Image
             src={profileSrc}
