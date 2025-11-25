@@ -1,20 +1,17 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "@api/axiosConfig";
 import {
-  Avatar,
   Badge,
   Box,
   Button,
   Fade,
   Flex,
-  Heading,
   HStack,
   Icon,
   IconButton,
   Image,
   Input,
   Text,
-  useColorModeValue,
   VStack,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
@@ -26,15 +23,14 @@ import {
   ViewIcon,
 } from "@chakra-ui/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBook, faHeart, faUser } from "@fortawesome/free-solid-svg-icons";
-import { LoginContext } from "../component/LoginProvider.jsx"; // ✅ LoginContext 추가
-import { generateDiaryId } from "../util/util.jsx"; // ✅ 다이어리 ID 생성 함수 추가
+import { faHeart } from "@fortawesome/free-solid-svg-icons";
 
-// 🎠 슬라이더 컴포넌트 (기존 유지)
+// 🎠 [최종 수정] 테두리 없고 너비가 꽉 찬 슬라이더
 const CardCarousel = ({ images }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const slidesCount = images.length;
 
+  // 자동 슬라이드 (3초마다)
   useEffect(() => {
     const autoSlide = setInterval(() => {
       setCurrentSlide((s) => (s === slidesCount - 1 ? 0 : s + 1));
@@ -53,14 +49,16 @@ const CardCarousel = ({ images }) => {
   return (
     <Box
       position="relative"
-      w="full"
+      w="full" // 👈 [변경] 상단 섹션과 똑같이 꽉 차게 (기존 maxW="900px" 제거)
       h={{ base: "300px", md: "500px" }}
       mx="auto"
       borderRadius="3xl"
       overflow="hidden"
       bg="white"
       boxShadow="xl"
+      // 👈 [변경] 테두리(border) 속성 삭제됨
     >
+      {/* 슬라이드 트랙 */}
       <Flex
         w="full"
         h="full"
@@ -76,6 +74,7 @@ const CardCarousel = ({ images }) => {
               h="full"
               objectFit="cover"
             />
+            {/* 하단 그라데이션 데코 */}
             <Box
               position="absolute"
               bottom="0"
@@ -88,6 +87,7 @@ const CardCarousel = ({ images }) => {
         ))}
       </Flex>
 
+      {/* 좌측 화살표 */}
       <IconButton
         aria-label="previous slide"
         icon={<ChevronLeftIcon w={8} h={8} />}
@@ -104,6 +104,7 @@ const CardCarousel = ({ images }) => {
         size="lg"
       />
 
+      {/* 우측 화살표 */}
       <IconButton
         aria-label="next slide"
         icon={<ChevronRightIcon w={8} h={8} />}
@@ -120,6 +121,7 @@ const CardCarousel = ({ images }) => {
         size="lg"
       />
 
+      {/* 하단 인디케이터 (점) */}
       <HStack
         position="absolute"
         bottom="20px"
@@ -142,6 +144,7 @@ const CardCarousel = ({ images }) => {
         ))}
       </HStack>
 
+      {/* 우측 하단 하트 장식 */}
       <Box position="absolute" bottom="25px" right="30px" zIndex={2}>
         <Icon
           as={FontAwesomeIcon}
@@ -160,40 +163,10 @@ export const MainPage = () => {
   const [popularBoards, setPopularBoards] = useState([]);
   const [showLogo, setShowLogo] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
-  // ✅ 로그인 정보 및 프로필 상태
-  const { memberInfo } = useContext(LoginContext);
-  const [myProfileImage, setMyProfileImage] = useState(null);
-
   const navigate = useNavigate();
 
+  // ✅ 고정된 3장의 사진
   const images = ["/img/dog1.png", "/img/cat1.png", "/img/juntos2.png"];
-
-  // 🎨 스타일 변수
-  const heroBg = useColorModeValue(
-    "linear(to-b, purple.50, white)",
-    "gray.800",
-  );
-  const titleGradient = useColorModeValue(
-    "linear(to-r, purple.500, pink.500)",
-    "linear(to-r, purple.300, pink.300)",
-  );
-
-  // ✅ [1] 프로필 이미지 로드 (로그인 시)
-  useEffect(() => {
-    if (memberInfo?.id) {
-      axios
-        .get(`/api/member/${memberInfo.id}`)
-        .then((res) => {
-          const img = res.data.profileImage || res.data.imageUrl;
-          // 경로 보정 (http 체크)
-          const finalSrc =
-            img && img.startsWith("http") ? img : `/uploads/${img}`;
-          setMyProfileImage(finalSrc);
-        })
-        .catch((e) => console.log("프로필 로드 실패", e));
-    }
-  }, [memberInfo]);
 
   const handleSearchClick = () => {
     const searchParams = new URLSearchParams();
@@ -260,11 +233,11 @@ export const MainPage = () => {
         </Flex>
       </Fade>
 
-      {/* 🌟 Hero Section (로그인 여부에 따라 변경) */}
+      {/* 🌟 Hero Section */}
       <Box
         textAlign="center"
         mt={8}
-        bgGradient={heroBg}
+        bgGradient="linear(to-b, purple.50, white)"
         py={12}
         borderRadius="3xl"
         boxShadow="sm"
@@ -294,73 +267,20 @@ export const MainPage = () => {
           filter="blur(50px)"
         />
 
-        {/* ✅ [변경] 로그인 상태에 따른 UI 분기 */}
-        {memberInfo ? (
-          // 🔵 로그인 상태
-          <VStack spacing={4} position="relative" zIndex={1}>
-            <Avatar
-              size="2xl"
-              src={myProfileImage}
-              name={memberInfo.nickname}
-              border="4px solid white"
-              boxShadow="lg"
-            />
-            <VStack spacing={1}>
-              <Heading size="lg" color="gray.700">
-                반가워요,{" "}
-                <Text as="span" color="purple.500">
-                  {memberInfo.nickname}
-                </Text>
-                님! 👋
-              </Heading>
-              <Text color="gray.500">오늘의 펫밀리 활동을 시작해보세요.</Text>
-            </VStack>
+        <Text
+          bgGradient="linear(to-r, purple.500, pink.500)"
+          bgClip="text"
+          fontSize={{ base: "2xl", md: "4xl" }}
+          fontWeight="900"
+          letterSpacing="tight"
+          mb={8}
+          position="relative"
+          zIndex={1}
+        >
+          반려인의, 반려인에 의한, 반려인을 위한 🐾
+        </Text>
 
-            <HStack spacing={4} mt={4}>
-              <Button
-                leftIcon={<FontAwesomeIcon icon={faBook} />}
-                colorScheme="purple"
-                size="lg"
-                onClick={() =>
-                  navigate(`/diary/${generateDiaryId(memberInfo.id)}`)
-                }
-                boxShadow="md"
-                borderRadius="full"
-                px={8}
-              >
-                내 다이어리
-              </Button>
-              <Button
-                leftIcon={<FontAwesomeIcon icon={faUser} />}
-                variant="outline"
-                colorScheme="gray"
-                size="lg"
-                onClick={() => navigate(`/member/page/${memberInfo.id}`)}
-                borderRadius="full"
-                bg="white"
-              >
-                마이페이지
-              </Button>
-            </HStack>
-          </VStack>
-        ) : (
-          // ⚪ 비로그인 상태 (기존)
-          <Box position="relative" zIndex={1}>
-            <Text
-              bgGradient={titleGradient}
-              bgClip="text"
-              fontSize={{ base: "2xl", md: "4xl" }}
-              fontWeight="900"
-              letterSpacing="tight"
-              mb={8}
-            >
-              반려인의, 반려인에 의한, 반려인을 위한 🐾
-            </Text>
-          </Box>
-        )}
-
-        {/* 검색창 (공통) */}
-        <Flex justifyContent="center" mt={10} position="relative" zIndex={1}>
+        <Flex justifyContent="center" mt={6} position="relative" zIndex={1}>
           <Input
             placeholder="궁금한 내용을 검색해보세요 (예: 강아지 간식)"
             width={{ base: "90%", md: "50%" }}
@@ -430,8 +350,9 @@ export const MainPage = () => {
         </HStack>
       </Box>
 
-      {/* ... (슬라이더 및 게시판 리스트는 기존과 동일) ... */}
-      {/* 슬라이더 */}
+      {/* =================================================== */}
+      {/* 🎠 [수정됨] 테두리 없고 꽉 찬 슬라이더 섹션 🎠 */}
+      {/* =================================================== */}
       <Box mt={16} mb={16}>
         <CardCarousel images={images} />
       </Box>
