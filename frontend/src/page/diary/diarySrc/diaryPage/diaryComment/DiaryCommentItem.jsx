@@ -46,6 +46,9 @@ export function DiaryCommentItem({
   const [showReply, setShowReply] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
 
+  // ✅ 이미지 로드 에러 상태 (엑박 방지용)
+  const [imageError, setImageError] = useState(false);
+
   const REPLY_LIMIT = depth === 0 ? 3 : 0;
 
   const cardBg = useColorModeValue("white", "gray.700");
@@ -62,11 +65,10 @@ export function DiaryCommentItem({
       ? format(insertedDate, "yyyy.MM.dd")
       : "Unknown date";
 
-  // ✅ [핵심 수정] 프로필 이미지 경로 완성 함수
-  // 백엔드에서 파일명만 오면 앞에 /uploads/를 붙여줍니다.
+  // ✅ [핵심] 프로필 이미지 경로 완성 함수
   const getProfileUrl = (imageName) => {
     if (!imageName) return null;
-    return imageName.startsWith("http") ? imageName : `/uploads/${imageName}`; // 🚨 여기가 핵심입니다!
+    return imageName.startsWith("http") ? imageName : `/uploads/${imageName}`;
   };
 
   const profileUrl = getProfileUrl(comment.profileImage);
@@ -93,21 +95,17 @@ export function DiaryCommentItem({
       );
   }
 
-  // 1. 내 자식 찾기
   const childComments = allComments.filter(
     (c) => String(c.replyCommentId) === String(comment.id),
   );
 
-  // 2. 보여줄 목록 계산
   const visibleChildren = showAllReplies
     ? childComments
     : childComments.slice(0, REPLY_LIMIT);
 
   const hiddenCount = childComments.length - REPLY_LIMIT;
 
-  // -------------------------------------------------------
   // 🎨 자식 렌더링 섹션
-  // -------------------------------------------------------
   const renderChildrenSection = () => {
     if (childComments.length === 0) return null;
 
@@ -146,23 +144,23 @@ export function DiaryCommentItem({
     );
   };
 
-  // =======================================================
+  // -------------------------------------------------------
   // Case 1. 대댓글 (자식) UI
-  // =======================================================
+  // -------------------------------------------------------
   if (comment.replyCommentId) {
-    const childProfileUrl = getProfileUrl(comment.profileImage);
     return (
       <Box mt={3}>
         <Flex align="flex-start">
-          {/* ✅ [적용] 프로필 이미지 */}
-          {childProfileUrl ? (
+          {/* ✅ 이미지 에러 처리 적용 */}
+          {profileUrl && !imageError ? (
             <Image
-              src={childProfileUrl}
+              src={profileUrl}
               alt={comment.nickname}
               boxSize="24px"
               borderRadius="full"
               mr={2}
               objectFit="cover"
+              onError={() => setImageError(true)}
             />
           ) : (
             <Avatar name={comment.nickname} size="xs" mr={2} />
@@ -208,9 +206,9 @@ export function DiaryCommentItem({
     );
   }
 
-  // =======================================================
+  // -------------------------------------------------------
   // Case 2. 부모 댓글 (카드) UI
-  // =======================================================
+  // -------------------------------------------------------
   return (
     <Box
       bg={cardBg}
@@ -228,14 +226,15 @@ export function DiaryCommentItem({
     >
       <Flex justify="space-between" align="center" mb={2}>
         <Flex gap={2} align="center">
-          {/* ✅ [적용] 프로필 이미지 */}
-          {profileUrl ? (
+          {/* ✅ 이미지 에러 처리 적용 */}
+          {profileUrl && !imageError ? (
             <Image
               src={profileUrl}
               alt={comment.nickname}
               boxSize="32px"
               borderRadius="full"
               objectFit="cover"
+              onError={() => setImageError(true)}
             />
           ) : (
             <Avatar name={comment.nickname} size="sm" />
