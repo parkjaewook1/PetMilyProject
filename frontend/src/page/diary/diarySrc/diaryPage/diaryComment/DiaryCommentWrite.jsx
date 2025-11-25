@@ -22,7 +22,7 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ 내 프로필 사진 상태 추가
+  // ✅ 내 프로필 사진 상태
   const [myProfileImage, setMyProfileImage] = useState(null);
 
   const toast = useToast();
@@ -35,14 +35,13 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   const inputBg = useColorModeValue("white", "gray.800");
   const titleColor = "blue.600";
 
-  // ✅ [핵심] 컴포넌트 로딩 시 내 프로필 사진 서버에서 가져오기
+  // ✅ [1] 컴포넌트 로딩 시 내 프로필 사진 서버에서 최신으로 가져오기
   useEffect(() => {
     if (memberInfo?.id) {
       axios
         .get(`/api/member/${memberInfo.id}`)
         .then((res) => {
-          // 서버에서 받은 이미지 파일명 (또는 URL)
-          // (컨트롤러 응답 구조에 따라 profileImage 또는 imageUrl을 씁니다)
+          // 프로필 이미지가 있으면 상태에 저장
           const img = res.data.profileImage || res.data.imageUrl;
           setMyProfileImage(img);
         })
@@ -50,13 +49,17 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
     }
   }, [memberInfo]);
 
-  // 이미지 경로 변환 함수
+  // ✅ [2] 이미지 경로 완성 함수 (리스트와 동일한 로직!)
   const getProfileSrc = (imageName) => {
     if (!imageName) return null;
-    return imageName.startsWith("http") ? imageName : `/uploads/${imageName}`;
+
+    // http로 시작하면(소셜 등) 그대로, 아니면 /uploads/ 붙이기 (Vercel Proxy)
+    if (imageName.startsWith("http")) return imageName;
+
+    return `/uploads/${imageName}`;
   };
 
-  // ✅ 최종 이미지 소스 (state 사용)
+  // 최종 이미지 경로
   const profileSrc = getProfileSrc(myProfileImage);
 
   const handleDiaryCommentSubmitClick = () => {
@@ -136,7 +139,7 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
           boxShadow: "0 0 0 1px #4299e1",
         }}
       >
-        {/* ✅ 프로필 사진 렌더링 */}
+        {/* ✅ [3] 완성된 경로(profileSrc)로 이미지 렌더링 */}
         {profileSrc ? (
           <Image
             src={profileSrc}
@@ -146,6 +149,10 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
             border="1px solid"
             borderColor="gray.200"
             objectFit="cover"
+            // 혹시 깨지면 아바타 보여주기
+            onError={(e) => {
+              e.target.style.display = "none";
+            }}
           />
         ) : (
           <Avatar name={nickname} size="xs" />
