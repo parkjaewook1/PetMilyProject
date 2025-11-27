@@ -33,7 +33,7 @@ public class MemberController {
     }
 
     // 회원가입 전 username 중복 체크 (로그인 전)
-    @GetMapping(value = "check", params = "username")
+    @GetMapping(value = "/check", params = "username")
     public ResponseEntity checkUsername(@RequestParam("username") String username) {
         Member member = service.getByUsername(username);
         if (member == null) {
@@ -43,7 +43,7 @@ public class MemberController {
     }
 
     // 회원가입 전 nickname 중복 체크 (로그인 전)
-    @GetMapping(value = "check", params = "nickname")
+    @GetMapping(value = "/check", params = "nickname")
     public ResponseEntity checkNickname(@RequestParam("nickname") String nickname) {
         Member member = service.getByNickname(nickname);
         if (member == null) {
