@@ -2,27 +2,18 @@ import axios from "axios";
 
 // 1. Axios 인스턴스 생성
 const axiosInstance = axios.create({
-  baseURL: "", // 컴포넌트에서 /api를 붙이므로 여기선 빈 문자열
-  withCredentials: true, // 쿠키 전송 허용
+  baseURL: "",
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// 2. [핵심 수정] 요청 인터셉터
-// 특정 요청(로그인, 중복확인 등)에는 토큰을 싣지 않도록 필터링합니다.
+// 2. 요청 인터셉터
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("accessToken");
-
-    // 토큰이 있고 + 토큰이 필요 없는 요청이 아닐 때만 헤더에 추가
-    if (
-      token &&
-      !config.url.includes("/member/login") &&
-      !config.url.includes("/member/signup") &&
-      !config.url.includes("/member/check") && // 👈 중복 확인
-      !config.url.includes("/member/reissue") // 👈 토큰 재발급
-    ) {
+    if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
     return config;
@@ -32,7 +23,7 @@ axiosInstance.interceptors.request.use(
   },
 );
 
-// 3. 응답 인터셉터 (401 에러 감지 및 재발급)
+// 3. 응답 인터셉터
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -67,13 +58,16 @@ axiosInstance.interceptors.response.use(
       } catch (reissueError) {
         console.error("토큰 재발급 실패:", reissueError);
 
-        // 토큰 삭제 확인
+        // 🚨 [핵심 수정] 토큰이 있었는지 먼저 확인!
         const hadToken = localStorage.getItem("accessToken");
 
+        // 토큰 삭제
         localStorage.removeItem("accessToken");
         delete axios.defaults.headers.common["Authorization"];
 
         const currentPath = window.location.pathname;
+
+        // 1. 로그인이 필수인 페이지면 -> 로그인 창으로 보냄
         if (
           currentPath !== "/" &&
           currentPath !== "/member/login" &&
@@ -81,8 +75,11 @@ axiosInstance.interceptors.response.use(
         ) {
           alert("로그인 세션이 만료되었습니다.");
           window.location.href = "/member/login";
-        } else {
-          // 원래 토큰이 있었는데 만료된 경우에만 새로고침 (무한루프 방지)
+        }
+        // 2. 홈 화면 등 비회원도 볼 수 있는 페이지라면?
+        else {
+          // ✅ [수정됨] "방금까지 로그인이 되어 있었던 경우"에만 새로고침!
+          // (계속 비회원이었는데 401 났다고 새로고침하면 무한루프 돔)
           if (hadToken) {
             window.location.reload();
           }
