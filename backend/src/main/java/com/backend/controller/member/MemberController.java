@@ -34,22 +34,30 @@ public class MemberController {
 
     // 회원가입 전 username 중복 체크 (로그인 전)
     @GetMapping(value = "/check", params = "username")
-    public ResponseEntity checkUsername(@RequestParam("username") String username) {
+    public ResponseEntity<String> checkUsername(@RequestParam("username") String username) {
         Member member = service.getByUsername(username);
+
         if (member == null) {
-            return ResponseEntity.notFound().build();
+            // ✅ [수정] 멤버가 없으면(null) -> 사용 가능! -> 200 OK 리턴
+            return ResponseEntity.ok("사용 가능한 이메일입니다.");
+        } else {
+            // ❌ [수정] 멤버가 있으면 -> 중복! -> 409 Conflict 리턴
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 사용 중인 이메일입니다.");
         }
-        return ResponseEntity.ok(username);
     }
 
     // 회원가입 전 nickname 중복 체크 (로그인 전)
     @GetMapping(value = "/check", params = "nickname")
-    public ResponseEntity checkNickname(@RequestParam("nickname") String nickname) {
+    public ResponseEntity<String> checkNickname(@RequestParam("nickname") String nickname) {
         Member member = service.getByNickname(nickname);
+
         if (member == null) {
-            return ResponseEntity.notFound().build();
+            // ✅ [수정] 사용 가능 -> 200 OK
+            return ResponseEntity.ok("사용 가능한 닉네임입니다.");
+        } else {
+            // ❌ [수정] 중복 -> 409 Conflict
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 사용 중인 닉네임입니다.");
         }
-        return ResponseEntity.ok(nickname);
     }
 
     @GetMapping("/{id}")
