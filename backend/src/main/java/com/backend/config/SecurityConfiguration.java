@@ -129,13 +129,17 @@ public class SecurityConfiguration {
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                 .successHandler(customSuccessHandler));
 
-        // 5. 권한 설정 (여기가 핵심!)
+        // 5. 권한 설정
         http.authorizeHttpRequests(auth -> auth
                 // [Preflight]
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // ✅ [추가됨] 메인 페이지 및 정적 리소스 허용 (401 방지)
-                .requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.ico", "/assets/**", "/error").permitAll()
+                // ✅ [수정 1] 에러 페이지 및 정적 리소스 허용
+                .requestMatchers("/error").permitAll()
+                .requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.ico", "/assets/**").permitAll()
+
+                // ✅ [수정 2] 중복 확인 (/check) 주소 명시적 허용 (이게 핵심!)
+                .requestMatchers(HttpMethod.GET, "/api/member/check").permitAll()
 
                 // [인증 관련]
                 .requestMatchers(HttpMethod.POST, "/api/member/signup", "/api/member/login", "/api/member/reissue").permitAll()
@@ -145,6 +149,7 @@ public class SecurityConfiguration {
                 // [조회 - GET 허용]
                 .requestMatchers(HttpMethod.GET, "/api/board/**", "/api/boards/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/comment/**", "/api/diaryComment/**").permitAll()
+                // 이미지 업로드 경로 허용
                 .requestMatchers(HttpMethod.GET, "/api/image/**", "/api/images/**", "/uploads/**").permitAll()
 
                 // [관리자]
