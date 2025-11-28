@@ -79,6 +79,15 @@ export function DiaryHomeMain() {
           `/api/diaryComment/${numericDiaryId}/recent-comments`,
           { params: { limit: 5 } },
         );
+        // 📢 이 로그를 꼭 확인해주세요!
+        console.log("방명록 데이터 전체:", diaryCommentRes.data);
+        if (diaryCommentRes.data.length > 0) {
+          console.log(
+            "첫 번째 댓글의 프로필 값:",
+            diaryCommentRes.data[0].profileImage,
+          );
+          console.log("혹시 다른 이름인가?:", diaryCommentRes.data[0]);
+        }
         setDiaryCommentList(
           Array.isArray(diaryCommentRes.data) ? diaryCommentRes.data : [],
         );
