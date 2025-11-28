@@ -182,7 +182,7 @@ export function DiaryBoardList() {
             color={titleColor}
             fontFamily="'Gulim', sans-serif"
           >
-            일기장
+            How was my day?
           </Heading>
         </HStack>
         {isOwner && (
