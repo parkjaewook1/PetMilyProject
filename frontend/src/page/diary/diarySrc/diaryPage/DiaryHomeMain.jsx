@@ -43,10 +43,18 @@ export function DiaryHomeMain() {
   const navigate = useNavigate();
   const [bannerImage, setBannerImage] = useState(null);
 
-  // ✅ [추가] 이미지 기본 주소 (본인의 오라클 버킷 주소로 변경하세요!)
-  // 예: "https://objectstorage.ap-chuncheon-1.oraclecloud.com/n/cnk496pav8mi/b/bucket-20241024-1049/o/"
+  // ✅ [중요] 본인의 오라클 클라우드 버킷 주소로 변경하세요!
   const IMG_BASE_URL =
-    "https://objectstorage.ap-chuncheon-1.oraclecloud.com/n/cnk496pav8mi/b/bucket-20241024-1049/o/";
+    "https://objectstorage.ap-chuncheon-1.oraclecloud.com/n/본인계정네임스페이스/b/본인버킷이름/o/";
+
+  // ✅ [추가] DiaryCommentItem과 동일한 이미지 주소 처리 로직
+  const getProfileUrl = (imageName) => {
+    if (!imageName) return null;
+    // 1. 소셜 로그인 등 외부 링크(http)면 그대로 사용
+    if (imageName.startsWith("http")) return imageName;
+    // 2. 그 외에는 파일명 앞에 오라클 클라우드 주소 붙이기
+    return `${IMG_BASE_URL}${imageName}`;
+  };
 
   // 🎨 디자인 컬러
   const bgGradient = useColorModeValue(
@@ -83,10 +91,6 @@ export function DiaryHomeMain() {
           `/api/diaryComment/${numericDiaryId}/recent-comments`,
           { params: { limit: 5 } },
         );
-
-        // 데이터 확인용 로그 (필요 없으면 삭제하셔도 됩니다)
-        // console.log("방명록 데이터 전체:", diaryCommentRes.data);
-
         setDiaryCommentList(
           Array.isArray(diaryCommentRes.data) ? diaryCommentRes.data : [],
         );
@@ -144,7 +148,7 @@ export function DiaryHomeMain() {
 
   return (
     <Box minH="100vh" bgGradient={bgGradient} pb={20}>
-      {/* 🌟 1. 커버 화면 (Hero Section) */}
+      {/* 🌟 1. 커버 화면 */}
       <Box
         position="relative"
         w="100%"
@@ -186,17 +190,18 @@ export function DiaryHomeMain() {
         )}
       </Box>
 
-      {/* 📜 2. 메인 콘텐츠 (일기 & 방명록) */}
+      {/* 📜 2. 메인 콘텐츠 */}
       <Box maxW="1200px" mx="auto" px={{ base: 4, md: 8 }} mt={10}>
         <Fade in={true}>
           <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
-            {/* 🟦 2-1. 일기장 (Diary) */}
+            {/* 🟦 2-1. 일기장 (생략 - 기존 코드 유지) */}
             <Card
               bg={cardBg}
               borderRadius="2xl"
               boxShadow="xl"
               overflow="hidden"
             >
+              {/* ... (일기장 부분 코드는 기존과 동일하므로 생략) ... */}
               <CardHeader
                 borderBottom="1px solid"
                 borderColor={borderColor}
@@ -219,7 +224,6 @@ export function DiaryHomeMain() {
                       </Heading>
                     </VStack>
                   </HStack>
-
                   {Number(memberInfo?.id) === ownerId ? (
                     <Button
                       size="sm"
@@ -247,7 +251,6 @@ export function DiaryHomeMain() {
                   )}
                 </Flex>
               </CardHeader>
-
               <CardBody p={0}>
                 <VStack spacing={0} align="stretch">
                   {normalizedBoards.map((board, idx) => (
@@ -265,7 +268,6 @@ export function DiaryHomeMain() {
                           cursor="pointer"
                           _hover={{ bg: "purple.50" }}
                           onClick={() => handleBoardClick(board.id)}
-                          transition="background 0.2s"
                         >
                           <VStack
                             spacing={0}
@@ -381,14 +383,10 @@ export function DiaryHomeMain() {
                           onClick={() => handleCommentClick(comment.id)}
                           transition="background 0.2s"
                         >
-                          {/* ✅ [수정] Avatar src에 기본 주소 추가 */}
+                          {/* ✅ [수정] getProfileUrl 함수 적용! */}
                           <Avatar
                             size="sm"
-                            src={
-                              comment.profileImage
-                                ? `${IMG_BASE_URL}${comment.profileImage}`
-                                : ""
-                            }
+                            src={getProfileUrl(comment.profileImage)}
                             name={comment.nickname}
                             mr={5}
                           />
