@@ -43,19 +43,6 @@ export function DiaryHomeMain() {
   const navigate = useNavigate();
   const [bannerImage, setBannerImage] = useState(null);
 
-  // ✅ [중요] 본인의 오라클 클라우드 버킷 주소로 변경하세요!
-  const IMG_BASE_URL =
-    "https://objectstorage.ap-chuncheon-1.oraclecloud.com/n/본인계정네임스페이스/b/본인버킷이름/o/";
-
-  // ✅ [추가] DiaryCommentItem과 동일한 이미지 주소 처리 로직
-  const getProfileUrl = (imageName) => {
-    if (!imageName) return null;
-    // 1. 소셜 로그인 등 외부 링크(http)면 그대로 사용
-    if (imageName.startsWith("http")) return imageName;
-    // 2. 그 외에는 파일명 앞에 오라클 클라우드 주소 붙이기
-    return `${IMG_BASE_URL}${imageName}`;
-  };
-
   // 🎨 디자인 컬러
   const bgGradient = useColorModeValue(
     "linear(to-br, #fdfbfb, #ebedee)",
@@ -66,6 +53,17 @@ export function DiaryHomeMain() {
 
   const { numericDiaryId, ownerId, ownerNickname } = useOutletContext();
   const diaryId = generateDiaryId(ownerId);
+
+  // ✅ [수정] DiaryCommentItem과 똑같은 로직 적용!
+  const getProfileUrl = (imageName) => {
+    if (!imageName) return null;
+    // 1. 외부 링크(http)면 그대로
+    if (imageName.startsWith("http")) return imageName;
+    // 2. 이미 /uploads/로 시작하면 그대로
+    if (imageName.startsWith("/uploads/")) return imageName;
+    // 3. 파일명만 있으면 /uploads/ 붙여줌
+    return `/uploads/${imageName}`;
+  };
 
   // 5줄 채우기 (빈칸 유지)
   const normalizeList = (list) => {
@@ -194,14 +192,13 @@ export function DiaryHomeMain() {
       <Box maxW="1200px" mx="auto" px={{ base: 4, md: 8 }} mt={10}>
         <Fade in={true}>
           <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
-            {/* 🟦 2-1. 일기장 (생략 - 기존 코드 유지) */}
+            {/* 🟦 2-1. 일기장 (변경 없음) */}
             <Card
               bg={cardBg}
               borderRadius="2xl"
               boxShadow="xl"
               overflow="hidden"
             >
-              {/* ... (일기장 부분 코드는 기존과 동일하므로 생략) ... */}
               <CardHeader
                 borderBottom="1px solid"
                 borderColor={borderColor}
@@ -323,7 +320,7 @@ export function DiaryHomeMain() {
               </CardBody>
             </Card>
 
-            {/* 🟩 2-2. 방명록 (Guest Book) */}
+            {/* 🟩 2-2. 방명록 (수정됨) */}
             <Card
               bg={cardBg}
               borderRadius="2xl"
@@ -352,7 +349,6 @@ export function DiaryHomeMain() {
                       </Heading>
                     </VStack>
                   </HStack>
-
                   <Button
                     size="sm"
                     colorScheme="teal"
@@ -363,7 +359,6 @@ export function DiaryHomeMain() {
                   </Button>
                 </Flex>
               </CardHeader>
-
               <CardBody p={0}>
                 <VStack spacing={0} align="stretch">
                   {normalizedComments.map((comment, idx) => (
@@ -381,15 +376,15 @@ export function DiaryHomeMain() {
                           cursor="pointer"
                           _hover={{ bg: "teal.50" }}
                           onClick={() => handleCommentClick(comment.id)}
-                          transition="background 0.2s"
                         >
-                          {/* ✅ [수정] getProfileUrl 함수 적용! */}
+                          {/* ✅ [적용] getProfileUrl 사용 */}
                           <Avatar
                             size="sm"
                             src={getProfileUrl(comment.profileImage)}
                             name={comment.nickname}
                             mr={5}
                           />
+
                           <VStack
                             align="start"
                             spacing={0}
