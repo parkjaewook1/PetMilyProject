@@ -23,7 +23,6 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import axios from "@api/axiosConfig";
 import { LoginContext } from "../../../../component/LoginProvider.jsx";
 import { format } from "date-fns";
-import { ko } from "date-fns/locale";
 import { DiaryContext } from "../diaryComponent/DiaryContext.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -43,6 +42,11 @@ export function DiaryHomeMain() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const [bannerImage, setBannerImage] = useState(null);
+
+  // ✅ [추가] 이미지 기본 주소 (본인의 오라클 버킷 주소로 변경하세요!)
+  // 예: "https://objectstorage.ap-chuncheon-1.oraclecloud.com/n/cnk496pav8mi/b/bucket-20241024-1049/o/"
+  const IMG_BASE_URL =
+    "https://objectstorage.ap-chuncheon-1.oraclecloud.com/n/cnk496pav8mi/b/bucket-20241024-1049/o/";
 
   // 🎨 디자인 컬러
   const bgGradient = useColorModeValue(
@@ -79,15 +83,10 @@ export function DiaryHomeMain() {
           `/api/diaryComment/${numericDiaryId}/recent-comments`,
           { params: { limit: 5 } },
         );
-        // 📢 이 로그를 꼭 확인해주세요!
-        console.log("방명록 데이터 전체:", diaryCommentRes.data);
-        if (diaryCommentRes.data.length > 0) {
-          console.log(
-            "첫 번째 댓글의 프로필 값:",
-            diaryCommentRes.data[0].profileImage,
-          );
-          console.log("혹시 다른 이름인가?:", diaryCommentRes.data[0]);
-        }
+
+        // 데이터 확인용 로그 (필요 없으면 삭제하셔도 됩니다)
+        // console.log("방명록 데이터 전체:", diaryCommentRes.data);
+
         setDiaryCommentList(
           Array.isArray(diaryCommentRes.data) ? diaryCommentRes.data : [],
         );
@@ -141,7 +140,6 @@ export function DiaryHomeMain() {
 
   const normalizedBoards = normalizeList(diaryBoardList);
   const normalizedComments = normalizeList(diaryCommentList);
-  const todayDate = format(new Date(), "M월 d일 EEEE", { locale: ko });
   const itemHeight = "72px"; // 리스트 아이템 높이 통일
 
   return (
@@ -189,7 +187,6 @@ export function DiaryHomeMain() {
       </Box>
 
       {/* 📜 2. 메인 콘텐츠 (일기 & 방명록) */}
-      {/* 📌 수정됨: mt를 양수(10)로 주어 배너 아래로 여유 있게 배치 */}
       <Box maxW="1200px" mx="auto" px={{ base: 4, md: 8 }} mt={10}>
         <Fade in={true}>
           <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
@@ -354,7 +351,6 @@ export function DiaryHomeMain() {
                     </VStack>
                   </HStack>
 
-                  {/* 📌 수정됨: 일기장 '글쓰기' 버튼 스타일(Solid, Rounded)로 변경 */}
                   <Button
                     size="sm"
                     colorScheme="teal"
@@ -385,9 +381,14 @@ export function DiaryHomeMain() {
                           onClick={() => handleCommentClick(comment.id)}
                           transition="background 0.2s"
                         >
+                          {/* ✅ [수정] Avatar src에 기본 주소 추가 */}
                           <Avatar
                             size="sm"
-                            src={comment.profileImage}
+                            src={
+                              comment.profileImage
+                                ? `${IMG_BASE_URL}${comment.profileImage}`
+                                : ""
+                            }
                             name={comment.nickname}
                             mr={5}
                           />
