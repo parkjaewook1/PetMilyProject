@@ -117,16 +117,14 @@ export function BoardView() {
     axios
       .delete(`/api/board/${board.id}`, { params })
       .then(() => {
-        toast({
-          status: "success",
-          description: `${id}번 게시물이 삭제되었습니다`,
-          position: "top",
-          duration: 10,
+        navigate("/board/list", {
+          state: {
+            message: `${id}번 게시물이 삭제되었습니다.`, // 전달할 메시지
+          },
+          replace: true, // 뒤로가기 방지
         });
-        setTimeout(() => {
-          navigate("/board/list");
-        }, 700);
       })
+
       .catch(() => {
         toast({
           status: "error",
