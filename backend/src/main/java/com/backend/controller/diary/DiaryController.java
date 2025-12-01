@@ -124,8 +124,11 @@ public class DiaryController {
         DiaryProfile diaryProfile = diaryProfileService.getProfileByMemberId(ownerId);
         System.out.println("ownerId 입니다 = " + ownerId);
 
+//        if (diaryProfile == null) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+//        }
         if (diaryProfile == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.ok(response);
         }
 
         response.put("status_message", diaryProfile.getStatusMessage());
