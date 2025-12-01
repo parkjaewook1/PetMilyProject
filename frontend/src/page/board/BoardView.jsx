@@ -123,7 +123,9 @@ export function BoardView() {
           position: "top",
           duration: 10,
         });
-        navigate(`/board/list`);
+        setTimeout(() => {
+          navigate("/board/list");
+        }, 500);
       })
       .catch(() => {
         toast({
