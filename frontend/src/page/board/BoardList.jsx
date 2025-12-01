@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-
 import {
   Badge,
   Box,
@@ -25,8 +24,9 @@ import {
   Thead,
   Tr,
   useColorModeValue,
+  useToast,
 } from "@chakra-ui/react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom"; // ✅ [추가] useLocation 가져오기
 import { ChevronDownIcon } from "@chakra-ui/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -49,8 +49,32 @@ export function BoardList() {
   const [searchParams] = useSearchParams();
 
   const navigate = useNavigate();
+  const location = useLocation(); // ✅ [추가] 전달받은 state 확인용
+  const toast = useToast(); // ✅ [추가] 토스트 사용
 
-  // useEffect 훅을 하나로 통합
+  // ✅ [핵심 추가] 삭제 후 넘어왔을 때 토스트 띄우기
+  useEffect(() => {
+    if (location.state && location.state.message) {
+      toast({
+        status: "success",
+        description: location.state.message, // "OO번 게시물이 삭제되었습니다."
+        position: "top",
+        duration: 1000,
+        isClosable: true,
+      });
+      // 토스트 띄운 후 state 초기화 (새로고침 시 또 뜨지 않게)
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, toast]);
+
+  // (보너스) 이미지 경로 처리 함수 (아까 말씀드린 것)
+  const getImageSrc = (imagePath) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith("http")) return imagePath;
+    if (imagePath.startsWith("/uploads/")) return imagePath;
+    return `/uploads/${imagePath}`;
+  };
+
   useEffect(() => {
     const boardTypeParam = searchParams.get("boardType") || "전체";
     const searchTypeParam = searchParams.get("searchType") || "전체";
@@ -74,6 +98,7 @@ export function BoardList() {
       });
   }, [searchParams]);
 
+  // ... (나머지 핸들러 함수들은 그대로 유지) ...
   const handlePageSizeChange = (number) => {
     setPageAmount(number);
     searchParams.set("pageAmount", number);
@@ -82,8 +107,10 @@ export function BoardList() {
   };
 
   const pageNumbers = [];
-  for (let i = pageInfo.leftPageNumber; i <= pageInfo.rightPageNumber; i++) {
-    pageNumbers.push(i);
+  if (pageInfo.leftPageNumber && pageInfo.rightPageNumber) {
+    for (let i = pageInfo.leftPageNumber; i <= pageInfo.rightPageNumber; i++) {
+      pageNumbers.push(i);
+    }
   }
 
   const handlePageButtonClick = (pageNumber) => {
@@ -108,7 +135,6 @@ export function BoardList() {
     searchParams.set("searchType", searchType);
     searchParams.set("keyword", searchKeyword);
     searchParams.set("offsetReset", true);
-
     navigate(`?${searchParams}`);
   };
 
@@ -125,6 +151,7 @@ export function BoardList() {
 
   return (
     <Container maxW="container.xl" py={10}>
+      {/* ... (UI 코드는 그대로 유지하되, 이미지 부분만 수정) ... */}
       <Center mt={10}>
         <Flex p={4} borderRadius="md" alignItems="center">
           <FontAwesomeIcon icon={faBookOpen} size="2x" />
@@ -156,8 +183,9 @@ export function BoardList() {
                 >
                   {board.fileList && board.fileList.length > 0 && (
                     <Box mb={2} width="100%" height="200px" overflow="hidden">
+                      {/* ✅ [적용] getImageSrc 함수로 이미지 경로 처리 */}
                       <Image
-                        src={board.fileList[0].src}
+                        src={getImageSrc(board.fileList[0].src)}
                         alt="썸네일"
                         borderRadius="md"
                         width="100%"
@@ -166,7 +194,7 @@ export function BoardList() {
                       />
                     </Box>
                   )}
-
+                  {/* ... (나머지 내용들) ... */}
                   <Box fontWeight="bold" as="h4" fontSize="xl" mb={2}>
                     {board.title}
                   </Box>
@@ -229,6 +257,7 @@ export function BoardList() {
               <Tbody>
                 {boardList.map((board) => (
                   <Tr key={board.id} _hover={{ bg: hoverBg }}>
+                    {/* ... (테이블 내용 그대로 유지) ... */}
                     <Td textAlign="center" py={3}>
                       <span
                         onClick={() =>
@@ -243,13 +272,9 @@ export function BoardList() {
                       {board.id}
                     </Td>
                     <Td
-                      onClick={() => {
-                        handleBoardClick(board.id);
-                      }}
+                      onClick={() => handleBoardClick(board.id)}
                       cursor="pointer"
-                      _hover={{
-                        bg: "gray.200",
-                      }}
+                      _hover={{ bg: "gray.200" }}
                       bg={board.id === selectedBoardId ? "gray.200" : ""}
                       textAlign="center"
                       py={3}
@@ -286,6 +311,7 @@ export function BoardList() {
         pageNumbers={pageNumbers}
         handlePageButtonClick={handlePageButtonClick}
       />
+      {/* ... (검색창 및 하단 메뉴 등 나머지 코드 그대로) ... */}
       <Center mb={10}>
         <Flex gap={1} alignItems="center">
           <Box>
@@ -305,9 +331,7 @@ export function BoardList() {
               onChange={(e) => setSearchKeyword(e.target.value)}
               placeholder="검색어"
               onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  handleSearchClick();
-                }
+                if (e.key === "Enter") handleSearchClick();
               }}
             />
           </Box>
