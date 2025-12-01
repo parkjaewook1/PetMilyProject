@@ -11,15 +11,8 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
   Text,
   Textarea,
-  useDisclosure,
   useToast,
 } from "@chakra-ui/react";
 import axios from "@api/axiosConfig";
@@ -30,7 +23,6 @@ import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
 export function BoardWrite() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  // const [writer, setWriter] = useState(""); // 사용되지 않아 주석 처리
   const [files, setFiles] = useState([]);
   const [invisibledText, setInvisibledText] = useState(true);
   const [disableSaveButton, setDisableSaveButton] = useState(false);
@@ -38,9 +30,6 @@ export function BoardWrite() {
   const navigate = useNavigate();
   const location = useLocation();
   const { memberInfo } = useContext(LoginContext);
-
-  // ✅ 모달 상태 관리 훅
-  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const toast = useToast();
 
@@ -54,25 +43,29 @@ export function BoardWrite() {
         files,
       })
       .then(() => {
-        // ✅ 저장 성공 시 바로 이동하지 않고 모달 열기
-        onOpen();
+        // ✅ [수정] 모달 대신 Toast 띄우기
+        toast({
+          title: "저장 완료",
+          description: "게시글이 성공적으로 저장되었습니다.",
+          status: "success",
+          duration: 1000,
+          isClosable: true,
+          position: "top",
+        });
+        // ✅ Toast 띄운 후 목록으로 이동
+        navigate("/board/list");
       })
       .catch((err) => {
         console.log(err);
         toast({
           title: "저장 실패",
-          description: "게시글 저장 중 오류가 발생했습니다.",
+          description: "오류가 발생했습니다. 다시 시도해주세요.",
           status: "error",
           duration: 3000,
           isClosable: true,
+          position: "top",
         });
       });
-  }
-
-  // ✅ 모달 닫기 및 목록 이동 핸들러
-  function handleCloseAndNavigate() {
-    onClose();
-    navigate("/board/list");
   }
 
   React.useEffect(() => {
@@ -82,16 +75,16 @@ export function BoardWrite() {
         duration: 3000,
         isClosable: true,
         status: "error",
+        position: "top",
       });
       const previousPath = location.state?.from || "/";
       navigate(previousPath, { replace: true });
     }
 
-    // 유효성 검사 로직
+    // 유효성 검사
     if (title.trim().length === 0 || content.trim().length === 0) {
       setDisableSaveButton(true);
     } else {
-      // 파일 용량 에러가 없을 때만 버튼 활성화
       if (invisibledText) {
         setDisableSaveButton(false);
       }
@@ -261,27 +254,6 @@ export function BoardWrite() {
           </Button>
         </Box>
       </Box>
-
-      {/* ✅ 저장 성공 모달 */}
-      <Modal
-        isOpen={isOpen}
-        onClose={handleCloseAndNavigate}
-        isCentered
-        closeOnOverlayClick={false} // 모달 밖을 클릭해도 안 닫히게 설정 (선택사항)
-      >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>알림</ModalHeader>
-          {/* <ModalCloseButton /> X 버튼 필요하면 주석 해제 */}
-          <ModalBody>게시글이 성공적으로 저장되었습니다.</ModalBody>
-
-          <ModalFooter>
-            <Button colorScheme="teal" onClick={handleCloseAndNavigate}>
-              확인
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </Center>
   );
 }
