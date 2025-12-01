@@ -26,7 +26,7 @@ import {
   useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom"; // ✅ useLocation 추가
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronDownIcon } from "@chakra-ui/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -49,20 +49,20 @@ export function BoardList() {
   const [searchParams] = useSearchParams();
 
   const navigate = useNavigate();
-  const location = useLocation(); // ✅ 전달받은 데이터 확인용
-  const toast = useToast(); // ✅ 토스트 띄우기용
+  const location = useLocation();
+  const toast = useToast();
 
-  // ✅ [삭제 토스트 로직] 빨간색(error) 스타일 적용
+  // ✅ [삭제 후 토스트] 빨간색(error) 스타일 적용
   useEffect(() => {
     if (location.state && location.state.message) {
       toast({
-        status: "error", // 🔴 빨간색으로 나오게 설정 (원래는 success지만 색상을 위해 error 사용)
+        status: "error", // 빨간색
         description: location.state.message,
         position: "top",
-        duration: 2000, // 조금 더 길게 (2초)
+        duration: 2000,
         isClosable: true,
       });
-      // 토스트 띄운 후 state 초기화 (새로고침 시 또 뜨지 않게)
+      // state 초기화
       window.history.replaceState({}, document.title);
     }
   }, [location.state, toast]);
@@ -173,7 +173,7 @@ export function BoardList() {
                 >
                   {board.fileList && board.fileList.length > 0 && (
                     <Box mb={2} width="100%" height="200px" overflow="hidden">
-                      {/* ✅ [원복] 원래 잘 되던 코드로 복구 */}
+                      {/* ✅ [원복] 원래 코드 그대로 사용 */}
                       <Image
                         src={board.fileList[0].src}
                         alt="썸네일"
