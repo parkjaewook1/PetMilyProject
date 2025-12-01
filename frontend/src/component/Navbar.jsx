@@ -14,6 +14,7 @@ import {
   Text,
   useDisclosure,
   useMediaQuery,
+  useToast,
 } from "@chakra-ui/react";
 import React, { useContext, useEffect, useState } from "react";
 import { LoginContext } from "./LoginProvider.jsx";
@@ -67,6 +68,7 @@ export function Navbar() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isLargerThan768] = useMediaQuery("(min-width: 768px)");
   const { memberInfo, setMemberInfo } = useContext(LoginContext);
+  const toast = useToast();
 
   const [myProfileImage, setMyProfileImage] = useState(null);
 
@@ -113,6 +115,13 @@ export function Navbar() {
         withCredentials: true,
       });
       if (response.status === 200) {
+        toast({
+          description: "로그아웃 되었습니다.",
+          status: "success",
+          position: "top",
+          duration: 1000,
+          isClosable: true,
+        });
         setMemberInfo(null);
         localStorage.removeItem("memberInfo");
         navigate("/member/login");
