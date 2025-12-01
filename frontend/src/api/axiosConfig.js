@@ -4,9 +4,9 @@ import axios from "axios";
 const axiosInstance = axios.create({
   baseURL: "", // 컴포넌트에서 /api를 붙이므로 여기선 빈 문자열
   withCredentials: true, // 쿠키 전송 허용
-  headers: {
-    "Content-Type": "application/json",
-  },
+  // headers: {
+  //   "Content-Type": "application/json",
+  // },
 });
 
 // 2. [핵심 수정] 요청 인터셉터
