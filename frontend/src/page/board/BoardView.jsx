@@ -125,7 +125,7 @@ export function BoardView() {
         });
         setTimeout(() => {
           navigate("/board/list");
-        }, 500);
+        }, 700);
       })
       .catch(() => {
         toast({
