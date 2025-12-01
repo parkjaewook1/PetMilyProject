@@ -43,27 +43,25 @@ export function BoardWrite() {
         files,
       })
       .then(() => {
-        // ✅ [수정] 모달 대신 Toast 띄우기
+        // ✅ [수정] DiaryCommentWrite와 똑같은 심플한 스타일로 변경!
+        // title 속성을 빼면 한 줄로 깔끔하게 나옵니다.
         toast({
-          title: "저장 완료",
-          description: "게시글이 성공적으로 저장되었습니다.",
           status: "success",
-          duration: 1000,
-          isClosable: true,
           position: "top",
+          description: "게시글이 성공적으로 저장되었습니다.",
+          duration: 1000,
         });
-        // ✅ Toast 띄운 후 목록으로 이동
+
         navigate("/board/list");
       })
       .catch((err) => {
         console.log(err);
+        // 에러 토스트도 스타일 통일
         toast({
-          title: "저장 실패",
-          description: "오류가 발생했습니다. 다시 시도해주세요.",
           status: "error",
-          duration: 3000,
-          isClosable: true,
           position: "top",
+          description: "저장 중 오류가 발생했습니다.",
+          duration: 1000,
         });
       });
   }
@@ -71,11 +69,10 @@ export function BoardWrite() {
   React.useEffect(() => {
     if (!memberInfo) {
       toast({
-        title: "로그인 회원만 가능합니다",
-        duration: 3000,
-        isClosable: true,
         status: "error",
         position: "top",
+        description: "로그인 회원만 가능합니다.",
+        duration: 3000,
       });
       const previousPath = location.state?.from || "/";
       navigate(previousPath, { replace: true });
