@@ -41,7 +41,6 @@ export function DiaryHome() {
   const navigate = useNavigate();
   const toast = useToast();
 
-  // ✅ [Hook 에러 방지] Hook은 항상 최상단에 선언
   const { theme, setTheme } = useTheme();
   const { colorMode, toggleColorMode } = useColorMode();
 
@@ -62,6 +61,9 @@ export function DiaryHome() {
   const [isEditing, setIsEditing] = useState(false);
   const [moodStats, setMoodStats] = useState([]);
   const chartRef = useRef(null);
+
+  // ✅ [추가] 백엔드 서버 주소 (이미지용)
+  const SERVER_HOST = "http://150.230.249.131:8080";
 
   // 🎨 스타일 변수
   const outerBg = useColorModeValue("#aebfd3", "#2d3748");
@@ -85,7 +87,6 @@ export function DiaryHome() {
   const inputFieldBg = useColorModeValue("whiteAlpha.900", "gray.600");
   const inputFieldBorder = useColorModeValue("orange.200", "gray.500");
 
-  // ✅ 현재 홈 화면인지 확인 (모바일 화면 전환용)
   const currentPath = location.pathname.replace(/\/$/, "");
   const homePath = `/diary/${encodedId}`;
   const isRootPath = currentPath === homePath;
@@ -183,16 +184,29 @@ export function DiaryHome() {
     }
   }, [moodStats, chartBorderColor]);
 
-  // 프로필 조회
+  // ✅ [핵심 수정] 프로필 조회 로직 (200 OK 빈 값 처리)
   const fetchDiaryProfile = async (ownerId) => {
     try {
       const response = await axios.get(`/api/diary/profile/${ownerId}`);
-      setProfileData({
-        statusMessage: response.data.statusMessage || "",
-        introduction: response.data.introduction || "",
-      });
-      setIsProfileExists(true);
+
+      const data = response.data;
+
+      // 데이터가 비어있는지 확인 (빈 객체면 길이가 0)
+      if (data && Object.keys(data).length > 0) {
+        setProfileData({
+          // 백엔드가 snake_case로 줄 수도 있고, camelCase일 수도 있으니 둘 다 체크
+          statusMessage: data.status_message || data.statusMessage || "",
+          introduction: data.introduction || "",
+        });
+        setIsProfileExists(true); // 데이터 있으니 수정 모드
+      } else {
+        // 200 OK지만 비어있음 -> 신규 유저
+        setProfileData({ statusMessage: "", introduction: "" });
+        setIsProfileExists(false); // 데이터 없으니 생성 모드
+      }
     } catch (error) {
+      // 진짜 서버 에러인 경우
+      console.error("프로필 조회 오류:", error);
       setProfileData({ statusMessage: "", introduction: "" });
       setIsProfileExists(false);
     }
@@ -231,19 +245,27 @@ export function DiaryHome() {
     }
   };
 
-  // 프로필 이미지 조회 (서버)
+  // ✅ [수정] 프로필 이미지 조회 (서버 주소 붙이기)
   async function fetchProfileImage() {
     try {
       const response = await axios.get(`/api/member/${ownerId}`);
-      const imageUrl = response.data.imageUrl || response.data.profileImage;
-      setProfileImage(imageUrl);
+      const imagePath = response.data.imageUrl || response.data.profileImage;
+
+      if (imagePath) {
+        // http로 시작하면 그대로, 아니면 서버 주소 붙이기
+        const fullUrl = imagePath.startsWith("http")
+          ? imagePath
+          : `${SERVER_HOST}${imagePath.startsWith("/") ? imagePath : `/uploads/${imagePath}`}`;
+
+        setProfileImage(fullUrl);
+      } else {
+        setProfileImage(null);
+      }
     } catch (error) {
       setProfileImage(null);
     }
   }
 
-  // ------------------------------------------------------
-  // 🚫 조건부 리턴 (이 위쪽에서 모든 Hook 선언 끝내야 함)
   // ------------------------------------------------------
   if (isLoading)
     return (
@@ -261,7 +283,6 @@ export function DiaryHome() {
   return (
     <DiaryProvider>
       <Center
-        // PC: 100vh 고정, Mobile: auto (내용만큼 늘어남)
         h={{ base: "auto", md: "100vh" }}
         minH="100vh"
         bg={outerBg}
@@ -271,15 +292,12 @@ export function DiaryHome() {
         }}
         p={{ base: 0, md: 8 }}
         alignItems={{ base: "flex-start", md: "center" }}
-        // 세로 스크롤: PC 숨김 / 모바일 허용
         overflowY={{ base: "visible", md: "hidden" }}
-        // 가로 스크롤: 무조건 방지
         overflowX="hidden"
       >
         <Flex
           w="100%"
           maxW="1280px"
-          // PC: 720px 고정 / 모바일: auto (늘어남)
           h={{ base: "auto", md: "720px" }}
           bg={skinMainBg}
           borderRadius={{ base: "0", md: "20px" }}
@@ -287,9 +305,7 @@ export function DiaryHome() {
           boxShadow="xl"
           position="relative"
           direction={{ base: "column", md: "row" }}
-          // 모바일 하단바 여유 공간
           pb={{ base: "80px", md: "5" }}
-          // 탭이 밖으로 튀어나오게 하려면 visible 필수
           overflow="visible"
         >
           {/* 내부 흰색 종이 영역 */}
@@ -311,7 +327,6 @@ export function DiaryHome() {
             >
               {/* 👈 [좌측] 프로필 영역 */}
               <VStack
-                // 모바일: 홈일 때만 보임
                 display={{ base: isRootPath ? "flex" : "none", md: "flex" }}
                 w={{ base: "100%", md: "250px" }}
                 h={{ base: "auto", md: "100%" }}
@@ -324,7 +339,6 @@ export function DiaryHome() {
                 align="stretch"
                 justify="flex-start"
                 flexShrink={0}
-                // PC에서는 내부 스크롤, 모바일은 전체 스크롤
                 overflowY={{ base: "visible", md: "auto" }}
               >
                 <Box
@@ -425,7 +439,6 @@ export function DiaryHome() {
                   >
                     {isEditing ? (
                       <VStack spacing={2}>
-                        {/* value || "" 처리로 에러 방지 */}
                         <Input
                           size="sm"
                           value={profileData.statusMessage || ""}
@@ -527,7 +540,6 @@ export function DiaryHome() {
 
               {/* 👉 [우측] 콘텐츠 영역 */}
               <VStack
-                // 모바일에서도 항상 렌더링 (홈이면 카드, 메뉴면 메뉴)
                 display="flex"
                 flex={1}
                 h={{ base: "auto", md: "100%" }}
@@ -554,7 +566,6 @@ export function DiaryHome() {
                   border="1px solid"
                   borderColor={contentBorderColor}
                   p={4}
-                  // 모바일 홈: 전체 스크롤 사용(visible), PC: 박스 스크롤(auto)
                   overflowY={{
                     base: isRootPath ? "visible" : "auto",
                     md: "auto",
