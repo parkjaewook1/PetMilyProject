@@ -67,7 +67,7 @@ export function MemberSignup(props) {
     isPhoneNumberValid &&
     postcode;
 
-  // 이메일 유효성 검사
+  // --- 유효성 검사 로직 ---
   function validateUsername(username) {
     const usernameRegex = /^[a-zA-Z0-9]+@[a-zA-Z]+\.[a-zA-Z]{2,3}$/.test(
       username,
@@ -75,13 +75,11 @@ export function MemberSignup(props) {
     setIsUsernameValid(usernameRegex);
   }
 
-  // 닉네임 유효성 검사
   function validateNickname(nickname) {
     const nicknameRegex = /^[가-힣a-zA-Z0-9]{3,12}$/.test(nickname);
     setIsNicknameValid(nicknameRegex);
   }
 
-  // 비밀번호 유효성 검사
   function validatePassword(password) {
     const passwordRegex =
       /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,16}$/.test(
@@ -90,37 +88,32 @@ export function MemberSignup(props) {
     setIsPasswordValid(passwordRegex);
   }
 
-  // 이름 유효성 검사
   function validateName(name) {
     const nameRegex = /^[가-힣]+$/.test(name);
     setIsNameValid(nameRegex);
   }
 
-  // 생년월일 유효성 검사
   function validateBirthDate(date) {
-    if (date.length !== 8) return false; // 길이가 8이 아니면 false 반환
-
+    if (date.length !== 8) return false;
     const year = parseInt(date.substring(0, 4), 10);
     const month = parseInt(date.substring(4, 6), 10);
     const day = parseInt(date.substring(6, 8), 10);
     const currentYear = new Date().getFullYear();
 
-    if (year < 1900 || year > currentYear) return false; // 연도가 1900-현재 연도 범위가 아니면 false 반환
-    if (month < 1 || month > 12) return false; // 월이 1-12 범위가 아니면 false 반환
+    if (year < 1900 || year > currentYear) return false;
+    if (month < 1 || month > 12) return false;
 
-    // 월별 일자
     const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
     if (month === 2 && day === 29) {
       if ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) {
-        return true; // 윤년이면 true 반환
+        return true;
       }
-      return false; // 윤년이 아니면 false 반환
+      return false;
     }
     if (day < 1 || day > daysInMonth[month - 1]) return false;
-    return true; // 위 조건에 모두 부합하면 true 반환
+    return true;
   }
 
-  // 연락처 유효성 검사
   function validatePhoneNumber(phoneNumber) {
     const phoneNumberRegex =
       /^01[0-9]{1}-[0-9]{3,4}-[0-9]{4}$/.test(phoneNumber) ||
@@ -128,119 +121,129 @@ export function MemberSignup(props) {
     return phoneNumberRegex;
   }
 
-  // 이름 입력 처리
+  // --- 입력 핸들러 ---
   function handleNameChange(e) {
     const name = e.target.value.trim();
     setName(name);
     validateName(name);
   }
 
-  // 생년월일 입력 처리
   function handleBirthDateChange(e) {
-    const birthDateRegex = e.target.value.replace(/[^0-9]/g, "").slice(0, 8); // 숫자만 입력받고 8자리로 제한
+    const birthDateRegex = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
     setBirthDate(birthDateRegex);
-
-    // 유효성 검사 호출
     const isValid = validateBirthDate(birthDateRegex);
     setIsBirthDateValid(isValid);
   }
 
-  // 연락처 입력 처리
   function handlePhoneNumberChange(e) {
     const phoneNumberRegex = e.target.value
-      .replace(/[^0-9]/g, "") // 숫자만 입력받기
+      .replace(/[^0-9]/g, "")
       .replace(/(^02.{0}|^01.{1}|[0-9]{3})([0-9]{3,4})([0-9]{4})/g, "$1-$2-$3");
     setPhoneNumber(phoneNumberRegex);
-
-    // 유효성 검사 호출
     const isValid = validatePhoneNumber(phoneNumberRegex);
     setIsPhoneNumberValid(isValid);
   }
 
-  // 이메일 중복확인
+  // ✅ [수정] 이메일 중복확인 (200 OK여도 내용이 없으면 사용 가능)
   function handleCheckUsername() {
-    if (!isUsernameValid) return; // 이메일 유효성 검사를 통과한 경우에만 요청
+    if (!isUsernameValid) return;
+
     axios
       .get(`/api/member/check?username=${username}`)
       .then((res) => {
-        toast({
-          status: "warning",
-          description: "사용할 수 없는 이메일입니다.",
-          position: "top",
-          duration: 3000,
-        });
-      })
-      .catch((err) => {
-        if (err.response.status === 404) {
+        // 데이터가 없으면(null 또는 빈 문자열) -> "사용 가능"
+        if (!res.data || res.data === "") {
           toast({
-            status: "info",
+            status: "success", // 초록색 토스트
             description: "사용할 수 있는 이메일입니다.",
+            position: "top",
+            duration: 1000,
+          });
+          setIsUsernameConfirmed(true);
+        } else {
+          // 데이터가 있으면 -> "중복"
+          toast({
+            status: "warning",
+            description: "이미 사용 중인 이메일입니다.",
             position: "top",
             duration: 3000,
           });
-          setIsUsernameConfirmed(true); // 이메일 확인 상태 업데이트
+          setIsUsernameConfirmed(false);
         }
       })
-      .finally();
+      .catch((err) => {
+        console.error(err);
+        toast({
+          status: "error",
+          description: "확인 중 오류가 발생했습니다.",
+          position: "top",
+          duration: 3000,
+        });
+      });
   }
 
-  // 닉네임 중복확인
+  // ✅ [수정] 닉네임 중복확인 (200 OK여도 내용이 없으면 사용 가능)
   function handleCheckNickname() {
-    if (!isNicknameValid) return; // 닉네임 유효성 검사를 통과한 경우에만 요청
+    if (!isNicknameValid) return;
+
     axios
       .get(`/api/member/check?nickname=${nickname}`)
       .then((res) => {
-        toast({
-          status: "warning",
-          description: "사용할 수 없는 닉네임입니다.",
-          position: "top",
-          duration: 3000,
-        });
-      })
-      .catch((err) => {
-        if (err.response.status === 404) {
+        // 데이터가 없으면 -> "사용 가능"
+        if (!res.data || res.data === "") {
           toast({
-            status: "info",
+            status: "success", // 초록색 토스트
             description: "사용할 수 있는 닉네임입니다.",
+            position: "top",
+            duration: 1000,
+          });
+          setIsNicknameConfirmed(true);
+        } else {
+          // 데이터가 있으면 -> "중복"
+          toast({
+            status: "warning",
+            description: "이미 사용 중인 닉네임입니다.",
             position: "top",
             duration: 3000,
           });
-          setIsNicknameConfirmed(true); // 닉네임 확인 상태 업데이트
+          setIsNicknameConfirmed(false);
         }
       })
-      .finally();
+      .catch((err) => {
+        console.error(err);
+        toast({
+          status: "error",
+          description: "확인 중 오류가 발생했습니다.",
+          position: "top",
+          duration: 3000,
+        });
+      });
   }
 
-  // 이메일 재입력
   function handleReenterUsername() {
-    setUsername(""); // 이메일 입력란 초기화
-    setIsUsernameConfirmed(false); // 이메일 확인 상태 초기화
-    setIsUsernameValid(false); // 이메일 유효성 초기화
+    setUsername("");
+    setIsUsernameConfirmed(false);
+    setIsUsernameValid(false);
   }
 
-  // 닉네임 재입력
   function handleReenterNickname() {
-    setNickname(""); // 닉네임 입력란 초기화
-    setIsNicknameConfirmed(false); // 닉네임 확인 상태 초기화
-    setIsNicknameValid(false); // 닉네임 유효성 초기화
+    setNickname("");
+    setIsNicknameConfirmed(false);
+    setIsNicknameValid(false);
   }
 
-  // 비밀번호 보기/숨기기
   function handleClickPassword() {
     setShowPassword(!showPassword);
   }
 
-  // 성별 선택
   function handleGenderSelect(selectedGender) {
     setGender(selectedGender);
   }
 
-  // 국적 선택
   function handleNationalitySelect(selectedNationality) {
     setNationality(selectedNationality);
   }
 
-  // 주소 검색
   function openPostcodePopup() {
     const postcodePopup = new window.daum.Postcode({
       onComplete: function (data) {
@@ -251,7 +254,6 @@ export function MemberSignup(props) {
     postcodePopup.open();
   }
 
-  // 제출
   function handleSubmit() {
     const signupData = {
       name: name,
@@ -266,7 +268,6 @@ export function MemberSignup(props) {
       mainAddress: mainAddress,
       detailedAddress: detailedAddress,
     };
-    console.log("signupData:", signupData);
 
     axios
       .post("/api/member/signup", signupData)
@@ -301,7 +302,7 @@ export function MemberSignup(props) {
             <Input
               placeholder={"이메일"}
               value={username}
-              readOnly={isUsernameConfirmed} // 이메일 확인 후 readOnly 설정
+              readOnly={isUsernameConfirmed}
               onChange={(e) => {
                 setUsername(e.target.value.trim());
                 validateUsername(e.target.value.trim());
@@ -342,12 +343,13 @@ export function MemberSignup(props) {
             </Alert>
           )}
         </FormControl>
+
         <FormControl isRequired>
           <InputGroup>
             <Input
               placeholder={"닉네임"}
               value={nickname}
-              readOnly={isNicknameConfirmed} // 닉네임 확인 후 readOnly 설정
+              readOnly={isNicknameConfirmed}
               onChange={(e) => {
                 setNickname(e.target.value.trim());
                 validateNickname(e.target.value.trim());
@@ -388,6 +390,8 @@ export function MemberSignup(props) {
             </Alert>
           )}
         </FormControl>
+
+        {/* ... 비밀번호 입력 (나머지 폼 요소는 기존과 동일) ... */}
         <FormControl isRequired>
           <InputGroup>
             <Input
@@ -438,6 +442,7 @@ export function MemberSignup(props) {
             </Alert>
           )}
         </FormControl>
+
         <Flex>
           <FormControl isRequired>
             <Flex justifyContent={"space-around"} mt={4} mb={4}>
@@ -496,6 +501,7 @@ export function MemberSignup(props) {
             </Flex>
           </FormControl>
         </Flex>
+
         <FormControl isRequired>
           <Input placeholder="이름" value={name} onChange={handleNameChange} />
           {!isNameValid && name && (
@@ -505,6 +511,7 @@ export function MemberSignup(props) {
             </Alert>
           )}
         </FormControl>
+
         <FormControl isRequired>
           <Input
             placeholder="생년월일 8자리 ( YYYYMMDD )"
@@ -518,6 +525,7 @@ export function MemberSignup(props) {
             </Alert>
           )}
         </FormControl>
+
         <FormControl isRequired>
           <Input
             placeholder="연락처 ( '-' 제외하고 입력 )"
@@ -533,6 +541,7 @@ export function MemberSignup(props) {
             </Alert>
           )}
         </FormControl>
+
         <FormControl isRequired>
           <Flex>
             <Flex width={"80%"} direction={"column"}>
@@ -559,6 +568,7 @@ export function MemberSignup(props) {
             placeholder="상세주소를 입력하세요."
           />
         </FormControl>
+
         <Button
           mt={5}
           width={"100%"}
@@ -571,7 +581,7 @@ export function MemberSignup(props) {
           }
           onClick={handleSubmit}
         >
-          제출
+          회원 가입
         </Button>
       </Box>
     </Center>
