@@ -66,8 +66,13 @@ export function MemberEdit(props) {
     postcode;
 
   useEffect(() => {
-    console.log(memberInfo?.role);
-    if (!memberInfo || memberInfo.role !== "ROLE_ADMIN") {
+    if (!memberInfo) return;
+
+    // 2. 권한 체크 변수 만들기
+    const isAdmin = memberInfo.role === "ROLE_ADMIN"; // 관리자 여부
+    const isOwner = String(memberInfo.id) === String(id); // 본인 여부 (문자열 변환 필수!)
+
+    if (!isAdmin && !isOwner) {
       navigate("/unauthorized");
       return;
     }
@@ -75,7 +80,6 @@ export function MemberEdit(props) {
     async function fetchMemberData() {
       try {
         const res = await axios.get(`/api/member/${id}`);
-        console.log(res.data);
         const memberData = res.data;
         setUsername(memberData.username);
         setNickname(memberData.nickname);

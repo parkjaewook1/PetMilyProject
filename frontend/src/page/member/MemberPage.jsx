@@ -39,6 +39,7 @@ export function MemberPage() {
       navigate("/unauthorized");
       return; // Stop execution if unauthorized
     }
+    console.log("아이디" + id);
 
     // 3. Fetch member data only if authorized
     async function fetchMemberData() {
