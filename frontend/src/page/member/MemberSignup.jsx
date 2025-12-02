@@ -144,16 +144,31 @@ export function MemberSignup(props) {
     setIsPhoneNumberValid(isValid);
   }
 
-  // ✅ [수정] 이메일 중복확인 (200 OK여도 내용이 없으면 사용 가능)
+  // ✅ [수정] 이메일 중복확인 (강력한 빈 값 체크)
   function handleCheckUsername() {
-    if (!isUsernameValid) return;
+    if (!isUsernameValid) {
+      toast({
+        status: "error",
+        description: "이메일 형식을 올바르게 입력해주세요.",
+        position: "top",
+        duration: 1000,
+      });
+      return;
+    }
+
+    // 파라미터 안전장치: username과 email 둘 다 보냄
+    const params = new URLSearchParams();
+    params.append("username", username);
+    params.append("email", username);
 
     axios
-      .get(`/api/member/check?username=${username}`)
+      .get(`/api/member/check?${params.toString()}`)
       .then((res) => {
-        console.log("이메용일 중복값 확인용" + res.data);
-        // 데이터가 없으면(null 또는 빈 문자열) -> "사용 가능"
-        // 1. 데이터가 없거나(null, ""), 2. 빈 객체({})인 경우 -> "사용 가능"
+        // 👀 F12 콘솔에서 이 로그를 확인하세요! (서버가 뭘 줬는지)
+        console.log("이메일 체크 응답 데이터:", res.data);
+
+        // 1. 데이터가 null, undefined, 빈 문자열("")인 경우 -> 사용 가능
+        // 2. 빈 객체({})인 경우 -> 사용 가능 (Object.keys 체크)
         const isAvailable =
           !res.data ||
           res.data === "" ||
@@ -168,7 +183,6 @@ export function MemberSignup(props) {
           });
           setIsUsernameConfirmed(true);
         } else {
-          // 데이터가 실제로 있음 -> "중복"
           toast({
             status: "warning",
             description: "이미 사용 중인 이메일입니다.",
@@ -179,7 +193,7 @@ export function MemberSignup(props) {
         }
       })
       .catch((err) => {
-        console.error(err);
+        console.error("서버 에러:", err);
         toast({
           status: "error",
           description: "확인 중 오류가 발생했습니다.",
@@ -189,16 +203,23 @@ export function MemberSignup(props) {
       });
   }
 
-  // ✅ [수정] 닉네임 중복확인 (200 OK여도 내용이 없으면 사용 가능)
+  // ✅ [수정] 닉네임 중복확인 (강력한 빈 값 체크)
   function handleCheckNickname() {
-    if (!isNicknameValid) return;
+    if (!isNicknameValid) {
+      toast({
+        status: "error",
+        description: "닉네임 형식을 확인해주세요.",
+        position: "top",
+        duration: 1000,
+      });
+      return;
+    }
 
     axios
       .get(`/api/member/check?nickname=${nickname}`)
       .then((res) => {
-        console.log("닉네임 중복확인 응답값:", res.data); // 👀 콘솔 확인용
+        console.log("닉네임 체크 응답 데이터:", res.data);
 
-        // 1. 데이터가 없거나(null, ""), 2. 빈 객체({})인 경우 -> "사용 가능"
         const isAvailable =
           !res.data ||
           res.data === "" ||
@@ -404,7 +425,6 @@ export function MemberSignup(props) {
           )}
         </FormControl>
 
-        {/* ... 비밀번호 입력 (나머지 폼 요소는 기존과 동일) ... */}
         <FormControl isRequired>
           <InputGroup>
             <Input
@@ -425,6 +445,7 @@ export function MemberSignup(props) {
             </InputRightElement>
           </InputGroup>
         </FormControl>
+
         <FormControl isRequired>
           <InputGroup>
             {password && (
