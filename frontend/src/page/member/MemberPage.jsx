@@ -39,7 +39,6 @@ export function MemberPage() {
       navigate("/unauthorized");
       return; // Stop execution if unauthorized
     }
-    console.log("아이디" + id);
 
     // 3. Fetch member data only if authorized
     async function fetchMemberData() {
@@ -134,7 +133,6 @@ export function MemberPage() {
 
   function handleEdit() {
     navigate(`/member/edit/${id}`);
-    console.log("이동하려는 ID:", id);
   }
 
   async function handleDeleteMember() {
