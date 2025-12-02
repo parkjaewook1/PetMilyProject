@@ -151,22 +151,29 @@ export function MemberSignup(props) {
     axios
       .get(`/api/member/check?username=${username}`)
       .then((res) => {
+        console.log("이메용일 중복값 확인용" + res.data);
         // 데이터가 없으면(null 또는 빈 문자열) -> "사용 가능"
-        if (!res.data || res.data === "") {
+        // 1. 데이터가 없거나(null, ""), 2. 빈 객체({})인 경우 -> "사용 가능"
+        const isAvailable =
+          !res.data ||
+          res.data === "" ||
+          (typeof res.data === "object" && Object.keys(res.data).length === 0);
+
+        if (isAvailable) {
           toast({
-            status: "success", // 초록색 토스트
-            description: "사용할 수 있는 이메일입니다.",
+            status: "success",
+            description: "사용 가능한 이메일입니다.",
             position: "top",
             duration: 1000,
           });
           setIsUsernameConfirmed(true);
         } else {
-          // 데이터가 있으면 -> "중복"
+          // 데이터가 실제로 있음 -> "중복"
           toast({
             status: "warning",
             description: "이미 사용 중인 이메일입니다.",
             position: "top",
-            duration: 3000,
+            duration: 1000,
           });
           setIsUsernameConfirmed(false);
         }
@@ -177,7 +184,7 @@ export function MemberSignup(props) {
           status: "error",
           description: "확인 중 오류가 발생했습니다.",
           position: "top",
-          duration: 3000,
+          duration: 1000,
         });
       });
   }
@@ -189,22 +196,28 @@ export function MemberSignup(props) {
     axios
       .get(`/api/member/check?nickname=${nickname}`)
       .then((res) => {
-        // 데이터가 없으면 -> "사용 가능"
-        if (!res.data || res.data === "") {
+        console.log("닉네임 중복확인 응답값:", res.data); // 👀 콘솔 확인용
+
+        // 1. 데이터가 없거나(null, ""), 2. 빈 객체({})인 경우 -> "사용 가능"
+        const isAvailable =
+          !res.data ||
+          res.data === "" ||
+          (typeof res.data === "object" && Object.keys(res.data).length === 0);
+
+        if (isAvailable) {
           toast({
-            status: "success", // 초록색 토스트
-            description: "사용할 수 있는 닉네임입니다.",
+            status: "success",
+            description: "사용 가능한 닉네임입니다.",
             position: "top",
             duration: 1000,
           });
           setIsNicknameConfirmed(true);
         } else {
-          // 데이터가 있으면 -> "중복"
           toast({
             status: "warning",
             description: "이미 사용 중인 닉네임입니다.",
             position: "top",
-            duration: 3000,
+            duration: 1000,
           });
           setIsNicknameConfirmed(false);
         }
@@ -215,7 +228,7 @@ export function MemberSignup(props) {
           status: "error",
           description: "확인 중 오류가 발생했습니다.",
           position: "top",
-          duration: 3000,
+          duration: 1000,
         });
       });
   }
