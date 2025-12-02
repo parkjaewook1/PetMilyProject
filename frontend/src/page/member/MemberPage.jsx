@@ -133,6 +133,7 @@ export function MemberPage() {
 
   function handleEdit() {
     navigate(`/member/edit/${id}`);
+    console.log("이동하려는 ID:", id);
   }
 
   async function handleDeleteMember() {
