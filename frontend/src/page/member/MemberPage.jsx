@@ -29,11 +29,18 @@ export function MemberPage() {
   const toast = useToast();
 
   useEffect(() => {
-    if (!memberInfo || memberInfo.id !== id) {
+    // 1. Wait for memberInfo to load
+    if (!memberInfo) return;
+
+    // 2. Safe Comparison: Convert both IDs to strings
+    // 'id' from useParams is always a string.
+    // 'memberInfo.id' might be a number.
+    if (String(memberInfo.id) !== String(id)) {
       navigate("/unauthorized");
-      return;
+      return; // Stop execution if unauthorized
     }
 
+    // 3. Fetch member data only if authorized
     async function fetchMemberData() {
       try {
         const res = await axios.get(`/api/member/${id}`);
