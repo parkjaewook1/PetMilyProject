@@ -36,18 +36,22 @@ public class ReissueController {
 
         System.out.println("=== /api/member/reissue 호출됨 ===");
 
-        // 1. Refresh token 추출
+        // 1. Refresh token 추출 (우선 쿠키 확인)
         String refresh = null;
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                System.out.println("쿠키 이름: " + cookie.getName() + ", 값: " + cookie.getValue());
                 if ("refresh".equals(cookie.getName())) {
                     refresh = cookie.getValue();
                 }
             }
         }
-        System.out.println("받은 refresh: " + refresh);
+
+        // ⚡️⚡️ [핵심 수정] 쿠키에 없으면 헤더(Refresh-Token)에서도 확인 ⚡️⚡️
+        if (refresh == null) {
+            refresh = request.getHeader("Refresh-Token");
+            System.out.println("헤더에서 찾은 refresh: " + refresh);
+        }
 
         if (refresh == null) {
             return new ResponseEntity<>("refresh token null", HttpStatus.BAD_REQUEST);
@@ -76,14 +80,11 @@ public class ReissueController {
         String role = jwtUtil.getRole(refresh);
         Integer userId = jwtUtil.getUserId(refresh);
 
-        // role null 방지
         if (role == null || role.isBlank()) {
             role = "ROLE_USER";
         }
 
-        System.out.println("username: " + username + ", role: " + role + ", userId: " + userId);
-
-        // 6. JWT 신규 발급 (userId 포함)
+        // 6. JWT 신규 발급
         String newAccess = jwtUtil.createJwt("access", username, role, userId, ACCESS_EXPIRE_MS);
         String newRefresh = jwtUtil.createJwt("refresh", username, role, userId, REFRESH_EXPIRE_MS);
 
@@ -93,6 +94,10 @@ public class ReissueController {
 
         // 8. 응답 헤더/쿠키 설정
         response.setHeader("access", newAccess);
+
+        // ⚡️⚡️ [핵심 수정] 새 Refresh 토큰을 헤더로도 보내줌 (쿠키 차단 대비)
+        response.setHeader("Refresh-Token", newRefresh);
+
         response.addCookie(createCookie("refresh", newRefresh));
 
         return new ResponseEntity<>(HttpStatus.OK);
@@ -110,7 +115,8 @@ public class ReissueController {
     private Cookie createCookie(String key, String value) {
         Cookie cookie = new Cookie(key, value);
         cookie.setMaxAge((int) (REFRESH_EXPIRE_MS / 1000)); // 초 단위
-        cookie.setSecure(false); // HTTPS 환경이면 true
+        // HTTP 백엔드이므로 secure는 false
+        cookie.setSecure(false);
         cookie.setPath("/");
         cookie.setHttpOnly(true);
         return cookie;
