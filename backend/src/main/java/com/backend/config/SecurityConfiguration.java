@@ -90,18 +90,16 @@ public class SecurityConfiguration {
             }
         }));
 
-        // 2. 에러 핸들링 (API는 401 JSON 반환, 나머지는 리다이렉트)
+        // 2. 에러 핸들링 (수정됨: 조건문 삭제, 리다이렉트 삭제)
         http.exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {
                     System.out.println("⛔ 인증 실패 (401) - 요청 경로: " + request.getRequestURI());
 
-                    if (request.getRequestURI().startsWith("/api/")) {
-                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                        response.setContentType("application/json;charset=UTF-8");
-                        response.getWriter().write("{\"error\":\"unauthorized\"}");
-                    } else {
-                        response.sendRedirect("/member/login");
-                    }
+                    // ⚡️ [핵심 수정] if-else 리다이렉트 로직을 전부 지웁니다.
+                    // API 서버는 무조건 401 상태코드와 JSON만 내려주면 됩니다.
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("{\"error\":\"unauthorized\", \"message\":\"로그인이 필요합니다.\"}");
                 })
         );
 
