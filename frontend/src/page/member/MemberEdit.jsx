@@ -23,6 +23,7 @@ export function MemberEdit(props) {
   const { memberInfo, setMemberInfo } = useContext(LoginContext);
   const [username, setUsername] = useState("");
   const [nickname, setNickname] = useState("");
+  // 초기 로딩 시 기존 닉네임은 확인된 상태로 간주
   const [isNicknameConfirmed, setIsNicknameConfirmed] = useState(true);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -35,11 +36,11 @@ export function MemberEdit(props) {
   const [mainAddress, setMainAddress] = useState("");
   const [detailedAddress, setDetailedAddress] = useState("");
 
-  const [isNicknameValid, setIsNicknameValid] = useState(false);
+  const [isNicknameValid, setIsNicknameValid] = useState(true); // 초기값 true (기존 데이터)
   const [isPasswordValid, setIsPasswordValid] = useState(false);
-  const [isNameValid, setIsNameValid] = useState(false);
-  const [isBirthDateValid, setIsBirthDateValid] = useState(false);
-  const [isPhoneNumberValid, setIsPhoneNumberValid] = useState(false);
+  const [isNameValid, setIsNameValid] = useState(true);
+  const [isBirthDateValid, setIsBirthDateValid] = useState(true);
+  const [isPhoneNumberValid, setIsPhoneNumberValid] = useState(true);
 
   const navigate = useNavigate();
   const toast = useToast();
@@ -54,10 +55,10 @@ export function MemberEdit(props) {
     "-" +
     birthDate.slice(6, 8);
 
+  // 비밀번호가 입력되지 않았으면(변경 안 함) 유효성 검사 패스 처리
   const isFormValid =
     isNicknameValid &&
-    isPasswordValid &&
-    isPasswordRight &&
+    (password ? isPasswordValid && isPasswordRight : true) &&
     gender &&
     nationality &&
     isNameValid &&
@@ -70,7 +71,7 @@ export function MemberEdit(props) {
 
     // 2. 권한 체크 변수 만들기
     const isAdmin = memberInfo.role === "ROLE_ADMIN"; // 관리자 여부
-    const isOwner = String(memberInfo.id) === String(id); // 본인 여부 (문자열 변환 필수!)
+    const isOwner = String(memberInfo.id) === String(id); // 본인 여부
 
     if (!isAdmin && !isOwner) {
       navigate("/unauthorized");
@@ -110,7 +111,7 @@ export function MemberEdit(props) {
     }
 
     fetchMemberData();
-  }, [id, memberInfo]);
+  }, [id, memberInfo, navigate]);
 
   function validateNickname(nickname) {
     const nicknameRegex = /^[가-힣a-zA-Z0-9]{3,12}$/.test(nickname);
@@ -205,36 +206,50 @@ export function MemberEdit(props) {
     postcodePopup.open();
   }
 
+  // 닉네임 수정 버튼 클릭 시 초기화
   function handleReenterNickname() {
     setNickname(""); // 닉네임 입력란 초기화
-    setIsNicknameConfirmed(false); // 닉네임 확인 상태 초기화
+    setIsNicknameConfirmed(false); // 닉네임 확인 상태 초기화 (수정 모드 진입)
     setIsNicknameValid(false); // 닉네임 유효성 초기화
   }
 
+  // ✅ [수정 완료] 닉네임 중복확인 로직 (MemberSignup과 통일)
   function handleCheckNickname() {
-    if (!isNicknameValid) return; // 닉네임 유효성 검사를 통과한 경우에만 요청
+    if (!isNicknameValid) return;
+
     axios
       .get(`/api/member/check?nickname=${nickname}`)
       .then((res) => {
-        toast({
-          status: "warning",
-          description: "사용할 수 없는 닉네임입니다.",
-          position: "top",
-          duration: 3000,
-        });
-      })
-      .catch((err) => {
-        if (err.response.status === 404) {
+        // 백엔드에서 true(Boolean)를 보내주므로, true인지 확인
+        if (res.data === true) {
           toast({
-            status: "info",
-            description: "사용할 수 있는 닉네임입니다.",
+            status: "success",
+            description: "사용 가능한 닉네임입니다.",
             position: "top",
             duration: 3000,
           });
-          setIsNicknameConfirmed(true); // 닉네임 확인 상태 업데이트
+          setIsNicknameConfirmed(true);
+        } else {
+          // 200 OK지만 false가 온 경우
+          toast({
+            status: "warning",
+            description: "이미 사용 중인 닉네임입니다.",
+            position: "top",
+            duration: 3000,
+          });
+          setIsNicknameConfirmed(false);
         }
       })
-      .finally();
+      .catch((err) => {
+        // 409 Conflict 등 에러가 나면 중복된 것임
+        toast({
+          status: "warning",
+          description: "이미 사용 중인 닉네임입니다.",
+          position: "top",
+          duration: 3000,
+        });
+        setIsNicknameConfirmed(false);
+      });
   }
 
   function handleSubmit(event) {
