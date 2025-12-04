@@ -47,17 +47,26 @@ public class MemberController {
         }
     }
 
-    // 회원가입 전 nickname 중복 체크 (로그인 전)
-    // 🔄 [수정] 리턴 타입을 String -> Boolean으로 변경
+    // 회원가입 및 수정 시 nickname 중복 체크
+    // 🔄 [수정] 로그인한 사용자의 경우, 본인 닉네임은 중복 아님 처리
     @GetMapping(value = "/check", params = "nickname")
-    public ResponseEntity<Boolean> checkNickname(@RequestParam("nickname") String nickname) {
+    public ResponseEntity<Boolean> checkNickname(
+            @RequestParam("nickname") String nickname,
+            @AuthenticationPrincipal CustomUserDetails principal) { // 👈 로그인 정보 추가
+
         Member member = service.getByNickname(nickname);
 
         if (member == null) {
-            // ✅ [수정] 사용 가능하면 true
+            // 1. 닉네임을 쓰는 사람이 아예 없으면 -> 사용 가능 (true)
             return ResponseEntity.ok(true);
         } else {
-            // ❌ [수정] 중복이면 false + 409 Conflict
+            // 2. 누군가 쓰고 있음. 근데 그게 나인가?
+            if (principal != null && member.getId().equals(principal.getId())) {
+                // 로그인 상태이고, 찾은 회원의 ID가 내 ID와 같다면 -> 사용 가능 (true)
+                return ResponseEntity.ok(true);
+            }
+
+            // 3. 남이 쓰고 있음 -> 중복 (false + 409)
             return ResponseEntity.status(HttpStatus.CONFLICT).body(false);
         }
     }
