@@ -33,30 +33,32 @@ public class MemberController {
     }
 
     // 회원가입 전 username 중복 체크 (로그인 전)
+    // 🔄 [수정] 리턴 타입을 String -> Boolean으로 변경
     @GetMapping(value = "/check", params = "username")
-    public ResponseEntity<String> checkUsername(@RequestParam("username") String username) {
+    public ResponseEntity<Boolean> checkUsername(@RequestParam("username") String username) {
         Member member = service.getByUsername(username);
 
         if (member == null) {
-            // ✅ [수정] 멤버가 없으면(null) -> 사용 가능! -> 200 OK 리턴
-            return ResponseEntity.ok("사용 가능한 이메일입니다.");
+            // ✅ [수정] 사용 가능하면 true 반환 (200 OK)
+            return ResponseEntity.ok(true);
         } else {
-            // ❌ [수정] 멤버가 있으면 -> 중복! -> 409 Conflict 리턴
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 사용 중인 이메일입니다.");
+            // ❌ [수정] 중복이면 409 상태코드와 함께 false 반환 (혹은 그냥 상태코드만)
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(false);
         }
     }
 
     // 회원가입 전 nickname 중복 체크 (로그인 전)
+    // 🔄 [수정] 리턴 타입을 String -> Boolean으로 변경
     @GetMapping(value = "/check", params = "nickname")
-    public ResponseEntity<String> checkNickname(@RequestParam("nickname") String nickname) {
+    public ResponseEntity<Boolean> checkNickname(@RequestParam("nickname") String nickname) {
         Member member = service.getByNickname(nickname);
 
         if (member == null) {
-            // ✅ [수정] 사용 가능 -> 200 OK
-            return ResponseEntity.ok("사용 가능한 닉네임입니다.");
+            // ✅ [수정] 사용 가능하면 true
+            return ResponseEntity.ok(true);
         } else {
-            // ❌ [수정] 중복 -> 409 Conflict
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 사용 중인 닉네임입니다.");
+            // ❌ [수정] 중복이면 false + 409 Conflict
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(false);
         }
     }
 
