@@ -50,10 +50,12 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         CustomOAuth2User customUserDetails = (CustomOAuth2User) authentication.getPrincipal();
 
         String username = customUserDetails.getUsername();
-        Long userId = null;
+        Integer userId = null;
 
         if (customUserDetails.getId() != null) {
-            userId = customUserDetails.getId().longValue();
+            // getId()가 Long을 반환한다면 .intValue()로, Integer라면 그대로 사용
+            // 여기서는 안전하게 Number 타입으로 받아서 intValue() 호출
+            userId = ((Number) customUserDetails.getId()).intValue();
         }
         // 필요 시 DB 조회로 보완 가능
         // else {
