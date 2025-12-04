@@ -119,7 +119,7 @@ export function BoardView() {
       .then(() => {
         navigate("/board/list", {
           state: {
-            message: `${id}번 게시물이 삭제되었습니다.`, // 전달할 메시지
+            message: `게시물이 삭제되었습니다.`, // 전달할 메시지
           },
           replace: true, // 뒤로가기 방지
         });
