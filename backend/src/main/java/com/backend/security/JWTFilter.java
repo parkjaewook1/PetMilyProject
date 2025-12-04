@@ -79,7 +79,7 @@ public class JWTFilter extends OncePerRequestFilter {
 
                     String username = jwtUtil.getUsername(refreshToken);
                     String role = jwtUtil.getRole(refreshToken);
-                    Long userId = jwtUtil.getUserId(refreshToken);
+                    Integer userId = jwtUtil.getUserId(refreshToken);
 
                     if (role == null || role.isBlank()) role = "ROLE_USER";
                     if (username == null) username = "";
@@ -146,7 +146,7 @@ public class JWTFilter extends OncePerRequestFilter {
         // 토큰 정상 -> 인증 객체 저장
         String username = jwtUtil.getUsername(accessToken);
         String role = jwtUtil.getRole(accessToken);
-        Long userId = null;
+        Integer userId = null;
         try {
             userId = jwtUtil.getUserId(accessToken);
         } catch (Exception ignore) {

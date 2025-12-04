@@ -74,7 +74,7 @@ public class ReissueController {
         // 5. 토큰 정보 추출
         String username = jwtUtil.getUsername(refresh);
         String role = jwtUtil.getRole(refresh);
-        Long userId = jwtUtil.getUserId(refresh);
+        Integer userId = jwtUtil.getUserId(refresh);
 
         // role null 방지
         if (role == null || role.isBlank()) {
