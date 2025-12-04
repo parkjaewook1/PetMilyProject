@@ -55,13 +55,13 @@ public class JWTUtil {
                 .get("role", String.class);
     }
 
-    public Long getUserId(String token) {
+    public Integer getUserId(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
-                .get("userId", Long.class);
+                .get("userId", Integer.class);
     }
 
     // ====== 토큰 만료 여부 ======
@@ -80,20 +80,20 @@ public class JWTUtil {
     }
 
     // ====== 토큰 생성 ======
-    public String createAccessToken(String username, String role, Long userId) {
+    public String createAccessToken(String username, String role, Integer userId) {
         if (role == null || role.isBlank()) role = "ROLE_USER"; // null 방지
         if (username == null) username = "";
         System.out.println("Access Token 발급됨: " + username + ", role=" + role + ", userId=" + userId);
         return createJwt("access", username, role, userId, ACCESS_TOKEN_EXP_MS);
     }
 
-    public String createRefreshToken(String username, String role, Long userId) {
+    public String createRefreshToken(String username, String role, Integer userId) {
         if (role == null || role.isBlank()) role = "ROLE_USER"; // null 방지
         if (username == null) username = "";
         return createJwt("refresh", username, role, userId, REFRESH_TOKEN_EXP_MS);
     }
 
-    public String createJwt(String category, String username, String role, Long userId, Long expiredMs) {
+    public String createJwt(String category, String username, String role, Integer userId, Long expiredMs) {
         return Jwts.builder()
                 .claim("category", category)
                 .claim("username", username)
