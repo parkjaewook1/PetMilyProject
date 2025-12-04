@@ -144,7 +144,7 @@ export function MemberSignup(props) {
     setIsPhoneNumberValid(isValid);
   }
 
-  // ✅ [수정] 이메일 중복확인 (강력한 빈 값 체크)
+  // ✅ [수정] 이메일 중복확인
   function handleCheckUsername() {
     if (!isUsernameValid) {
       toast({
@@ -156,7 +156,6 @@ export function MemberSignup(props) {
       return;
     }
 
-    // 파라미터 안전장치: username과 email 둘 다 보냄
     const params = new URLSearchParams();
     params.append("username", username);
     params.append("email", username);
@@ -164,15 +163,11 @@ export function MemberSignup(props) {
     axios
       .get(`/api/member/check?${params.toString()}`)
       .then((res) => {
-        // 👀 F12 콘솔에서 이 로그를 확인하세요! (서버가 뭘 줬는지)
+        // 백엔드가 true를 반환하면 res.data는 true입니다.
         console.log("이메일 체크 응답 데이터:", res.data);
 
-        // 1. 데이터가 null, undefined, 빈 문자열("")인 경우 -> 사용 가능
-        // 2. 빈 객체({})인 경우 -> 사용 가능 (Object.keys 체크)
-        const isAvailable =
-          !res.data ||
-          res.data === "" ||
-          (typeof res.data === "object" && Object.keys(res.data).length === 0);
+        // ✅ [수정 포인트] 백엔드에서 true(Boolean)를 주므로 === true 로 비교
+        const isAvailable = res.data === true;
 
         if (isAvailable) {
           toast({
@@ -183,6 +178,7 @@ export function MemberSignup(props) {
           });
           setIsUsernameConfirmed(true);
         } else {
+          // 혹시 200 OK인데 false가 온 경우
           toast({
             status: "warning",
             description: "이미 사용 중인 이메일입니다.",
@@ -193,17 +189,19 @@ export function MemberSignup(props) {
         }
       })
       .catch((err) => {
+        // 백엔드가 409 Conflict를 보내면 catch로 빠집니다.
         console.error("서버 에러:", err);
         toast({
-          status: "error",
-          description: "확인 중 오류가 발생했습니다.",
+          status: "warning", // 이미 사용 중인 경우이므로 warning
+          description: "이미 사용 중인 이메일입니다.",
           position: "top",
           duration: 1000,
         });
+        setIsUsernameConfirmed(false);
       });
   }
 
-  // ✅ [수정] 닉네임 중복확인 (강력한 빈 값 체크)
+  // ✅ [수정] 닉네임 중복확인
   function handleCheckNickname() {
     if (!isNicknameValid) {
       toast({
@@ -220,10 +218,8 @@ export function MemberSignup(props) {
       .then((res) => {
         console.log("닉네임 체크 응답 데이터:", res.data);
 
-        const isAvailable =
-          !res.data ||
-          res.data === "" ||
-          (typeof res.data === "object" && Object.keys(res.data).length === 0);
+        // ✅ [수정 포인트] 백엔드에서 true(Boolean)를 주므로 === true 로 비교
+        const isAvailable = res.data === true;
 
         if (isAvailable) {
           toast({
@@ -244,13 +240,15 @@ export function MemberSignup(props) {
         }
       })
       .catch((err) => {
+        // 백엔드가 409 Conflict를 보내면 catch로 빠집니다.
         console.error(err);
         toast({
-          status: "error",
-          description: "확인 중 오류가 발생했습니다.",
+          status: "warning",
+          description: "이미 사용 중인 닉네임입니다.",
           position: "top",
           duration: 1000,
         });
+        setIsNicknameConfirmed(false);
       });
   }
 
