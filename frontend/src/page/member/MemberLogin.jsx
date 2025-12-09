@@ -25,7 +25,7 @@ export function MemberLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const location = useLocation(); // ✅ 추가
+  const location = useLocation();
   const { setMemberInfo } = useContext(LoginContext);
 
   async function handleLogin(event) {
@@ -57,24 +57,35 @@ export function MemberLogin() {
       });
 
       if (response.status === 200) {
-        const { access, id, nickname } = response.data;
-        const memberInfo = { access, id, nickname };
-        console.log("데이터 입니다", response.data);
+        // ⚡️ [수정] 백엔드에서 보내준 데이터에서 refresh 토큰도 꺼냅니다.
+        const { access, refresh, id, nickname, role } = response.data;
+
+        const memberInfo = { access, id, nickname, role };
+        console.log("로그인 데이터:", response.data);
+
+        // ⚡️ [핵심 추가] axiosConfig가 사용할 토큰들을 로컬스토리지에 저장합니다.
+        // 이 부분이 있어야 재발급(401 -> 400 해결)이 작동합니다.
+        localStorage.setItem("accessToken", access);
+
+        if (refresh) {
+          localStorage.setItem("refreshToken", refresh);
+        }
 
         // ✅ 전역 상태 업데이트
         setMemberInfo(memberInfo);
         localStorage.setItem("memberInfo", JSON.stringify(memberInfo));
 
-        // ✅ axios전역 헤더 즉시 세팅
+        // ✅ axios 기본 헤더 설정 (표준 Authorization 방식)
         axios.defaults.headers.common["Authorization"] = `Bearer ${access}`;
 
-        // ✅ 로그인 전 가려던 경로로 이동 (없으면 홈으로)
+        // ✅ 로그인 전 가려던 경로로 이동
         const redirectPath = location.state?.from || "/";
         navigate(redirectPath, { replace: true });
       } else {
         setError("로그인에 실패했습니다.");
       }
     } catch (error) {
+      console.error(error);
       setError("이메일 또는 비밀번호를 다시 확인해주세요.");
     } finally {
       setIsLoading(false);

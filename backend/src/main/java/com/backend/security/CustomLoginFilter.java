@@ -75,31 +75,28 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
         GrantedAuthority auth = iterator.next();
         String role = auth.getAuthority();
 
-        // 토큰 생성 (Integer 타입 userId)
+        // 토큰 생성
         Integer userId = customUserDetails.getId();
         String access = jwtUtil.createJwt("access", username, role, userId, 600000L); // 10분
         String refresh = jwtUtil.createJwt("refresh", username, role, userId, 36000000L); // 10시간
 
-        // 기존 refresh 쿠키 삭제
+        // 1. 쿠키 설정 (기존 방식 유지 - 로컬용)
         Cookie deleteCookie = new Cookie("refresh", null);
         deleteCookie.setMaxAge(0);
         deleteCookie.setPath("/");
         response.addCookie(deleteCookie);
 
-        // 토큰 DB 저장
         addRefreshEntity(username, refresh, 36000000L);
-
-        // 쿠키 발급 (로컬용)
         response.addCookie(createCookie("refresh", refresh));
 
         try {
-            // JSON 응답 생성
+            // 2. JSON 응답 생성 (여기에 refresh 추가!)
             Map<String, String> data = new HashMap<>();
             data.put("id", id.toString());
             data.put("nickname", nickname);
             data.put("access", access);
 
-            // ⚡️⚡️ [핵심 수정] Refresh 토큰을 JSON 바디에도 넣어줍니다. (HTTPS 문제 해결용)
+            // ⚡️ [추가] 쿠키가 안 될 때를 대비해 body에도 넣어줍니다.
             data.put("refresh", refresh);
 
             String jsonData = new ObjectMapper().writeValueAsString(data);
@@ -132,13 +129,10 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
 
     private Cookie createCookie(String key, String value) {
         Cookie cookie = new Cookie(key, value);
-        cookie.setMaxAge(24 * 60 * 60); // 1일
+        cookie.setMaxAge(24 * 60 * 60);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
-
-        // ⚠️ [중요] HTTP 백엔드이므로 secure는 false로 해야 쿠키가 생성됩니다.
-        cookie.setSecure(false);
-
+        cookie.setSecure(false); // ⚠️ HTTP 환경 필수
         return cookie;
     }
 }

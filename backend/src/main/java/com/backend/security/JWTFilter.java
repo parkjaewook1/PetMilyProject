@@ -24,29 +24,31 @@ public class JWTFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        // 1. 헤더에서 access 토큰 꺼내기
-        String accessToken = request.getHeader("access");
+        // 1. 헤더에서 Authorization 키를 찾음 (표준 방식 복구)
+        String authorization = request.getHeader("Authorization");
 
-        // 토큰이 없으면? -> 그냥 통과시킵니다. (권한이 필요 없는 요청일 수도 있으니까요. SecurityConfig가 알아서 막아줍니다.)
-        if (accessToken == null) {
+        // Authorization 헤더가 없거나 Bearer 로 시작하지 않으면 다음 필터로 넘김 (비회원 등)
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 2. 만료 여부 확인 (⚡️ 여기가 핵심! 500 에러 방지)
+        // "Bearer " (7글자)를 제거하고 순수 토큰만 추출
+        String accessToken = authorization.split(" ")[1];
+
+        // 2. 만료 여부 확인 (500 에러 방지용 예외 처리)
         try {
             jwtUtil.isExpired(accessToken);
         } catch (ExpiredJwtException e) {
-            // 만료되면 500 에러 대신 "access token expired" 메시지와 401 상태코드 반환
-            // 프론트엔드가 이걸 보고 "아, 재발급 받아야겠구나" 하고 알 수 있음
+            // 만료 시 401 응답 + 메시지 전송 (프론트 재발급 트리거)
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("text/plain;charset=UTF-8"); // 단순 텍스트로 응답
+            response.setContentType("text/plain;charset=UTF-8");
             PrintWriter writer = response.getWriter();
             writer.print("access token expired");
-            return; // 필터 종료 (더 이상 진행 안 함)
+            return;
         }
 
-        // 3. access 토큰인지 확인 (카테고리 검사)
+        // 3. 토큰 카테고리 확인 (access 토큰인지)
         String category = jwtUtil.getCategory(accessToken);
         if (!category.equals("access")) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -58,21 +60,19 @@ public class JWTFilter extends OncePerRequestFilter {
         // 4. 사용자 정보 추출
         String username = jwtUtil.getUsername(accessToken);
         String role = jwtUtil.getRole(accessToken);
-
-        // ⚡️ [수정] Long -> Integer로 변경 (아까 수정한 JWTUtil에 맞춤)
-        Integer userId = jwtUtil.getUserId(accessToken);
+        Integer userId = jwtUtil.getUserId(accessToken); // Integer 타입 유지
 
         // 5. 인증 객체 생성
         Member member = new Member();
         member.setUsername(username);
+        // Role Enum 변환 (문자열 -> Enum)
         member.setRole(Role.valueOf(role));
-        // Member 엔티티의 ID 타입이 Integer라면 그대로 넣으면 됩니다.
         member.setId(userId);
 
         CustomUserDetails customUserDetails = new CustomUserDetails(member);
         Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
 
-        // 6. 세션에 등록 (일시적)
+        // 6. 세션에 등록
         SecurityContextHolder.getContext().setAuthentication(authToken);
 
         filterChain.doFilter(request, response);
