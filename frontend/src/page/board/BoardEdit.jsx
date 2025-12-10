@@ -42,12 +42,7 @@ export function BoardEdit() {
   const { memberInfo } = useContext(LoginContext);
   const memberId = memberInfo && memberInfo.id ? parseInt(memberInfo.id) : null;
 
-  // ⚡️ [수정 1] params 객체를 useEffect 밖에서 매번 생성하지 않도록 주의
-  // 여기서는 useEffect 안에서 직접 사용하거나, memberId를 의존성으로 씁니다.
-
   useEffect(() => {
-    // ⚡️ [수정 2] memberId가 있을 때만 params를 생성해서 보냅니다.
-    // 그리고 의존성 배열에는 'id'와 'memberId'만 넣습니다. (객체인 params 제외)
     const requestParams = memberId ? { memberId } : {};
 
     if (id) {

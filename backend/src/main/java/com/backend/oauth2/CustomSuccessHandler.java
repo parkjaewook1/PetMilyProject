@@ -80,7 +80,7 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         response.addCookie(createCookie("refresh", refresh));
 
         // 리다이렉트 (프론트로 Access 토큰 전달)
-        String redirectUrl = "http://52.79.251.74:8080/member/oauth/login"
+        String redirectUrl = "https://pet-mily-project.vercel.app/member/oauth/login"
                 + "?username=" + username
                 + "&token=" + access;
         response.sendRedirect(redirectUrl);
