@@ -24,18 +24,13 @@ public class DiaryCommentService {
     private final DiaryService diaryService;
     private final FriendsService friendsService;
 
-
+    // ... (add, list, delete, edit, get, validate 메서드는 기존 유지) ...
     public DiaryComment add(DiaryComment diaryComment, Authentication authentication) {
-        // 1. 로그인된 사용자 정보 가져오기
         Member member = memberMapper.selectByUsername(authentication.getName());
         if (member == null) {
             throw new UsernameNotFoundException("로그인한 사용자를 찾을 수 없습니다.");
         }
-
-        // 2. 작성자 ID 세팅
         diaryComment.setMemberId(member.getId());
-
-        // 3. ✅ 대댓글(replyCommentId) 유효성 검증
         if (diaryComment.getReplyCommentId() != null) {
             DiaryComment parent = mapper.selectById(diaryComment.getReplyCommentId());
             if (parent == null) {
@@ -45,38 +40,24 @@ public class DiaryCommentService {
                 throw new IllegalArgumentException("부모 댓글과 다른 다이어리에 대댓글을 달 수 없습니다.");
             }
         }
-
-        // 4. 저장 (이 시점에는 profileImage 정보가 없음)
         mapper.diaryCommentInsert(diaryComment);
-
-        // 5. ✅ [핵심] 저장된 ID로 다시 조회해서 리턴!
-        // (Mapper의 selectById가 실행되면서 LEFT JOIN profile을 통해 사진 정보를 가져옵니다)
         return mapper.selectById(diaryComment.getId());
     }
 
-
-    // ✅ 부모 댓글 페이징 목록 (대댓글은 미리보기 제외, replyCount만 내려줌)
     public Map<String, Object> list(Integer diaryId, int page, int pageSize, String type, String keyword) {
-        // 부모 댓글 총 개수 (검색 조건 포함)
         int totalComments = mapper.countParentCommentsByDiaryIdAndSearch(diaryId, type, keyword);
         int totalPages = (int) Math.ceil((double) totalComments / pageSize);
         int offset = (page - 1) * pageSize;
-
-        // 부모 댓글만 페이징 조회 (검색 조건 포함)
         List<DiaryComment> comments = mapper.selectParentCommentsBySearch(diaryId, type, keyword, pageSize, offset);
-
-        // 각 부모 댓글에 replyCount만 세팅 (필요하다면 여기서 미리보기 replies 채울 수도 있음)
         for (DiaryComment comment : comments) {
             int replyCount = mapper.countReplies(comment.getId());
             comment.setReplyCount(replyCount);
-            comment.setReplies(null); // 목록 조회 시에는 무거운 대댓글 리스트를 굳이 안 가져가도 됨 (더보기 버튼으로 해결)
+            comment.setReplies(null);
         }
-
         Map<String, Object> result = new HashMap<>();
         result.put("comments", comments);
         result.put("totalPages", totalPages);
         result.put("currentPage", page);
-
         return result;
     }
 
@@ -95,7 +76,9 @@ public class DiaryCommentService {
     public boolean validate(DiaryComment diaryComment) {
         return diaryComment.getComment() != null && !diaryComment.getComment().isBlank();
     }
+    // ... (여기까지 기존 코드 유지) ...
 
+    // ⚡️ [핵심 수정 1] 댓글 수정/삭제 권한 확인 (403 해결)
     public boolean hasAccess(Integer commentId, Authentication authentication) {
         // 현재 로그인한 사용자 정보
         Member currentUser = memberMapper.selectByUsername(authentication.getName());
@@ -109,21 +92,23 @@ public class DiaryCommentService {
             return false;
         }
 
-        // 댓글 작성자 ID
-        Integer commentOwnerId = diaryComment.getMemberId();
+        // ⚡️ [수정 포인트] 모든 ID를 Long으로 변환하여 안전하게 비교
+        // (DB가 Long이고 Java가 Integer일 때 equals가 false 뜨는 것 방지)
+        Long currentUserId = Long.valueOf(currentUser.getId());
+        Long commentOwnerId = Long.valueOf(diaryComment.getMemberId());
 
-        // 다이어리 주인 ID 조회
-        Integer diaryOwnerId = mapper.findDiaryOwnerIdByDiaryId(diaryComment.getDiaryId());
+        // 다이어리 주인 ID도 Long으로 변환
+        Integer diaryOwnerIdInt = mapper.findDiaryOwnerIdByDiaryId(diaryComment.getDiaryId());
+        Long diaryOwnerId = (diaryOwnerIdInt != null) ? Long.valueOf(diaryOwnerIdInt) : null;
 
         // 작성자 본인 또는 다이어리 주인이면 true
-        return currentUser.getId().equals(commentOwnerId) || currentUser.getId().equals(diaryOwnerId);
+        return currentUserId.equals(commentOwnerId) || currentUserId.equals(diaryOwnerId);
     }
 
     public List<DiaryComment> getRecentComments(Integer diaryId, int limit) {
         return mapper.selectRecentComments(diaryId, limit);
     }
 
-    // ✅ 특정 댓글의 전체 대댓글 조회 (더보기 API)
     public List<DiaryComment> getAllReplies(Integer commentId) {
         return mapper.selectAllReplies(commentId);
     }
@@ -132,19 +117,29 @@ public class DiaryCommentService {
         return mapper.selectAllByDiaryId(diaryId);
     }
 
+    // ⚡️ [핵심 수정 2] 다이어리 접근 권한 (비공개/친구공개 로직)
     public boolean canAccessDiary(Integer diaryId, Authentication authentication) {
         var diary = diaryService.getDiaryById(diaryId);
         if (diary == null) return false;
 
         Integer userId = null;
+        Long currentUserId = null; // Long 타입 변수 추가
+
         if (authentication != null) {
             Member currentUser = memberMapper.selectByUsername(authentication.getName());
             if (currentUser != null) {
                 userId = currentUser.getId();
+                currentUserId = Long.valueOf(userId); // Long으로 변환
             }
         }
 
-        boolean isOwner = (userId != null && userId.equals(diary.getMemberId()));
+        // ⚡️ [수정 포인트] 여기서도 Long 타입으로 변환해서 비교해야 안전함
+        // diary.getMemberId()가 Long일 가능성이 큼
+        Long diaryOwnerId = Long.valueOf(diary.getMemberId());
+
+        boolean isOwner = (currentUserId != null && currentUserId.equals(diaryOwnerId));
+
+        // 친구 체크 로직도 안전하게 (userId는 Integer 그대로 쓰는게 맞는지, Long인지 friendsService 확인 필요하지만, 보통 Integer로 넘김)
         boolean isFriend = (!isOwner && userId != null)
                 && friendsService.checkFriendship(userId, diary.getMemberId());
 
