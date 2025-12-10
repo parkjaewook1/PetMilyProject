@@ -41,13 +41,24 @@ export function BoardEdit() {
   const { isOpen, onClose, onOpen } = useDisclosure();
   const { memberInfo } = useContext(LoginContext);
   const memberId = memberInfo && memberInfo.id ? parseInt(memberInfo.id) : null;
-  const params = memberId ? { memberId } : {};
+
+  // ⚡️ [수정 1] params 객체를 useEffect 밖에서 매번 생성하지 않도록 주의
+  // 여기서는 useEffect 안에서 직접 사용하거나, memberId를 의존성으로 씁니다.
 
   useEffect(() => {
-    axios.get(`/api/board/${id}`, { params }).then((res) => {
-      setBoard(res.data.board);
-    });
-  }, [id, params]);
+    // ⚡️ [수정 2] memberId가 있을 때만 params를 생성해서 보냅니다.
+    // 그리고 의존성 배열에는 'id'와 'memberId'만 넣습니다. (객체인 params 제외)
+    const requestParams = memberId ? { memberId } : {};
+
+    if (id) {
+      axios
+        .get(`/api/board/${id}`, { params: requestParams })
+        .then((res) => {
+          setBoard(res.data.board);
+        })
+        .catch((err) => console.error("게시글 로드 실패:", err));
+    }
+  }, [id, memberId]); // 👈 객체(params) 대신 원시값(memberId)을 넣어서 무한 루프 방지!
 
   useEffect(() => {
     if (board) {
@@ -63,7 +74,7 @@ export function BoardEdit() {
         id: board.id,
         title: board.title,
         content: board.content,
-        memberId: params.memberId,
+        memberId: memberId, // ⚡️ [수정] params.memberId 대신 memberId 직접 사용
         removeFileList,
         addFileList,
       })
@@ -78,7 +89,7 @@ export function BoardEdit() {
       })
       .catch((err) => {
         const errorMessage =
-          err.response.status === 403
+          err.response?.status === 403
             ? "권한이 없습니다."
             : "다른 오류가 발생했습니다";
         toast({
