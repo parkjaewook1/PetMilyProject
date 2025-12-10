@@ -65,8 +65,20 @@ public class JWTFilter extends OncePerRequestFilter {
         // 5. 인증 객체 생성
         Member member = new Member();
         member.setUsername(username);
-        // Role Enum 변환 (문자열 -> Enum)
-        member.setRole(Role.valueOf(role));
+
+        // ⚡️ [수정됨] Role 변환 로직 (500 에러 해결)
+        // 토큰의 "ROLE_USER"를 Enum의 "USER"로 변환합니다.
+        try {
+            String roleName = role;
+            if (role.startsWith("ROLE_")) {
+                roleName = role.replace("ROLE_", ""); // "ROLE_" 제거
+            }
+            member.setRole(Role.valueOf(roleName));
+        } catch (IllegalArgumentException | NullPointerException e) {
+            // 매칭되는 Role이 없거나 null일 경우 안전하게 기본값 설정
+            member.setRole(Role.USER);
+        }
+
         member.setId(userId);
 
         CustomUserDetails customUserDetails = new CustomUserDetails(member);
