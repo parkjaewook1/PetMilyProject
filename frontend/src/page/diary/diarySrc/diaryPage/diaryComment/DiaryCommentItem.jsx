@@ -37,6 +37,7 @@ export function DiaryCommentItem({
   onCommentAdded,
   depth = 0,
 }) {
+  console.log("✅ DiaryCommentItem 컴포넌트 로딩됨! (수정본)");
   const { memberInfo } = useContext(LoginContext);
   const navigate = useNavigate();
   const { encodedId } = useParams();
