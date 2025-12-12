@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/member")
@@ -47,7 +49,7 @@ public class ReissueController {
             }
         }
 
-        // ⚡️⚡️ [핵심 수정] 쿠키에 없으면 헤더(Refresh-Token)에서도 확인 ⚡️⚡️
+        // 쿠키에 없으면 헤더(Refresh-Token)에서도 확인
         if (refresh == null) {
             refresh = request.getHeader("Refresh-Token");
             System.out.println("헤더에서 찾은 refresh: " + refresh);
@@ -92,15 +94,22 @@ public class ReissueController {
         refreshMapper.deleteByRefresh(refresh);
         addRefreshEntity(username, newRefresh, REFRESH_EXPIRE_MS);
 
-        // 8. 응답 헤더/쿠키 설정
-        response.setHeader("access", newAccess);
+        // 8. 응답 설정
 
-        // ⚡️⚡️ [핵심 수정] 새 Refresh 토큰을 헤더로도 보내줌 (쿠키 차단 대비)
+        // (1) 헤더 설정 (기존 유지)
+        response.setHeader("access", newAccess);
         response.setHeader("Refresh-Token", newRefresh);
 
+        // (2) 쿠키 설정 (기존 유지)
         response.addCookie(createCookie("refresh", newRefresh));
 
-        return new ResponseEntity<>(HttpStatus.OK);
+        //  JSON Body에도 토큰을 담아서 리턴
+        // 프론트엔드에서 response.data.access 로 쉽게 꺼내 쓸 수 있게 됩니다.
+        Map<String, String> tokenMap = new HashMap<>();
+        tokenMap.put("access", newAccess);
+        tokenMap.put("refresh", newRefresh);
+
+        return ResponseEntity.ok(tokenMap);
     }
 
     private void addRefreshEntity(String username, String refresh, long expiredMs) {
