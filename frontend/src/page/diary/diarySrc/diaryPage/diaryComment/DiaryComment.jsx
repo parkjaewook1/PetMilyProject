@@ -103,18 +103,17 @@ export function DiaryComment() {
     fetchParentComments(1, type, keyword);
   };
 
-  if (isLoading)
+  if (isLoading || !numericDiaryId || numericDiaryId === 0) {
     return (
       <Center h="200px">
         <Spinner color="blue.400" thickness="4px" />
       </Center>
     );
+  }
 
   return (
     <Box h="100%" display="flex" flexDirection="column" p={1}>
       {" "}
-      {/* 전체 패딩 축소 */}
-      {/* 1. 작성창 (여백 mb=1로 축소) */}
       <Box mb={1} flexShrink={0}>
         <DiaryCommentWrite
           diaryId={numericDiaryId}
