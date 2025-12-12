@@ -68,6 +68,7 @@ export function DiaryCommentEdit() {
     axios
       .put(`/api/diaryComment/edit`, {
         id: diaryComment.id,
+        diaryId: diaryComment.diaryId,
         nickname: memberInfo.nickname,
         comment: diaryComment.comment,
         memberId: memberInfo.id,
