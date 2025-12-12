@@ -60,7 +60,14 @@ export function DiaryComment() {
     setIsLoading(true);
     try {
       const res = await axios.get(`/api/diaryComment/list`, {
-        params: { diaryId: numericDiaryId, page, pageSize: 5, type, keyword },
+        params: {
+          diaryId: numericDiaryId,
+          page,
+          pageSize: 5,
+          type,
+          keyword,
+          _t: new Date().getTime(),
+        },
       });
       setParentComments(res.data.comments || []);
       setTotalPages(res.data.totalPages || 1);
