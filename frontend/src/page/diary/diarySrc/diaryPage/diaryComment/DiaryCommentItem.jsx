@@ -78,19 +78,30 @@ export function DiaryCommentItem({
 
   const profileUrl = getProfileUrl(comment.profileImage);
 
-  // 🛡️ [수정됨] 안전장치가 추가된 미니홈피 이동 함수
+  // 🕵️‍♂️ [디버깅용 수정] 로그와 알림창이 포함된 함수
   function goToMiniHome(authorId) {
-    // ID가 없거나 0이면(아직 로딩 중이면) 이동을 막습니다.
+    // 1. 화면에 팝업 띄우기 (눈으로 바로 확인)
+    alert(`[DEBUG 확인] 클릭된 ID 값: ${authorId} (타입: ${typeof authorId})`);
+
+    // 2. 콘솔에 상세 로그 찍기
+    console.group("🚀 미니홈피 이동 시도");
+    console.log("1. 클릭된 작성자 ID (authorId):", authorId);
+    console.log("2. 전체 댓글 데이터:", comment);
+    console.groupEnd();
+
+    // 3. 방어 코드 (ID가 0이거나 없으면 이동 차단)
     if (!authorId || authorId === 0) {
       toast({
         status: "warning",
-        description: "정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.",
+        description: `데이터를 불러오는 중입니다. (ID: ${authorId}) 잠시 후 다시 시도해주세요.`,
         position: "top",
         duration: 2000,
+        isClosable: true,
       });
-      return;
+      return; // ❌ 여기서 멈춤 (서버로 잘못된 요청 안 보냄)
     }
 
+    // 4. 정상일 때만 이동
     const targetDiaryId = generateDiaryId(authorId);
     navigate(`/diary/${targetDiaryId}`);
   }
