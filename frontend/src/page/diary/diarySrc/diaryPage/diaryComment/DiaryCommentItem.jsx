@@ -78,7 +78,19 @@ export function DiaryCommentItem({
 
   const profileUrl = getProfileUrl(comment.profileImage);
 
+  // 🛡️ [수정됨] 안전장치가 추가된 미니홈피 이동 함수
   function goToMiniHome(authorId) {
+    // ID가 없거나 0이면(아직 로딩 중이면) 이동을 막습니다.
+    if (!authorId || authorId === 0) {
+      toast({
+        status: "warning",
+        description: "정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.",
+        position: "top",
+        duration: 2000,
+      });
+      return;
+    }
+
     const targetDiaryId = generateDiaryId(authorId);
     navigate(`/diary/${targetDiaryId}`);
   }
