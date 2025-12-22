@@ -90,14 +90,17 @@ public class MemberController {
 
     // 회원 수정 (로그인 후)
     @PutMapping("/edit")
-    public ResponseEntity update(@AuthenticationPrincipal CustomUserDetails principal,
-                                 @RequestBody Member member) {
+    public ResponseEntity<?> update(@AuthenticationPrincipal CustomUserDetails principal,
+                                    @RequestBody Member member) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         if (service.update(principal.getId(), member)) {
             return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.notFound().build();
     }
+
 
     // 프로필 이미지 업로드 (로그인 후)
     @PostMapping("/profile")

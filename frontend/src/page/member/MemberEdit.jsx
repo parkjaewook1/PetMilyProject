@@ -269,7 +269,7 @@ export function MemberEdit(props) {
     };
 
     axios
-      .put(`/api/member/edit/${id}`, updatedData)
+      .put(`/api/member/edit`, updatedData)
       .then((res) => {
         // Context와 LocalStorage 업데이트
         setMemberInfo((prev) => ({ ...prev, nickname }));
