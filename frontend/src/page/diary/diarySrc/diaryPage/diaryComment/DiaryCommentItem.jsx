@@ -81,15 +81,6 @@ export function DiaryCommentItem({
 
   // 🕵️‍♂️ [디버깅용 수정] 로그와 알림창이 포함된 함수
   function goToMiniHome(authorId) {
-    // 1. 화면에 팝업 띄우기 (눈으로 바로 확인)
-    alert(`[DEBUG 확인] 클릭된 ID 값: ${authorId} (타입: ${typeof authorId})`);
-
-    // 2. 콘솔에 상세 로그 찍기
-    console.group("🚀 미니홈피 이동 시도");
-    console.log("1. 클릭된 작성자 ID (authorId):", authorId);
-    console.log("2. 전체 댓글 데이터:", comment);
-    console.groupEnd();
-
     // 3. 방어 코드 (ID가 0이거나 없으면 이동 차단)
     if (!authorId || authorId === 0) {
       toast({
