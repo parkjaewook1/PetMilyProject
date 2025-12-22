@@ -1,6 +1,5 @@
 import {
   Avatar,
-  Badge,
   Box,
   Button,
   Container,
@@ -80,9 +79,6 @@ export function BoardView() {
   const memberId = memberInfo && memberInfo.id ? parseInt(memberInfo.id) : null;
   const params = memberId ? { memberId } : {};
 
-  const [selectedWriter, setSelectedWriter] = useState(null);
-  const [selectedWriterId, setSelectedWriterId] = useState(null);
-
   useEffect(() => {
     axios
       .get(`/api/board/${id}`, { params })
@@ -154,26 +150,11 @@ export function BoardView() {
       });
   };
 
-  const handleWriterClick = (writer, writerId) => {
-    setSelectedWriter(writer);
-    setSelectedWriterId(writerId);
-  };
-
   const handleDiaryView = () => {
-    const diaryId = generateDiaryId(selectedWriterId);
-    const url = `/diary/${diaryId}`;
-    console.log(
-      "[BoardView] selectedWriterId:",
-      selectedWriterId,
-      typeof selectedWriterId,
-    );
-    console.log(
-      "[BoardView] board.memberId:",
-      board?.memberId,
-      typeof board?.memberId,
-    );
-    const windowFeatures = "width=1531,height=864";
-    window.open(url, "_blank", windowFeatures);
+    if (!board?.memberId) return;
+    const diaryId = generateDiaryId(board.memberId);
+    if (!diaryId) return;
+    window.open(`/diary/${diaryId}`, "_blank", "width=1531,height=864");
   };
 
   if (board === null) {
@@ -220,15 +201,6 @@ export function BoardView() {
                       sx={{ cursor: "pointer" }}
                     />
                   )}
-                  <Badge
-                    cursor="pointer"
-                    color="blue.600"
-                    onClick={() =>
-                      handleWriterClick(board.writer, board.memberId)
-                    }
-                  >
-                    {board.writer}
-                  </Badge>
                 </Box>
               </PopoverTrigger>
               <PopoverContent width="fit-content" maxWidth="200px">
