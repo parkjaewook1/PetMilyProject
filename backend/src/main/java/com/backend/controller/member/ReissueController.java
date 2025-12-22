@@ -3,7 +3,6 @@ package com.backend.controller.member;
 import com.backend.domain.member.RefreshEntity;
 import com.backend.mapper.member.RefreshMapper;
 import com.backend.security.JWTUtil;
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -38,13 +37,14 @@ public class ReissueController {
 
         System.out.println("=== /api/member/reissue 호출됨 ===");
 
-        // 1. Refresh token 추출 (우선 쿠키 확인)
+        // 1) Refresh token 추출 (쿠키 우선)
         String refresh = null;
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if ("refresh".equals(cookie.getName())) {
                     refresh = cookie.getValue();
+                    break;
                 }
             }
         }
@@ -55,29 +55,28 @@ public class ReissueController {
             System.out.println("헤더에서 찾은 refresh: " + refresh);
         }
 
-        if (refresh == null) {
-            return new ResponseEntity<>("refresh token null", HttpStatus.BAD_REQUEST);
+        // refresh 자체가 없으면 "요청이 잘못됨" -> 400
+        if (refresh == null || refresh.isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("refresh token null");
         }
 
-        // 2. 만료 확인
-        try {
-            jwtUtil.isExpired(refresh);
-        } catch (ExpiredJwtException e) {
-            return new ResponseEntity<>("refresh token expired", HttpStatus.BAD_REQUEST);
+        // 2) 만료 확인 (boolean 기반으로 처리) -> 만료면 401
+        if (jwtUtil.isExpired(refresh)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("refresh token expired");
         }
 
-        // 3. category 확인
+        // 3) category 확인 (refresh 토큰인지) -> 아니면 401
         String category = jwtUtil.getCategory(refresh);
         if (!"refresh".equals(category)) {
-            return new ResponseEntity<>("invalid refresh token", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("invalid refresh token");
         }
 
-        // 4. DB 존재 여부 확인
+        // 4) DB 존재 여부 확인 -> 없으면 401 (위조/이미 로그아웃 등)
         if (!refreshMapper.existsByRefresh(refresh)) {
-            return new ResponseEntity<>("invalid refresh token", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("invalid refresh token");
         }
 
-        // 5. 토큰 정보 추출
+        // 5) 토큰 정보 추출
         String username = jwtUtil.getUsername(refresh);
         String role = jwtUtil.getRole(refresh);
         Integer userId = jwtUtil.getUserId(refresh);
@@ -86,25 +85,20 @@ public class ReissueController {
             role = "ROLE_USER";
         }
 
-        // 6. JWT 신규 발급
+        // 6) JWT 신규 발급
         String newAccess = jwtUtil.createJwt("access", username, role, userId, ACCESS_EXPIRE_MS);
         String newRefresh = jwtUtil.createJwt("refresh", username, role, userId, REFRESH_EXPIRE_MS);
 
-        // 7. Refresh 토큰 DB 갱신
+        // 7) Refresh 토큰 DB 갱신
         refreshMapper.deleteByRefresh(refresh);
         addRefreshEntity(username, newRefresh, REFRESH_EXPIRE_MS);
 
-        // 8. 응답 설정
-
-        // (1) 헤더 설정 (기존 유지)
+        // 8) 응답 설정
         response.setHeader("access", newAccess);
         response.setHeader("Refresh-Token", newRefresh);
-
-        // (2) 쿠키 설정 (기존 유지)
         response.addCookie(createCookie("refresh", newRefresh));
 
-        //  JSON Body에도 토큰을 담아서 리턴
-        // 프론트엔드에서 response.data.access 로 쉽게 꺼내 쓸 수 있게 됩니다.
+        // body에도 같이 내려주기
         Map<String, String> tokenMap = new HashMap<>();
         tokenMap.put("access", newAccess);
         tokenMap.put("refresh", newRefresh);
@@ -123,9 +117,8 @@ public class ReissueController {
 
     private Cookie createCookie(String key, String value) {
         Cookie cookie = new Cookie(key, value);
-        cookie.setMaxAge((int) (REFRESH_EXPIRE_MS / 1000)); // 초 단위
-        // HTTP 백엔드이므로 secure는 false
-        cookie.setSecure(false);
+        cookie.setMaxAge((int) (REFRESH_EXPIRE_MS / 1000));
+        cookie.setSecure(false);   // https 배포면 true + SameSite 설정도 고려
         cookie.setPath("/");
         cookie.setHttpOnly(true);
         return cookie;

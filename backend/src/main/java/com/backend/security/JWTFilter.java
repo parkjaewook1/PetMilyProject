@@ -2,7 +2,6 @@ package com.backend.security;
 
 import com.backend.domain.member.Member;
 import com.backend.domain.member.Role;
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,21 +33,19 @@ public class JWTFilter extends OncePerRequestFilter {
         }
 
         // "Bearer " (7글자)를 제거하고 순수 토큰만 추출
-        String accessToken = authorization.split(" ")[1];
+        String accessToken = authorization.substring(7).trim();
+
 
         // 2. 만료 여부 확인 (500 에러 방지용 예외 처리)
-        try {
-            jwtUtil.isExpired(accessToken);
-        } catch (ExpiredJwtException e) {
-            // 만료 시 401 응답 + 메시지 전송 (프론트 재발급 트리거)
+        if (jwtUtil.isExpired(accessToken)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("text/plain;charset=UTF-8");
-            PrintWriter writer = response.getWriter();
-            writer.print("access token expired");
+            response.getWriter().print("access token expired");
             return;
         }
 
         // 3. 토큰 카테고리 확인 (access 토큰인지)
+
         String category = jwtUtil.getCategory(accessToken);
         if (!category.equals("access")) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
