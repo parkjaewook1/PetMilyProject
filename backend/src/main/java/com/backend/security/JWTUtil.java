@@ -16,8 +16,8 @@ public class JWTUtil {
     private final SecretKey secretKey;
 
     // Access / Refresh 만료 시간 상수
-    private static final long ACCESS_TOKEN_EXP_MS = 1000L * 60 * 60 * 2;      // 2시간
-    private static final long REFRESH_TOKEN_EXP_MS = 1000L * 60 * 60 * 24 * 14; // 14일
+    public static final long ACCESS_TOKEN_EXP_MS = 1000L * 60 * 60 * 2;        // 2시간
+    public static final long REFRESH_TOKEN_EXP_MS = 1000L * 60 * 60 * 24 * 14; // 14일
 
     public JWTUtil(@Value("${jwt.secret.key}") String secret) {
         System.out.println("Loaded JWT Secret Key: " + secret);
@@ -73,27 +73,29 @@ public class JWTUtil {
                     .parseSignedClaims(token)
                     .getPayload()
                     .getExpiration();
-            return exp.before(new Date()); // 현재 시간보다 이전이면 만료
+            return exp.before(new Date());
         } catch (ExpiredJwtException e) {
-            return true; // 파싱 중 만료 예외 발생 시 true
+            return true;
         }
     }
 
-    // ====== 토큰 생성 ======
+    // ====== 토큰 생성 (표준화) ======
     public String createAccessToken(String username, String role, Integer userId) {
-        if (role == null || role.isBlank()) role = "ROLE_USER"; // null 방지
-        if (username == null) username = "";
-        System.out.println("Access Token 발급됨: " + username + ", role=" + role + ", userId=" + userId);
         return createJwt("access", username, role, userId, ACCESS_TOKEN_EXP_MS);
     }
 
     public String createRefreshToken(String username, String role, Integer userId) {
-        if (role == null || role.isBlank()) role = "ROLE_USER"; // null 방지
-        if (username == null) username = "";
         return createJwt("refresh", username, role, userId, REFRESH_TOKEN_EXP_MS);
     }
 
     public String createJwt(String category, String username, String role, Integer userId, Long expiredMs) {
+        // ✅ 여기서 한 번에 방어 처리 (로그인/재발급 어디서 호출해도 안전)
+        if (category == null || category.isBlank()) category = "access";
+        if (username == null) username = "";
+        if (role == null || role.isBlank()) role = "ROLE_USER";
+        if (userId == null) userId = 0;
+        if (expiredMs == null || expiredMs <= 0) expiredMs = ACCESS_TOKEN_EXP_MS;
+
         return Jwts.builder()
                 .claim("category", category)
                 .claim("username", username)

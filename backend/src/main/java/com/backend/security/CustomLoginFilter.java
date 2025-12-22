@@ -30,7 +30,10 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
     private final RefreshMapper refreshMapper;
     private final LoginCheckMapper loginCheckMapper;
 
-    public CustomLoginFilter(AuthenticationManager authenticationManager, JWTUtil jwtUtil, RefreshMapper refreshMapper, LoginCheckMapper loginCheckMapper) {
+    public CustomLoginFilter(AuthenticationManager authenticationManager,
+                             JWTUtil jwtUtil,
+                             RefreshMapper refreshMapper,
+                             LoginCheckMapper loginCheckMapper) {
 
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
@@ -42,24 +45,30 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
     }
 
     @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+            throws AuthenticationException {
 
         String username = request.getParameter("username");
         String password = request.getParameter("password");
 
-        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, password);
+        UsernamePasswordAuthenticationToken authToken =
+                new UsernamePasswordAuthenticationToken(username, password);
 
         return authenticationManager.authenticate(authToken);
     }
 
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
+    protected void successfulAuthentication(HttpServletRequest request,
+                                            HttpServletResponse response,
+                                            FilterChain chain,
+                                            Authentication authentication) {
 
         // 유저 정보
         String username = authentication.getName();
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         Integer id = customUserDetails.getId();
         String nickname = customUserDetails.getNickname();
+        Integer userId = customUserDetails.getId();
 
         // LoginCheck
         LoginEntity existingRecord = loginCheckMapper.findByMemberNickname(nickname);
@@ -70,33 +79,36 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
         existingRecord.setLoginCheck(true);
         loginCheckMapper.upsertLoginCheck(existingRecord);
 
+        // 권한(role)
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
         GrantedAuthority auth = iterator.next();
         String role = auth.getAuthority();
 
-        // 토큰 생성
-        Integer userId = customUserDetails.getId();
-        String access = jwtUtil.createJwt("access", username, role, userId, 600000L); // 10분
-        String refresh = jwtUtil.createJwt("refresh", username, role, userId, 36000000L); // 10시간
+        // ✅ 토큰 생성: 표준 API 사용 (2시간 / 14일)
+        String access = jwtUtil.createAccessToken(username, role, userId);
+        String refresh = jwtUtil.createRefreshToken(username, role, userId);
 
-        // 1. 쿠키 설정 (기존 방식 유지 - 로컬용)
+        // 1) 기존 refresh 쿠키 제거(덮어쓰기 안정)
         Cookie deleteCookie = new Cookie("refresh", null);
         deleteCookie.setMaxAge(0);
         deleteCookie.setPath("/");
         response.addCookie(deleteCookie);
 
-        addRefreshEntity(username, refresh, 36000000L);
+        // 2) Refresh DB 저장도 ✅ 14일로 통일
+        addRefreshEntity(username, refresh, JWTUtil.REFRESH_TOKEN_EXP_MS);
+
+        // 3) refresh 쿠키 재설정
         response.addCookie(createCookie("refresh", refresh));
 
         try {
-            // 2. JSON 응답 생성 (여기에 refresh 추가!)
+            // 4) JSON 응답
             Map<String, String> data = new HashMap<>();
             data.put("id", id.toString());
             data.put("nickname", nickname);
             data.put("access", access);
 
-            // ⚡️ [추가] 쿠키가 안 될 때를 대비해 body에도 넣어줍니다.
+            // 쿠키가 막히는 배포 환경 대비: body에도 refresh 포함
             data.put("refresh", refresh);
 
             String jsonData = new ObjectMapper().writeValueAsString(data);
@@ -114,7 +126,9 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
     }
 
     @Override
-    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) {
+    protected void unsuccessfulAuthentication(HttpServletRequest request,
+                                              HttpServletResponse response,
+                                              AuthenticationException failed) {
         response.setStatus(401);
     }
 
@@ -129,10 +143,16 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
 
     private Cookie createCookie(String key, String value) {
         Cookie cookie = new Cookie(key, value);
-        cookie.setMaxAge(24 * 60 * 60);
+
+        // ✅ JWTUtil.REFRESH_TOKEN_EXP_MS(14일) 기준으로 쿠키 만료도 통일
+        cookie.setMaxAge((int) (JWTUtil.REFRESH_TOKEN_EXP_MS / 1000));
+
         cookie.setHttpOnly(true);
         cookie.setPath("/");
-        cookie.setSecure(false); // ⚠️ HTTP 환경 필수
+
+        // 배포가 https면 true 권장
+        cookie.setSecure(false);
+
         return cookie;
     }
 }
