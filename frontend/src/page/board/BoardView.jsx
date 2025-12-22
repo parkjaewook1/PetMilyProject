@@ -162,6 +162,16 @@ export function BoardView() {
   const handleDiaryView = () => {
     const diaryId = generateDiaryId(selectedWriterId);
     const url = `/diary/${diaryId}`;
+    console.log(
+      "[BoardView] selectedWriterId:",
+      selectedWriterId,
+      typeof selectedWriterId,
+    );
+    console.log(
+      "[BoardView] board.memberId:",
+      board?.memberId,
+      typeof board?.memberId,
+    );
     const windowFeatures = "width=1531,height=864";
     window.open(url, "_blank", windowFeatures);
   };
