@@ -101,6 +101,35 @@ public class MemberController {
         return ResponseEntity.notFound().build();
     }
 
+    // ✅ 관리자/본인: 특정 회원(id) 수정
+    @PutMapping("/edit/{id}")
+    public ResponseEntity<?> updateByAdminOrOwner(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @PathVariable Integer id,
+            @RequestBody Member member
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // 관리자 판별 (프로젝트에 맞게 조정 가능)
+        boolean isAdmin = principal.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+
+        boolean isOwner = principal.getId().equals(id);
+
+        // 관리자도 아니고 본인도 아니면 금지
+        if (!isAdmin && !isOwner) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        // ✅ 여기서 핵심: 수정 대상은 principal이 아니라 PathVariable id
+        if (service.update(id, member)) {
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
 
     // 프로필 이미지 업로드 (로그인 후)
     @PostMapping("/profile")

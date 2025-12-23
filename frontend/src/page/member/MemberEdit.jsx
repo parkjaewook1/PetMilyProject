@@ -265,24 +265,40 @@ export function MemberEdit(props) {
       postcode: postcode,
       mainAddress: mainAddress,
       detailedAddress: detailedAddress || "",
-      ...(password && { password }), // 비밀번호 입력했을 때만 포함
+      ...(password && { password }),
     };
 
+    const isAdmin = memberInfo?.role === "ROLE_ADMIN";
+    const isOwner = String(memberInfo?.id) === String(id);
+
     axios
-      .put(`/api/member/edit`, updatedData)
-      .then((res) => {
-        // Context와 LocalStorage 업데이트
-        setMemberInfo((prev) => ({ ...prev, nickname }));
+      .put(`/api/member/edit/${id}`, updatedData)
+      .then(() => {
+        // ✅ 본인 수정일 때만 Context 업데이트 (관리자 남 수정이면 절대 X)
+        if (isOwner) {
+          setMemberInfo((prev) => ({ ...prev, nickname }));
+        }
+
         Swal.fire({
           title: "회원 정보가 업데이트되었습니다.",
-          text: "마이페이지로 이동합니다.",
+          text: isOwner
+            ? "마이페이지로 이동합니다."
+            : "회원 목록으로 이동합니다.",
           icon: "success",
           confirmButtonText: "확인",
         }).then(() => {
-          navigate(`/member/page/${id}`);
+          // ✅ 이동 경로 분기
+          if (isOwner) {
+            navigate(`/member/page/${id}`);
+          } else if (isAdmin) {
+            navigate(`/member/list`); // 너가 만든 관리자 목록 라우트로 맞춰줘
+            // 또는 navigate(-1);
+          } else {
+            navigate(`/`);
+          }
         });
       })
-      .catch((err) => {
+      .catch(() => {
         Swal.fire({
           title: "회원 정보 업데이트에 실패하였습니다.",
           text: "오류가 발생하였습니다. 잠시 후 다시 시도해주세요.",
