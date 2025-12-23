@@ -89,7 +89,7 @@ export function DiaryNavbar({ isOwner, type = "desktop" }) {
     },
     {
       path: `/diary/${encodedId}/board/list`,
-      label: "다이어리",
+      label: "일기",
       icon: faBook,
     },
     {
