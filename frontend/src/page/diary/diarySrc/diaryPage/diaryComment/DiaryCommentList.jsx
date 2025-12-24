@@ -59,7 +59,7 @@ export function DiaryCommentList({
           color={titleColor}
           fontSize="xs"
         >
-          No.{rootComments.length} 방명록
+          방명록 {rootComments.length}개
         </Text>
         <Spacer />
         <Badge
@@ -107,10 +107,11 @@ export function DiaryCommentList({
         <Box flex={1} overflowY="auto" sx={scrollbarStyle} pr={1}>
           {/* ✂️ spacing을 줄여서 더 많이 보이게 함 */}
           <VStack spacing={2} align="stretch" pb={2}>
-            {rootComments.map((comment) => (
+            {rootComments.map((comment, index) => (
               <DiaryCommentItem
                 key={comment.id}
                 comment={comment}
+                commentNo={index + 1}
                 allComments={allComments}
                 onCommentAdded={onCommentAdded}
               />

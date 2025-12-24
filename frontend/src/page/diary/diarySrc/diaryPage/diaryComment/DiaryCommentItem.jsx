@@ -35,9 +35,9 @@ export function DiaryCommentItem({
   comment,
   allComments,
   onCommentAdded,
+  commentNo,
   depth = 0,
 }) {
-  console.log("✅ DiaryCommentItem 컴포넌트 로딩됨! (수정본)");
   const { memberInfo } = useContext(LoginContext);
   const navigate = useNavigate();
   const { encodedId } = useParams();
@@ -66,22 +66,17 @@ export function DiaryCommentItem({
       ? format(insertedDate, "yyyy.MM.dd")
       : "Unknown date";
 
-  // ✅ [핵심 수정] 중복 경로 방지 로직
+  // ✅ 중복 경로 방지
   const getProfileUrl = (imageName) => {
     if (!imageName) return null;
-    // 1. 외부 링크(http)면 그대로
     if (imageName.startsWith("http")) return imageName;
-    // 2. 이미 /uploads/로 시작하면 그대로 (백엔드에서 붙여준 경우)
     if (imageName.startsWith("/uploads/")) return imageName;
-    // 3. 파일명만 있으면 붙여줌
     return `/uploads/${imageName}`;
   };
 
   const profileUrl = getProfileUrl(comment.profileImage);
 
-  // 🕵️‍♂️ [디버깅용 수정] 로그와 알림창이 포함된 함수
   function goToMiniHome(authorId) {
-    // 3. 방어 코드 (ID가 0이거나 없으면 이동 차단)
     if (!authorId || authorId === 0) {
       toast({
         status: "warning",
@@ -90,10 +85,9 @@ export function DiaryCommentItem({
         duration: 2000,
         isClosable: true,
       });
-      return; // ❌ 여기서 멈춤 (서버로 잘못된 요청 안 보냄)
+      return;
     }
 
-    // 4. 정상일 때만 이동
     const targetDiaryId = generateDiaryId(authorId);
     navigate(`/diary/${targetDiaryId}`);
   }
@@ -104,6 +98,7 @@ export function DiaryCommentItem({
 
   function handleDelete(commentId) {
     if (!window.confirm("정말 삭제하시겠습니까?")) return;
+
     axios
       .delete(`/api/diaryComment/${commentId}`)
       .then(() => {
@@ -130,13 +125,14 @@ export function DiaryCommentItem({
 
     return (
       <Box mt={2} pl={3} ml={2} borderLeft="2px solid" borderColor={lineColor}>
-        {visibleChildren.map((child) => (
+        {visibleChildren.map((child, index) => (
           <DiaryCommentItem
             key={child.id}
             comment={child}
             allComments={allComments}
             onCommentAdded={onCommentAdded}
             depth={depth + 1}
+            commentNo={`${commentNo}-${index + 1}`}
           />
         ))}
 
@@ -163,7 +159,7 @@ export function DiaryCommentItem({
     );
   };
 
-  // Case 1. 대댓글 (자식) UI
+  // ✅ 대댓글 UI
   if (comment.replyCommentId) {
     return (
       <Box mt={3}>
@@ -187,8 +183,14 @@ export function DiaryCommentItem({
               <Text as="span" fontWeight="bold" mr={2}>
                 {comment.nickname}
               </Text>
+
+              <Text as="span" fontSize="xs" color="gray.500" mr={2}>
+                No.{commentNo}
+              </Text>
+
               {comment.comment}
             </Text>
+
             <Flex gap={3} mt={1} align="center">
               <Text fontSize="xs" color="gray.500">
                 {formattedDate}
@@ -204,6 +206,7 @@ export function DiaryCommentItem({
                 {showReply ? "취소" : "답글"}
               </Text>
             </Flex>
+
             {showReply && (
               <ReplyWrite
                 diaryId={comment.diaryId}
@@ -217,12 +220,13 @@ export function DiaryCommentItem({
             )}
           </Box>
         </Flex>
+
         {renderChildrenSection()}
       </Box>
     );
   }
 
-  // Case 2. 부모 댓글 (카드) UI
+  // ✅ 부모 댓글(카드) UI
   return (
     <Box
       bg={cardBg}
@@ -252,11 +256,19 @@ export function DiaryCommentItem({
           ) : (
             <Avatar name={comment.nickname} size="sm" />
           )}
+
           <Text fontWeight="bold">{comment.nickname}</Text>
+
+          {/* ✅ 부모 댓글에도 No 표시 */}
+          <Text fontSize="xs" color="gray.500">
+            No.{commentNo}
+          </Text>
+
           <Text fontSize="sm" color="gray.500">
             {formattedDate}
           </Text>
         </Flex>
+
         <Menu>
           <MenuButton
             as={IconButton}
@@ -327,5 +339,6 @@ DiaryCommentItem.propTypes = {
   comment: PropTypes.object.isRequired,
   allComments: PropTypes.array.isRequired,
   onCommentAdded: PropTypes.func,
+  commentNo: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   depth: PropTypes.number,
 };
