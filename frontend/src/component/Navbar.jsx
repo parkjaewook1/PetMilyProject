@@ -262,7 +262,10 @@ export function Navbar() {
                         boxShadow="base"
                       />
                       <Text fontWeight="bold" color="gray.700" fontSize="sm">
-                        {nickname}님
+                        <span translate="no" className="notranslate">
+                          {nickname}
+                        </span>
+                        님
                       </Text>
                     </HStack>
                   </MenuButton>
@@ -376,8 +379,13 @@ export function Navbar() {
                         cursor="default"
                         bg="purple.50"
                       >
-                        👋 {nickname}님
+                        👋{" "}
+                        <span translate="no" className="notranslate">
+                          {nickname}
+                        </span>
+                        님
                       </MenuItem>
+
                       <MenuItem
                         onClick={() =>
                           navigate(`/member/page/${memberInfo.id}`)
