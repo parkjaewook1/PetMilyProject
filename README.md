@@ -8,6 +8,17 @@ Spring Boot 기반 백엔드와 React 기반 프론트엔드로 구성된 풀스
 
 ---
 
+## ✨ Key Features
+
+- Spring Security Filter Chain 기반 JWT 인증 구조 설계
+- Access Token / Refresh Token 기반 로그인 시스템
+- 네이버 OAuth2 소셜 로그인
+- 관리자 / 사용자 권한 분리
+- N-Depth 계층형 댓글 시스템 (재귀 구조)
+- Oracle Cloud 기반 서버 배포
+
+---
+
 ## 🛠 Tech Stack
 
 | 구분 | 기술 |
@@ -52,17 +63,26 @@ PetMilyProject/
 
 ## 🛠 트러블슈팅
 
-| 문제 | 해결 |
-|------|------|
-| JWT 로그아웃 후 토큰 유효 문제 | Refresh Token DB 저장 후 로그아웃 시 삭제 |
-| ROLE_ prefix 매핑 불일치 | JWT 파싱 시 prefix 제거 + 방어 로직 추가 |
-| AWS 비용 문제 | Oracle Cloud 무료 인스턴스로 마이그레이션 |
-| N-Depth 댓글 렌더링 | 재귀 컴포넌트 설계로 해결 |
+### 1. JWT 로그아웃 후 토큰 유효 문제
+JWT는 Stateless 구조이기 때문에 로그아웃 후에도 Access Token이 만료될 때까지 유효한 문제가 발생했습니다.
+Refresh Token을 DB에 저장하고 로그아웃 시 DB에서 삭제하는 방식으로 재발급 루트를 차단했습니다.
+
+### 2. ROLE_ prefix 매핑 불일치
+토큰에는 `ROLE_USER`, 서버 Enum에는 `USER` 형태로 저장되어 인증 객체 생성 시 예외가 발생했습니다.
+JWT 파싱 단계에서 prefix를 제거하고 정규화하는 방어 로직을 추가해 해결했습니다.
+
+### 3. AWS 비용 문제 → Oracle Cloud 마이그레이션
+AWS 프리티어 종료 후 비용 절감이 필요했습니다.
+Oracle Cloud 무료 인스턴스(Ubuntu)로 마이그레이션하고, 이미지를 서버 내부에서 직접 관리하여 외부 API 호출 없이 즉시 서빙하는 구조로 개선했습니다.
+
+### 4. N-Depth 댓글 렌더링
+단순 반복문으로는 깊이가 정해지지 않은 계층 구조를 렌더링하기 어려웠습니다.
+컴포넌트가 자기 자신을 재귀 호출하는 구조로 설계하고, `padding-left`를 동적으로 계산해 시각적 계층을 표현했습니다.
 
 ---
 
 ## 👤 담당 역할
 
-- 백엔드  (인증/권한, 회원, 다이어리, 방명록)
-- 프론트엔드  (React, Axios 인터셉터, Context API)
+- 백엔드 전체 (인증/권한, 회원, 다이어리, 방명록)
+- 프론트엔드 전체 (React, Axios 인터셉터, Context API)
 - 배포 환경 구축 (Oracle Cloud + Vercel)
