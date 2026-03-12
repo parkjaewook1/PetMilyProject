@@ -11,8 +11,8 @@ Spring Boot 기반 백엔드와 React 기반 프론트엔드로 구성된 풀스
 ## ✨ Key Features
 
 - Spring Security Filter Chain 기반 JWT 인증 구조 설계
+- 커스텀 JWT Authentication Filter 구현
 - Access Token / Refresh Token 기반 로그인 시스템
-- 네이버 OAuth2 소셜 로그인
 - 관리자 / 사용자 권한 분리
 - N-Depth 계층형 댓글 시스템 (재귀 구조)
 - Oracle Cloud 기반 서버 배포
@@ -55,8 +55,15 @@ Spring Boot 기반 백엔드와 React 기반 프론트엔드로 구성된 풀스
 ## 🗂 프로젝트 구조
 ```
 PetMilyProject/
-├── backend/   # Spring Boot
-└── frontend/  # React + Vite
+├── backend/
+│   ├── controller
+│   ├── service
+│   ├── security
+│   └── repository
+└── frontend/
+    ├── components
+    ├── pages
+    └── api
 ```
 
 ---
