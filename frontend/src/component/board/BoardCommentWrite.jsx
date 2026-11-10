@@ -1,3 +1,4 @@
+import "../../design/accountBoardStyles.js";
 import { useContext, useState } from "react";
 import { Box, Button, Flex, Textarea, Tooltip } from "@chakra-ui/react";
 import axios from "@api/axiosConfig";
@@ -34,13 +35,14 @@ export function BoardCommentWrite({ boardId, isProcessing, setIsProcessing }) {
     return;
   }
   return (
-    <Flex gap={2} mb={10}>
+    <Flex className="ab-comment-compose" gap={2} mb={10}>
       <Box flex={1}>
         <Textarea
           // isDisabled={!account.isLoggedIn()}
           placeholder={"댓글을 작성해 보세요"}
           value={boardComment}
           onChange={(e) => setBoardComment(e.target.value)}
+          variant="journal"
         />
       </Box>
       <Box>
@@ -50,7 +52,8 @@ export function BoardCommentWrite({ boardId, isProcessing, setIsProcessing }) {
             w="80px"
             isLoading={isProcessing}
             onClick={handleBoardCommentSubmitClick}
-            colorScheme={"blue"}
+            variant="journal"
+            aria-label="댓글 등록"
           >
             <FontAwesomeIcon icon={faPencil} />
           </Button>

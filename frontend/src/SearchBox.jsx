@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Box, Button, Input } from "@chakra-ui/react";
 
-const SearchBox = ({ onSearch }) => {
+const SearchBox = ({ onSearch, isDisabled = false }) => {
   const [keyword, setKeyword] = useState("");
 
   const handleKeywordChange = (e) => {
@@ -26,11 +26,13 @@ const SearchBox = ({ onSearch }) => {
     >
       <Input
         id="keyword"
+        aria-label="장소 키워드"
+        isDisabled={isDisabled}
         placeholder="키워드를 입력하세요"
         value={keyword}
         onChange={handleKeywordChange}
       />
-      <Button onClick={handleSearchClick} marginTop="5px">
+      <Button isDisabled={isDisabled} variant="journal" onClick={handleSearchClick} marginTop="5px">
         검색
       </Button>
     </Box>

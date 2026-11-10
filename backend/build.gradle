@@ -26,11 +26,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
 
-    // ❌ [삭제] AWS S3 제거 (이미 주석처리 됨 -> 삭제 추천)
-    // implementation 'software.amazon.awssdk:s3:2.25.60'
-
-    // ❌ [삭제] Azure Blob Storage 제거 (이제 서버 로컬 폴더를 쓰므로 삭제!)
-    // implementation 'com.azure.spring:spring-cloud-azure-starter-storage-blob:5.13.0'
 
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
@@ -53,6 +48,7 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.3'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testRuntimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {
@@ -64,6 +60,34 @@ tasks.named('bootRun') {
     jvmArgs += '--enable-preview'
 }
 
+// Git ignore rules do not affect resource packaging. Keep private local files
+// in place, but never copy them into runtime/test classpaths or either JAR.
+tasks.named('processResources') {
+    exclude 'secret/**'
+    exclude '**/*.key', '**/*.pem', '**/*.p12', '**/*.pfx', '**/*.jks', '**/*.keystore'
+    exclude '**/*_backup.sql', '**/backup.sql', '**/*.sql.gz', '**/*.sql.zip'
+    exclude '**/*.bak', '**/*.dump'
+}
+
+// Defense in depth for archives assembled from an existing resources output.
+tasks.withType(Jar).configureEach {
+    exclude 'secret/**', 'BOOT-INF/classes/secret/**'
+    exclude '**/*.key', '**/*.pem', '**/*.p12', '**/*.pfx', '**/*.jks', '**/*.keystore'
+    exclude '**/*_backup.sql', '**/backup.sql', '**/*.sql.gz', '**/*.sql.zip'
+    exclude '**/*.bak', '**/*.dump'
+}
+
 compileJava {
     options.compilerArgs += ['--enable-preview']
+}
+// Explicit opt-in: loopback-only MariaDB fixture database; never uses application datasource settings.
+tasks.register('mariaDbIntegrationTest', Test) {
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    jvmArgs += '--enable-preview'
+    filter { includeTestsMatching 'com.backend.admin.live.MariaDbHttpIntegrationTest' }
+    systemProperty 'petmily.mariadb.url', System.getProperty('petmily.mariadb.url', '')
+    systemProperty 'petmily.browser', System.getProperty('petmily.browser', 'false')
+    systemProperty 'petmily.integration.output', System.getProperty('petmily.integration.output', '/tmp/petmily-maria-live/results')
 }

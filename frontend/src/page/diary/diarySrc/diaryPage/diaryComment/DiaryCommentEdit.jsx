@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../../../../design/fullAuditStyles.js";
 import {
   Box,
   Button,
@@ -117,14 +118,25 @@ export function DiaryCommentEdit() {
 
   if (diaryComment === null) {
     return (
-      <Center h="300px">
+      <Center
+        h="300px"
+        sx={fullSurfaceStyle}
+        className="full-journal full-diary full-diarycommentedit"
+      >
         <Spinner size="xl" color="blue.400" />
       </Center>
     );
   }
 
   return (
-    <Box h="100%" p={4} display="flex" flexDirection="column">
+    <Box
+      h="100%"
+      p={4}
+      display="flex"
+      flexDirection="column"
+      sx={fullSurfaceStyle}
+      className="full-journal full-diary full-diarycommentedit"
+    >
       {/* 1. 헤더 영역 */}
       <Flex
         align="center"
@@ -152,7 +164,12 @@ export function DiaryCommentEdit() {
         fontFamily="'Gulim', sans-serif"
       >
         <FormControl>
-          <FormLabel fontSize="sm" fontWeight="bold" color="gray.600">
+          <FormLabel
+            fontSize="sm"
+            fontWeight="bold"
+            color="gray.600"
+            variant="journal"
+          >
             작성자
           </FormLabel>
           <Input
@@ -163,11 +180,17 @@ export function DiaryCommentEdit() {
             size="sm"
             fontWeight="bold"
             color="gray.700"
+            variant="journal"
           />
         </FormControl>
 
         <FormControl flex={1} display="flex" flexDirection="column">
-          <FormLabel fontSize="sm" fontWeight="bold" color="gray.600">
+          <FormLabel
+            fontSize="sm"
+            fontWeight="bold"
+            color="gray.600"
+            variant="journal"
+          >
             내용
           </FormLabel>
           <Box position="relative" flex={1}>
@@ -195,6 +218,7 @@ export function DiaryCommentEdit() {
               lineHeight="1.8"
               borderColor={borderColor}
               focusBorderColor={titleColor}
+              variant="journal"
             />
 
             <Icon
@@ -219,6 +243,7 @@ export function DiaryCommentEdit() {
           variant="ghost"
           size="sm"
           onClick={handleDelete}
+          className="full-danger"
         >
           삭제
         </Button>
@@ -227,7 +252,7 @@ export function DiaryCommentEdit() {
           <Button
             leftIcon={<FontAwesomeIcon icon={faXmark} />}
             onClick={() => navigate(-1)}
-            variant="ghost"
+            variant="journalOutline"
             colorScheme="gray"
             size="sm"
           >
@@ -239,6 +264,7 @@ export function DiaryCommentEdit() {
             colorScheme="blue"
             size="sm"
             boxShadow="md"
+            variant="journal"
           >
             저장
           </Button>
@@ -248,14 +274,23 @@ export function DiaryCommentEdit() {
       {/* 저장 확인 모달 */}
       <Modal isOpen={isOpen} onClose={onClose} isCentered size="sm">
         <ModalOverlay />
-        <ModalContent fontFamily="'Gulim', sans-serif">
+        <ModalContent
+          fontFamily="'Gulim', sans-serif"
+          sx={fullSurfaceStyle}
+          className="full-journal full-overlay"
+        >
           <ModalHeader fontSize="md">수정 확인</ModalHeader>
           <ModalBody fontSize="sm">정말 수정하시겠습니까?</ModalBody>
           <ModalFooter>
-            <Button size="sm" onClick={onClose} mr={2}>
+            <Button size="sm" onClick={onClose} mr={2} variant="journal">
               취소
             </Button>
-            <Button size="sm" onClick={handleCommentSubmit} colorScheme="blue">
+            <Button
+              size="sm"
+              onClick={handleCommentSubmit}
+              colorScheme="blue"
+              variant="journal"
+            >
               확인
             </Button>
           </ModalFooter>

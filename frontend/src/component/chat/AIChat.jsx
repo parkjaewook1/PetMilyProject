@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../design/fullAuditStyles.js";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   Box,
@@ -153,6 +154,8 @@ export function AIChat() {
       overflow="hidden"
       bg="white"
       boxShadow="lg"
+      sx={fullSurfaceStyle}
+      className="full-journal full-ai"
     >
       <Box
         display="flex"
@@ -161,9 +164,12 @@ export function AIChat() {
         borderBottomWidth="1px"
         p={2}
       >
-        <Text fontWeight="bold" fontSize="lg">
-          AI 수의사와 상담
-        </Text>
+        <Box>
+          <Text className="service-eyebrow">PETMILY / ASK AI</Text>
+          <Text as="h1" fontWeight="bold" fontSize="lg">
+            AI 수의사와 상담
+          </Text>
+        </Box>
         <IconButton
           icon={isMinimized ? <ChatIcon /> : <MinusIcon />}
           size="sm"
@@ -189,16 +195,18 @@ export function AIChat() {
                 mb={2}
               >
                 <Box
+                  className="ai-message"
+                  data-role={msg.role}
                   bg={msg.role === "user" ? "blue.100" : "gray.100"}
                   p={3}
                   borderRadius="md"
                   maxWidth="70%"
                 >
-                  <Text fontSize="md" fontWeight="bold">
+                  <Text className="ai-message-author" fontSize="md" fontWeight="bold">
                     {msg.role === "user" ? name : "AI 수의사"}
                   </Text>
-                  <Text fontSize="md">{msg.content}</Text>
-                  <Text fontSize="sm" color="gray.500">
+                  <Text className="ai-message-content" fontSize="md">{msg.content}</Text>
+                  <Text className="ai-message-time" fontSize="sm" color="gray.500">
                     {new Date(msg.timestamp).toLocaleString("ko-KR", {
                       timeZone: "Asia/Seoul",
                     })}
@@ -215,7 +223,9 @@ export function AIChat() {
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="메시지를 입력하세요"
+              aria-label="AI 상담 메시지"
               fontSize="md"
+              variant="journal"
             />
             <InputRightElement width="4.5rem">
               <Button
@@ -223,6 +233,7 @@ export function AIChat() {
                 size="md"
                 onClick={sendMessage}
                 disabled={!isConnected}
+                variant="journal"
               >
                 보내기
               </Button>

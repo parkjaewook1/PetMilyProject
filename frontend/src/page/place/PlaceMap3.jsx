@@ -1,6 +1,7 @@
+import { fullSurfaceStyle } from "../../design/fullAuditStyles.js";
 import React, { useState } from "react";
 import KakaoMap2 from "../../KakaoMap2.jsx";
-import { Box, Button } from "@chakra-ui/react";
+import { Box, Button, Text } from "@chakra-ui/react";
 import SelectComponent from "../../SelectCompoent.jsx";
 
 // 이름 오류 수정: 'SelectCompoent' -> 'SelectComponent'
@@ -19,7 +20,13 @@ export function PlaceMap3() {
   };
 
   return (
-    <Box position="relative" width="100%" height="500px">
+    <Box
+      position="relative"
+      width="100%"
+      height="500px"
+      sx={fullSurfaceStyle}
+      className="full-journal full-map full-placemap3"
+    >
       <Box
         position="absolute"
         top="50%"
@@ -33,11 +40,13 @@ export function PlaceMap3() {
         height="400px"
       >
         <SelectComponent
+          isDisabled
           selectedCategories={selectedCategories}
           onCategoryChange={handleCategoryChange}
         />
-        <Button mt={2} onClick={() => searchByCategory(map)}>
-          카테고리 검색
+        <Text fontSize="sm">이 화면의 카테고리 검색은 준비 중입니다.</Text>
+        <Button mt={2} isDisabled variant="journal">
+          카테고리 검색 · 준비 중
         </Button>
       </Box>
       <div className="App">

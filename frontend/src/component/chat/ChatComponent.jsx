@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../design/fullAuditStyles.js";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   Box,
@@ -7,8 +8,6 @@ import {
   HStack,
   IconButton,
   Input,
-  InputGroup,
-  InputRightElement,
   Text,
   VStack,
 } from "@chakra-ui/react";
@@ -19,6 +18,8 @@ import axios from "@api/axiosConfig";
 import { LoginContext } from "../LoginProvider";
 
 export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
+  const friendId = selectedFriend?.id;
+  const friendNickname = selectedFriend?.nickname;
   const { memberInfo } = useContext(LoginContext) || {};
   const username = memberInfo?.nickname;
   const userId = memberInfo?.id;
@@ -28,6 +29,55 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef(null);
+  const messageInputRef = useRef(null);
+  const chatRef = useRef(null);
+  const returnFocusRef = useRef(null);
+
+  useEffect(() => {
+    returnFocusRef.current = document.activeElement;
+    return () =>
+      requestAnimationFrame(() => {
+        const previous = returnFocusRef.current;
+        const canRestore =
+          previous?.isConnected &&
+          previous.getClientRects().length > 0 &&
+          previous.matches("button, input, textarea, [tabindex]");
+        const target = canRestore
+          ? previous
+          : document.querySelector(".pet-friends .drag-handle button");
+        target?.focus({ preventScroll: true });
+      });
+  }, []);
+
+  useEffect(() => {
+    setIsMinimized(false);
+  }, [friendId]);
+
+  useEffect(() => {
+    if (!isMinimized) messageInputRef.current?.focus({ preventScroll: true });
+  }, [isMinimized, friendId]);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const resize = () => {
+      chatRef.current?.style.setProperty(
+        "--pet-chat-visible-height",
+        `${viewport.height}px`,
+      );
+      chatRef.current?.style.setProperty(
+        "--pet-chat-lift",
+        `${Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)}px`,
+      );
+    };
+    resize();
+    viewport.addEventListener("resize", resize);
+    viewport.addEventListener("scroll", resize);
+    return () => {
+      viewport.removeEventListener("resize", resize);
+      viewport.removeEventListener("scroll", resize);
+    };
+  }, []);
 
   const prevOnNewMessageRef = useRef();
 
@@ -42,9 +92,7 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
     console.log("ChatComponent mounted. selectedFriend:", selectedFriend);
 
     if (username && selectedFriend) {
-      const roomId = [userId, selectedFriend.id]
-        .sort((a, b) => a - b)
-        .join("-");
+      const roomId = [userId, friendId].sort((a, b) => a - b).join("-");
       const socket = new SockJS(`/ws`);
       const client = new Client({
         webSocketFactory: () => socket,
@@ -91,7 +139,7 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
         }
       };
     }
-  }, [username, selectedFriend, onNewMessage, userId]);
+  }, [username, selectedFriend, onNewMessage, userId, friendId]);
 
   const fetchMessagesForRoom = async (roomId) => {
     try {
@@ -103,8 +151,9 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
   };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-  }, [messages]);
+    const list = messagesEndRef.current;
+    if (list) list.scrollTop = list.scrollHeight;
+  }, [messages, isMinimized]);
 
   const sendMessage = async () => {
     if (!isConnected) {
@@ -115,13 +164,13 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
       return;
     }
 
-    const roomId = [userId, selectedFriend.id].sort((a, b) => a - b).join("-");
+    const roomId = [userId, friendId].sort((a, b) => a - b).join("-");
     const chatMessage = {
       senderId: userId,
-      recipientId: selectedFriend.id,
+      recipientId: friendId,
       content: message,
       senderNickName: username,
-      recipientNickName: selectedFriend.nickname,
+      recipientNickName: friendNickname,
     };
 
     stompClient.publish({
@@ -139,7 +188,8 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+      e.preventDefault();
       sendMessage();
     }
   };
@@ -150,76 +200,59 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
 
   return (
     <Box
-      position="fixed"
-      bottom={2}
-      right={2}
-      p={2}
-      minW="400px"
-      maxW="400px"
-      borderWidth="1px"
-      borderRadius="lg"
-      overflow="hidden"
-      bg="white"
+      ref={chatRef}
+      className="full-journal pet-chat"
+      sx={fullSurfaceStyle}
+      data-minimized={isMinimized}
+      role="region"
+      aria-label={`${friendNickname}님과 대화`}
     >
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        borderBottomWidth="1px"
-        p={2}
-      >
-        <HStack>
-          <Text fontWeight="bold">채팅</Text>
-          <Text color={"gray.400"}> with {selectedFriend.nickname}</Text>
-        </HStack>
-        <Box display="flex" justifyContent="flex-end" alignItems="center">
+      <Flex className="pet-chat-header">
+        <Box minW={0}>
+          <Text className="pet-chat-caption">친구와 나누는 이야기</Text>
+          <Text className="pet-chat-title" title={friendNickname}>
+            {friendNickname}
+          </Text>
+        </Box>
+        <HStack spacing={1} flexShrink={0}>
           <IconButton
             icon={isMinimized ? <ChatIcon /> : <MinusIcon />}
-            size="sm"
             onClick={toggleMinimize}
-            aria-label={isMinimized ? "Expand Chat" : "Minimize Chat"}
+            aria-label={isMinimized ? "대화창 펼치기" : "대화창 접기"}
+            aria-expanded={!isMinimized}
+            aria-controls="pet-chat-body"
           />
-          <CloseButton onClick={onClose} />
-        </Box>
-      </Box>
+          <CloseButton aria-label="대화창 닫기" onClick={onClose} />
+        </HStack>
+      </Flex>
       {!isMinimized && (
-        <VStack spacing={4} p={2}>
+        <VStack id="pet-chat-body" className="pet-chat-body" spacing={0}>
+          <Text className="pet-chat-status" role="status">
+            {isConnected ? "연결됨" : "대화 연결 중…"}
+          </Text>
           <Box
-            width="100%"
-            h="300px"
-            overflowY="scroll"
-            p={2}
-            borderWidth="1px"
-            borderRadius="lg"
+            className="pet-chat-messages"
+            ref={messagesEndRef}
+            role="log"
+            aria-label="대화 내역"
+            aria-live="polite"
+            tabIndex={0}
           >
+            {messages.length === 0 && (
+              <Text className="pet-chat-empty">
+                안부를 전하며 이야기를 시작해 보세요.
+              </Text>
+            )}
             {messages.map((msg, index) => (
               <Flex
                 key={index}
-                justifyContent={
-                  Number(msg.senderId) === Number(userId)
-                    ? "flex-start"
-                    : "flex-end"
-                }
-                mb={2}
+                className="pet-chat-message"
+                data-own={Number(msg.senderId) === Number(userId)}
               >
-                <Box
-                  bg={
-                    Number(msg.senderId) === Number(userId)
-                      ? "blue.100"
-                      : "gray.100"
-                  }
-                  p={2}
-                  borderRadius="md"
-                  textAlign={
-                    Number(msg.senderId) === Number(userId) ? "left" : "right"
-                  }
-                  maxWidth="70%"
-                >
-                  <Text fontSize="md" fontWeight="bold">
-                    {msg.senderNickName}
-                  </Text>
-                  <Text fontSize="md">{msg.content}</Text>
-                  <Text fontSize="md" color="gray.500">
+                <Box className="pet-chat-bubble">
+                  <Text className="pet-chat-sender">{msg.senderNickName}</Text>
+                  <Text className="pet-chat-content">{msg.content}</Text>
+                  <Text className="pet-chat-time">
                     {new Date(msg.timestamp).toLocaleString("ko-KR", {
                       timeZone: "Asia/Seoul",
                     })}
@@ -227,27 +260,31 @@ export const ChatComponent = ({ selectedFriend, onClose, onNewMessage }) => {
                 </Box>
               </Flex>
             ))}
-            <div ref={messagesEndRef} />
           </Box>
-          <InputGroup>
-            <Input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="메시지를 입력하세요"
-            />
-            <InputRightElement width="4.5rem">
+          <Box className="pet-chat-compose">
+            <Text as="label" htmlFor="pet-chat-input">
+              메시지
+            </Text>
+            <Flex gap={2}>
+              <Input
+                id="pet-chat-input"
+                ref={messageInputRef}
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="메시지를 입력하세요"
+                variant="journal"
+              />
               <Button
-                h="1.75rem"
-                size="sm"
                 onClick={sendMessage}
-                disabled={!isConnected}
+                isDisabled={!isConnected || !message.trim()}
+                variant="journal"
               >
-                보냄
+                보내기
               </Button>
-            </InputRightElement>
-          </InputGroup>
+            </Flex>
+          </Box>
         </VStack>
       )}
     </Box>

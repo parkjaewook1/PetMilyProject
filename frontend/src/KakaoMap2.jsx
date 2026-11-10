@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "./design/fullAuditStyles.js";
 import React, { useEffect, useRef, useState } from "react";
 import { Box, Flex } from "@chakra-ui/react";
 
@@ -43,7 +44,14 @@ const KakaoMap2 = ({ width = "600px", height = "400px" }) => {
   }, []);
 
   return (
-    <Flex justify="center" align="center" w="100%" h="100%">
+    <Flex
+      justify="center"
+      align="center"
+      w="100%"
+      h="100%"
+      sx={fullSurfaceStyle}
+      className="full-journal full-local-map"
+    >
       <Box
         id="map"
         ref={kakaoMaps}

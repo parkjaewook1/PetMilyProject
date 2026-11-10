@@ -1,3 +1,4 @@
+import { accountBoardPageStyle } from "../../design/accountBoardStyles.js";
 import React, { useState } from "react";
 import {
   Box,
@@ -90,14 +91,18 @@ const ReportModal = ({ isOpen, onClose, boardId, memberId }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent className="ab-modal" sx={accountBoardPageStyle}>
         <ModalHeader>신고 사유 선택</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <VStack spacing={4}>
             {Object.keys(customReasons).map((reason) => (
               <Box key={reason} width="100%">
-                <Button width="100%" onClick={() => setSelectedReason(reason)}>
+                <Button
+                  width="100%"
+                  onClick={() => setSelectedReason(reason)}
+                  variant="journalOutline"
+                >
                   {reason}
                 </Button>
                 {selectedReason === reason && (
@@ -109,6 +114,7 @@ const ReportModal = ({ isOpen, onClose, boardId, memberId }) => {
                     isInvalid={
                       isReasonEmpty && customReasons[reason].trim() === ""
                     }
+                    variant="journal"
                   />
                 )}
               </Box>
@@ -116,10 +122,10 @@ const ReportModal = ({ isOpen, onClose, boardId, memberId }) => {
           </VStack>
         </ModalBody>
         <ModalFooter>
-          <Button colorScheme="blue" mr={3} onClick={handleReport}>
+          <Button mr={3} onClick={handleReport} variant="journal">
             제출
           </Button>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="journalOutline" onClick={onClose}>
             취소
           </Button>
         </ModalFooter>

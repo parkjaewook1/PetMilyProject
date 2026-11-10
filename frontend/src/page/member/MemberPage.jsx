@@ -1,3 +1,5 @@
+import { accountBoardPageStyle } from "../../design/accountBoardStyles.js";
+import { ProfileAvatar } from "../../component/ProfileAvatar.jsx";
 import React, { useContext, useEffect, useState } from "react";
 import {
   Box,
@@ -6,16 +8,14 @@ import {
   CloseButton,
   Flex,
   FormControl,
-  Icon,
-  Image,
   Input,
+  Text,
   useToast,
 } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "@api/axiosConfig";
 import Swal from "sweetalert2";
 import { LoginContext } from "../../component/LoginProvider.jsx";
-import { AddIcon } from "@chakra-ui/icons";
 
 export function MemberPage() {
   const { id } = useParams();
@@ -53,7 +53,7 @@ export function MemberPage() {
           setHasProfileImage(true);
         }
       } catch (err) {
-        console.error(err);
+        console.error("회원 요청에 실패했습니다.");
         Swal.fire({
           title: "회원 정보를 불러오는 데 실패했습니다.",
           text: "오류가 발생하였습니다. 잠시 후 다시 시도해주세요.",
@@ -193,22 +193,44 @@ export function MemberPage() {
   }
 
   return (
-    <Center mt={5}>
+    <Center
+      as="main"
+      className="ab-page ab-account ab-memberpage"
+      sx={accountBoardPageStyle}
+      mt={5}
+    >
       <Box
+        className="ab-form-panel ab-profile-panel"
         w={[300, 500, 700]}
         p={8}
         boxShadow="lg"
         borderRadius="md"
         bg="white"
       >
-        <Box mb={10} fontSize="3xl" fontWeight="bold" textAlign="center">
+        <Text className="ab-eyebrow">PETMILY / ACCOUNT</Text>
+        <Box
+          as="h1"
+          className="ab-heading"
+          mb={10}
+          fontSize="2xl"
+          fontWeight="bold"
+          textAlign="center"
+        >
           마이페이지
         </Box>
-        <FormControl mb={6}>
-          <Box textAlign="center" mb={6} position="relative">
+        <Text className="ab-description">
+          계정 정보와 프로필 사진을 관리하세요.
+        </Text>
+        <FormControl className="ab-profile-grid" mb={6}>
+          <Box
+            className="ab-profile-portrait"
+            textAlign="center"
+            mb={6}
+            position="relative"
+          >
             {profileImage ? (
               <>
-                <Image
+                <ProfileAvatar
                   src={profileImage}
                   boxSize="200px"
                   borderRadius="full"
@@ -229,6 +251,9 @@ export function MemberPage() {
               </>
             ) : (
               <Box
+                className="ab-profile-upload"
+                title="프로필 사진 선택"
+                aria-label="프로필 사진 선택"
                 as="label"
                 htmlFor="profileImageInput"
                 bg="gray.200"
@@ -242,45 +267,53 @@ export function MemberPage() {
                 mx="auto"
                 mb={4}
               >
-                <Icon as={AddIcon} w={12} h={12} color="gray.500" />
+                <ProfileAvatar boxSize="200px" borderRadius="full" />
                 <Input
                   type="file"
                   accept="image/*"
                   onChange={handleProfileImageUpload}
                   display="none"
                   id="profileImageInput"
+                  variant="journal"
                 />
               </Box>
             )}
+            <Text className="ab-profile-hint">
+              사진이 없으면 기본 실루엣이 표시됩니다.
+            </Text>
+            {!hasProfileImage && imageFile && (
+              <Button
+                width="100%"
+                mb={6}
+                onClick={handleSaveProfileImage}
+                variant="journal"
+              >
+                프로필 이미지 저장
+              </Button>
+            )}
           </Box>
-          {!hasProfileImage && imageFile && (
-            <Button
-              width="100%"
-              bg="purple.500"
-              color="white"
-              _hover={{ bg: "purple.600" }}
-              mb={6}
-              onClick={handleSaveProfileImage}
-            >
-              프로필 이미지 저장
-            </Button>
-          )}
-          <Box fontWeight="bold" mb={3}>
+          <Box className="ab-profile-label" fontWeight="bold" mb={3}>
             이메일:
           </Box>
-          <Box mb={6}>{username}</Box>
-          <Box fontWeight="bold" mb={3}>
+          <Box className="ab-profile-value" mb={6}>
+            {username}
+          </Box>
+          <Box className="ab-profile-label" fontWeight="bold" mb={3}>
             닉네임:
           </Box>
-          <Box mb={6}>{nickname}</Box>
-          <Flex flexDirection="column" alignItems="center">
+          <Box className="ab-profile-value" mb={6}>
+            {nickname}
+          </Box>
+          <Flex
+            className="ab-profile-actions"
+            flexDirection="column"
+            alignItems="center"
+          >
             <Button
               width="100%"
-              bg="blue.500"
-              color="white"
-              _hover={{ bg: "blue.600" }}
               mb={4}
               onClick={handleEdit}
+              variant="journalOutline"
             >
               정보 수정
             </Button>
@@ -292,6 +325,7 @@ export function MemberPage() {
                 _hover={{ bg: "red.600" }}
                 mb={4}
                 onClick={handleDeleteMember}
+                className="ab-danger"
               >
                 회원 탈퇴
               </Button>
@@ -299,10 +333,8 @@ export function MemberPage() {
             {memberInfo && memberInfo.role === "ROLE_ADMIN" && (
               <Button
                 width="100%"
-                bg="green.500"
-                color="white"
-                _hover={{ bg: "green.600" }}
                 onClick={() => navigate("/member/list")}
+                variant="journalOutline"
               >
                 관리자 모드
               </Button>

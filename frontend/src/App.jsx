@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
-import { ChakraProvider, theme } from "@chakra-ui/react";
+import { ChakraProvider } from "@chakra-ui/react";
+import journalTheme from "./theme.js";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import axios from "@api/axiosConfig";
 import { Home } from "./page/Home.jsx";
@@ -155,7 +156,7 @@ const App = () => {
 
   return (
     <LoginProvider>
-      <ChakraProvider theme={theme}>
+      <ChakraProvider theme={journalTheme}>
         <ThemeProvider>
           <RouterProvider router={router} />
         </ThemeProvider>

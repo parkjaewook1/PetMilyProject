@@ -1,0 +1,244 @@
+/* Opt-in administrator list and its own SweetAlert portal only. */
+body:has(.admin-members) {
+  background: var(--chakra-colors-journal-paper);
+}
+.full-journal.admin-members {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 32px 160px;
+  min-height: calc(100vh - 80px);
+  background: var(--full-paper);
+}
+.admin-members .admin-members-header {
+  border-top: 1px solid var(--full-brand);
+  padding-top: 24px;
+}
+.admin-members .admin-members-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--full-muted);
+  margin-bottom: 12px;
+}
+.admin-members .admin-members-header h1 {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+.admin-members .admin-members-header > p:last-child {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--full-muted);
+}
+.admin-members .admin-members-search {
+  margin: 28px 0;
+  max-width: 560px;
+}
+.admin-members .admin-members-search label {
+  display: block;
+  color: var(--full-muted);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.admin-members .admin-members-search input {
+  min-width: 0;
+  height: 44px;
+}
+.admin-members .admin-members-search button {
+  height: 44px;
+  flex-shrink: 0;
+}
+.admin-members #admin-member-search-help {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--full-muted);
+  line-height: 1.7;
+}
+.admin-members .admin-members-count {
+  color: var(--full-muted);
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+.admin-members .admin-members-table-wrap {
+  overflow: visible;
+  white-space: normal;
+}
+.admin-members .admin-members-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.admin-members .admin-members-table :is(th, td) {
+  padding: 16px 8px;
+  border-color: var(--full-line);
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+.admin-members .admin-members-table th {
+  font-size: 11px;
+  color: var(--full-muted);
+  font-weight: 500;
+  border-top: 1px solid var(--full-brand);
+}
+.admin-members .admin-members-table td {
+  font-size: 12px;
+}
+.admin-members .admin-members-table th:nth-child(1) {
+  width: 6%;
+}
+.admin-members .admin-members-table th:nth-child(2) {
+  width: 24%;
+}
+.admin-members .admin-members-table th:nth-child(3) {
+  width: 15%;
+}
+.admin-members .admin-members-table th:nth-child(4) {
+  width: 7%;
+}
+.admin-members .admin-members-table th:nth-child(5) {
+  width: 13%;
+}
+.admin-members .admin-members-table th:nth-child(6) {
+  width: 20%;
+}
+.admin-members .admin-members-table th:nth-child(7) {
+  width: 15%;
+}
+.admin-members .admin-members-table .chakra-stack {
+  flex-wrap: wrap;
+}
+.admin-members .admin-members-table button {
+  min-width: 40px;
+  min-height: 40px;
+}
+.admin-members .admin-members-table .admin-members-danger {
+  color: var(--chakra-colors-red-600);
+  border-color: var(--chakra-colors-red-200);
+}
+.admin-members .admin-members-table .admin-members-danger:hover {
+  background: var(--chakra-colors-red-50);
+}
+.admin-members .admin-members-state {
+  padding: 40px 12px;
+  border-block: 1px solid var(--full-line);
+  text-align: center;
+  gap: 12px;
+  font-size: 14px;
+}
+.admin-members .admin-members-state button {
+  margin-top: 16px;
+}
+.admin-members .admin-members-pagination {
+  margin-top: 28px;
+  text-align: center;
+}
+.admin-members .admin-members-pagination > p {
+  font-size: 11px;
+  color: var(--full-muted);
+}
+.admin-members .admin-members-pagination > div > div {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.admin-members .admin-members-pagination button {
+  margin: 0;
+  min-width: 40px;
+  min-height: 40px;
+}
+.admin-members .admin-members-pagination button[aria-current="page"] {
+  background: var(--full-brand);
+  color: var(--full-paper);
+  border-color: var(--full-brand);
+}
+.admin-members-dialog.swal2-popup {
+  background: var(--chakra-colors-journal-paper);
+  color: var(--chakra-colors-journal-ink);
+  border: 1px solid var(--chakra-colors-journal-line);
+  border-radius: 3px;
+  font-family: "Noto Sans KR", sans-serif;
+  width: min(440px, calc(100vw - 32px));
+  padding: 24px;
+}
+.admin-members-dialog .swal2-title {
+  color: var(--chakra-colors-journal-brand);
+  font-size: 22px;
+  font-weight: 500;
+  padding: 0;
+}
+.admin-members-dialog .swal2-html-container {
+  font-size: 14px;
+  line-height: 1.8;
+  margin: 16px 0;
+}
+.admin-members-dialog .swal2-actions {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.admin-members-dialog .swal2-styled {
+  margin: 0;
+  min-height: 40px;
+  border-radius: 3px;
+  font-size: 13px;
+  box-shadow: none;
+}
+.admin-members-dialog .swal2-confirm {
+  background: var(--chakra-colors-red-600);
+}
+.admin-members-dialog .swal2-cancel {
+  background: var(--chakra-colors-journal-paper);
+  color: var(--chakra-colors-journal-brand);
+  border: 1px solid var(--chakra-colors-journal-line);
+}
+.admin-members-dialog .swal2-styled:focus-visible {
+  outline: 2px solid var(--chakra-colors-journal-brand);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+@media (max-width: 767px) {
+  .full-journal.admin-members {
+    padding: 24px 20px 160px;
+  }
+  .admin-members .admin-members-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .admin-members .admin-members-table :is(tbody, tr) {
+    display: block;
+    width: 100%;
+  }
+  .admin-members .admin-members-table tr {
+    border-top: 1px solid var(--full-line);
+    padding: 16px 0;
+  }
+  .admin-members .admin-members-table tr:last-child {
+    border-bottom: 1px solid var(--full-line);
+  }
+  .admin-members .admin-members-table td {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 12px;
+    padding: 7px 0;
+    border: 0;
+    font-size: 13px;
+  }
+  .admin-members .admin-members-table td::before {
+    content: attr(data-label);
+    color: var(--full-muted);
+    font-size: 11px;
+  }
+  .admin-members .admin-members-table td > * {
+    min-width: 0;
+  }
+  .admin-members .admin-members-search input {
+    font-size: 16px;
+  }
+}
+
+.admin-members :is(button, input, td) {
+  scroll-margin-block: 100px;
+}

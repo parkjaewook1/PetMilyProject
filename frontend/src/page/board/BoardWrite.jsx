@@ -1,3 +1,4 @@
+import { accountBoardPageStyle } from "../../design/accountBoardStyles.js";
 import React, { useContext, useState } from "react";
 import {
   Box,
@@ -124,8 +125,13 @@ export function BoardWrite() {
   }
 
   return (
-    <Center>
+    <Center
+      as="main"
+      className="ab-page ab-board ab-editor"
+      sx={accountBoardPageStyle}
+    >
       <Box
+        className="ab-editor-sheet"
         maxW={"700px"}
         w={"100%"}
         p={6}
@@ -134,21 +140,31 @@ export function BoardWrite() {
         mt={10}
         bg={"white"}
       >
+        <Text className="ab-eyebrow">COMMUNITY / WRITE</Text>
+        <Text as="h1" className="ab-heading">
+          이야기 쓰기
+        </Text>
+        <Text className="ab-description">
+          반려생활의 질문과 기록을 이웃과 나눠요.
+        </Text>
         <Box mb={6}>
           <FormControl>
-            <FormLabel>작성자</FormLabel>
+            <FormLabel variant="journal">작성자</FormLabel>
             <Text>{memberInfo.nickname}</Text>
           </FormControl>
         </Box>
         <Box mb={6}>
           <FormControl>
-            <FormLabel>제목</FormLabel>
+            <FormLabel htmlFor="boardwrite-field-1" variant="journal">
+              제목
+            </FormLabel>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              variant="filled"
+              variant="journal"
               focusBorderColor="teal.500"
               placeholder="제목을 입력하세요"
+              id="boardwrite-field-1"
             />
           </FormControl>
         </Box>
@@ -162,20 +178,21 @@ export function BoardWrite() {
                 <MenuButton
                   as={Button}
                   rightIcon={isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                  bg="gray.100"
-                  color="black"
                   fontWeight="medium"
-                  _hover={{ bg: "gray.200" }}
-                  _active={{ bg: "gray.300" }}
                   size="lg"
                   width="100%"
                   border="1px solid"
                   borderColor="gray.300"
                   borderRadius="md"
+                  variant="journalOutline"
                 >
                   {`${boardType}`}
                 </MenuButton>
-                <MenuList overflowY="auto">
+                <MenuList
+                  overflowY="auto"
+                  className="ab-menu"
+                  sx={accountBoardPageStyle}
+                >
                   <MenuItem onClick={() => setBoardType("자유")}>
                     자유 게시판
                   </MenuItem>
@@ -209,27 +226,33 @@ export function BoardWrite() {
         </Box>
         <Box mb={6}>
           <FormControl>
-            <FormLabel>내용</FormLabel>
+            <FormLabel htmlFor="boardwrite-field-2" variant="journal">
+              내용
+            </FormLabel>
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               height="200px"
-              variant="filled"
+              variant="journal"
               focusBorderColor="teal.500"
               placeholder="내용을 입력하세요"
+              id="boardwrite-field-2"
             />
           </FormControl>
         </Box>
         <Box mb={6}>
           <FormControl>
-            <FormLabel>파일</FormLabel>
+            <FormLabel htmlFor="boardwrite-field-3" variant="journal">
+              파일
+            </FormLabel>
             <Input
               multiple
               type="file"
               accept="image/*"
               onChange={handleChange}
-              variant="filled"
+              variant="journal"
               focusBorderColor="teal.500"
+              id="boardwrite-field-3"
             />
             {!invisibledText && (
               <FormHelperText color="red.500">
@@ -243,9 +266,9 @@ export function BoardWrite() {
         </Box>
         <Box textAlign="center">
           <Button
-            colorScheme={"teal"}
             onClick={handleSaveClick}
             isDisabled={disableSaveButton}
+            variant="journal"
           >
             저장
           </Button>

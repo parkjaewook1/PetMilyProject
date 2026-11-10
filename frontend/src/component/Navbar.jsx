@@ -1,5 +1,5 @@
+import { ProfileAvatar } from "./ProfileAvatar.jsx";
 import {
-  Avatar,
   Box,
   Button,
   Flex,
@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "@api/axiosConfig";
 import { generateDiaryId } from "../util/util.jsx";
 import BoardMenu from "./BoardMenu.jsx";
+import "./Navbar.css";
 import { ChevronDownIcon, HamburgerIcon } from "@chakra-ui/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -41,20 +42,20 @@ const NavButton = ({ icon, children, onClick, to }) => {
 
   return (
     <Button
+      className="petmily-nav-link"
       variant="ghost"
       leftIcon={icon ? <FontAwesomeIcon icon={icon} /> : null}
       onClick={handleClick}
       px={4}
       py={5}
-      rounded={"full"}
+      rounded="4px"
       fontWeight="bold"
       fontSize="md"
       color="gray.600"
       _hover={{
-        bg: "purple.50",
-        color: "purple.600",
-        transform: "translateY(-2px)",
-        shadow: "sm",
+        bg: "#eee7ef",
+        color: "#3b124b",
+        boxShadow: "none",
       }}
       transition="all 0.2s"
     >
@@ -146,6 +147,7 @@ export function Navbar() {
 
   return (
     <Flex
+      className="petmily-nav"
       as="nav"
       position="fixed"
       top="0"
@@ -155,27 +157,32 @@ export function Navbar() {
       h={{ base: "60px", md: "80px" }}
       alignItems="center"
       justifyContent="center"
-      px={4}
-      bg="rgba(248, 248, 255, 0.85)"
-      backdropFilter="blur(12px)"
-      boxShadow="sm"
+      px={{ base: "22px", md: "24px" }}
+      bg="#faf8f4"
+      boxShadow="none"
       borderBottom="1px solid"
-      borderColor="purple.100"
+      borderColor="#e3ddd6"
       transition="all 0.3s"
     >
       <Flex
+        className="petmily-nav-inner"
         w="100%"
-        maxW="1200px"
+        maxW="1160px"
         alignItems="center"
         justifyContent="space-between"
       >
-        <HStack spacing={{ base: 2, md: 6 }} alignItems="center">
+        <HStack
+          className="petmily-nav-brand-group"
+          spacing={{ base: 2, md: 8 }}
+          alignItems="center"
+        >
           <Box
+            as="button"
+            className="petmily-nav-logo"
+            aria-label="Petmily 홈"
             cursor="pointer"
             onClick={() => navigate("/")}
-            w={{ base: "100px", md: "130px" }}
-            transition="transform 0.2s"
-            _hover={{ transform: "scale(1.05)" }}
+            w={{ base: "96px", md: "112px" }}
           >
             <Img
               src={"/img/petmily-logo.png"}
@@ -191,10 +198,7 @@ export function Navbar() {
               spacing={1}
               display={{ base: "none", md: "flex" }}
             >
-              <Box
-                _hover={{ transform: "translateY(-2px)" }}
-                transition="all 0.2s"
-              >
+              <Box _hover={{ color: "#3b124b" }} transition="all 0.2s">
                 <BoardMenu isOpen={isOpen} onOpen={onOpen} onClose={onClose} />
               </Box>
 
@@ -220,19 +224,20 @@ export function Navbar() {
           {isLargerThan768 ? (
             <>
               <Button
+                className="petmily-nav-action petmily-nav-write"
                 leftIcon={<FontAwesomeIcon icon={faPencil} />}
-                bgGradient="linear(to-r, purple.400, purple.500)"
+                bg="#3b124b"
                 color="white"
                 variant="solid"
                 size="sm"
                 onClick={() => navigate("/board/write")}
-                borderRadius="full"
+                borderRadius="4px"
                 px={5}
-                boxShadow="md"
+                boxShadow="none"
                 _hover={{
-                  bgGradient: "linear(to-r, purple.500, purple.600)",
-                  transform: "translateY(-1px)",
-                  boxShadow: "lg",
+                  bg: "#51235f",
+
+                  boxShadow: "none",
                 }}
                 _active={{ transform: "translateY(0)" }}
               >
@@ -242,24 +247,25 @@ export function Navbar() {
               {isLoggedIn ? (
                 <Menu>
                   <MenuButton
+                    className="petmily-nav-account"
                     as={Button}
-                    rounded={"full"}
+                    rounded="4px"
                     variant={"ghost"}
                     cursor={"pointer"}
                     minW={0}
                     rightIcon={<ChevronDownIcon color="gray.400" />}
-                    _hover={{ bg: "purple.50" }}
+                    _hover={{ bg: "#eee7ef" }}
                     pl={2}
                     pr={4}
                   >
                     <HStack spacing={2}>
                       {/* ✅ Avatar에 이미지 적용 */}
-                      <Avatar
+                      <ProfileAvatar
                         size={"sm"}
                         src={myProfileImage}
                         name={nickname}
                         border="2px solid white"
-                        boxShadow="base"
+                        boxShadow="none"
                       />
                       <Text fontWeight="bold" color="gray.700" fontSize="sm">
                         <span translate="no" className="notranslate">
@@ -270,6 +276,7 @@ export function Navbar() {
                     </HStack>
                   </MenuButton>
                   <MenuList
+                    className="petmily-nav-menu"
                     zIndex={1001}
                     border="none"
                     boxShadow="xl"
@@ -304,20 +311,21 @@ export function Navbar() {
                 </Menu>
               ) : (
                 <Button
+                  className="petmily-nav-action petmily-nav-login"
                   fontSize={"sm"}
                   fontWeight="bold"
-                  color={"purple.600"}
+                  color={"#3b124b"}
                   bg={"white"}
                   border="1px solid"
                   borderColor="purple.200"
                   _hover={{
-                    bg: "purple.50",
+                    bg: "#eee7ef",
                     borderColor: "purple.400",
                   }}
                   onClick={() => navigate("/member/login")}
                   size="sm"
                   px={6}
-                  borderRadius="full"
+                  borderRadius="4px"
                 >
                   Login
                 </Button>
@@ -326,6 +334,7 @@ export function Navbar() {
           ) : (
             <>
               <IconButton
+                className="petmily-nav-mobile-button"
                 icon={<FontAwesomeIcon icon={faPencil} />}
                 variant="ghost"
                 colorScheme="purple"
@@ -336,6 +345,7 @@ export function Navbar() {
               />
               <Menu>
                 <MenuButton
+                  className="petmily-nav-mobile-button"
                   as={IconButton}
                   icon={<HamburgerIcon w={6} h={6} />}
                   variant="ghost"
@@ -344,6 +354,7 @@ export function Navbar() {
                   isRound
                 />
                 <MenuList
+                  className="petmily-nav-menu"
                   zIndex={1001}
                   border="none"
                   boxShadow="dark-lg"
@@ -375,9 +386,9 @@ export function Navbar() {
                     <>
                       <MenuItem
                         fontWeight="bold"
-                        color="purple.600"
+                        color="#3b124b"
                         cursor="default"
-                        bg="purple.50"
+                        bg="#eee7ef"
                       >
                         👋{" "}
                         <span translate="no" className="notranslate">
@@ -406,7 +417,7 @@ export function Navbar() {
                     <MenuItem
                       onClick={() => navigate("/member/login")}
                       fontWeight="bold"
-                      color="purple.600"
+                      color="#3b124b"
                     >
                       로그인
                     </MenuItem>

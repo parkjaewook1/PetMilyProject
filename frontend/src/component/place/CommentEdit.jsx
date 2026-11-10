@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../design/fullAuditStyles.js";
 import {
   Box,
   Button,
@@ -63,18 +64,22 @@ export function CommentEdit({
   }
 
   return (
-    <Flex>
+    <Flex
+      sx={fullSurfaceStyle}
+      className="full-journal full-place-comment full-commentedit"
+    >
       <Box flex={1} mr={3}>
         <Textarea
           value={commentText}
           onChange={(e) => setCommentText(e.target.value)}
+          variant="journal"
         />
         <StarRating ratingIndex={ratingIndex} setRatingIndex={setRatingIndex} />
       </Box>
       <Stack>
         <Button
           size={"sm"}
-          variant="outline"
+          variant="journalOutline"
           colorScheme={"gray"}
           onClick={() => setIsEditing(false)}
         >
@@ -86,7 +91,7 @@ export function CommentEdit({
             size={"sm"}
             isLoading={isProcessing}
             onClick={onOpen}
-            variant="outline"
+            variant="journalOutline"
             colorScheme={"blue"}
           >
             <FontAwesomeIcon icon={faPaperPlane} />
@@ -95,14 +100,26 @@ export function CommentEdit({
       </Stack>
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent
+          sx={fullSurfaceStyle}
+          className="full-journal full-overlay"
+        >
           <ModalHeader>수정 확인</ModalHeader>
           <ModalBody>댓글을 저장하시겠습니까?</ModalBody>
           <ModalFooter>
-            <Button mr={2} colorScheme={"gray"} onClick={onClose}>
+            <Button
+              mr={2}
+              colorScheme={"gray"}
+              onClick={onClose}
+              variant="journal"
+            >
               취소
             </Button>
-            <Button colorScheme={"blue"} onClick={handleCommentSubmit}>
+            <Button
+              colorScheme={"blue"}
+              onClick={handleCommentSubmit}
+              variant="journal"
+            >
               확인
             </Button>
           </ModalFooter>

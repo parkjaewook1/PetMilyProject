@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../design/fullAuditStyles.js";
 import React, { useContext, useEffect, useState } from "react";
 import axios from "@api/axiosConfig";
 import {
@@ -169,7 +170,12 @@ export function BoardReportList() {
 
   return (
     <>
-      <Container maxW="container.xl" py={10}>
+      <Container
+        className="full-journal full-report"
+        sx={fullSurfaceStyle}
+        maxW="container.xl"
+        py={10}
+      >
         <Box>
           <Menu>
             {({ isOpen }) => (
@@ -188,7 +194,10 @@ export function BoardReportList() {
                 >
                   {`${boardType} 게시판`}
                 </MenuButton>
-                <MenuList>
+                <MenuList
+                  sx={fullSurfaceStyle}
+                  className="full-journal full-overlay"
+                >
                   <MenuItem onClick={() => handleClickBoardTypeButton("전체")}>
                     전체 게시판
                   </MenuItem>
@@ -299,6 +308,7 @@ export function BoardReportList() {
                               },
                             })
                           }
+                          className="full-danger"
                         >
                           확인
                         </Button>
@@ -345,6 +355,7 @@ export function BoardReportList() {
                 colorScheme="red"
                 onClick={handleDeleteSelected}
                 disabled={selectedBoards.length === 0}
+                className="full-danger"
               >
                 선택 삭제
               </Button>
@@ -364,6 +375,7 @@ export function BoardReportList() {
                 value={searchType}
                 onChange={(e) => setSearchType(e.target.value)}
                 bg={bg}
+                variant="journal"
               >
                 <option value="전체">전체</option>
                 <option value="글">글</option>
@@ -380,10 +392,11 @@ export function BoardReportList() {
                     handleSearchClick();
                   }
                 }}
+                variant="journal"
               />
             </Box>
             <Box>
-              <Button onClick={handleSearchClick}>
+              <Button onClick={handleSearchClick} variant="journal">
                 <FontAwesomeIcon icon={faMagnifyingGlass} />
               </Button>
             </Box>
@@ -405,7 +418,10 @@ export function BoardReportList() {
                     >
                       {`게시글 (${pageAmount})개씩 보기`}
                     </MenuButton>
-                    <MenuList>
+                    <MenuList
+                      sx={fullSurfaceStyle}
+                      className="full-journal full-overlay"
+                    >
                       <MenuItem onClick={() => handlePageSizeChange(10)}>
                         10개씩 보기
                       </MenuItem>

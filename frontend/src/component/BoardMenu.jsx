@@ -83,24 +83,25 @@ export default function BoardMenu() {
     <Menu autoSelect={false} isLazy>
       {/* 1. 트리거 버튼 (Navbar의 다른 버튼들과 디자인 통일) */}
       <MenuButton
+        className="petmily-nav-link"
         as={Button}
         variant="ghost"
         leftIcon={<FontAwesomeIcon icon={faList} />}
         rightIcon={<ChevronDownIcon color="gray.400" />}
         px={4}
         py={5}
-        rounded="full" // 둥근 알약 모양
+        rounded="3px"
         fontWeight="bold"
         fontSize="md"
         color="gray.600"
         _hover={{
-          bg: "purple.50",
-          color: "purple.600",
-          transform: "translateY(-2px)",
-          boxShadow: "sm",
+          bg: "#eee7ef",
+          color: "#3b124b",
+
+          boxShadow: "none",
         }}
         _active={{
-          bg: "purple.100",
+          bg: "#e5dbe9",
         }}
         transition="all 0.2s"
       >
@@ -109,6 +110,7 @@ export default function BoardMenu() {
 
       {/* 2. 드롭다운 메뉴 리스트 */}
       <MenuList
+        className="petmily-nav-menu"
         border="none"
         boxShadow="dark-lg"
         borderRadius="xl"
@@ -124,13 +126,14 @@ export default function BoardMenu() {
             mb={1}
             py={3}
             _hover={{
-              bg: "purple.50",
-              color: "purple.700",
+              bg: "#eee7ef",
+              color: "#3b124b",
             }}
           >
             <Flex align="center" gap={3}>
               {/* 아이콘 박스 */}
               <Box
+                className="petmily-menu-category"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"

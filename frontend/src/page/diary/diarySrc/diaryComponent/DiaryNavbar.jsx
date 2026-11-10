@@ -110,7 +110,11 @@ export function DiaryNavbar({ isOwner, type = "desktop" }) {
 
   // 🖥️ [Desktop] 스타일 수정
   const getDesktopStyle = (path, isSpecial = false) => {
-    const isActive = currentPath === path || currentPath.startsWith(path + "/");
+    // The home bookmark is exact; child bookmarks include their own detail routes.
+    const isActive =
+      path === `/diary/${encodedId}`
+        ? currentPath === path
+        : currentPath === path || currentPath.startsWith(path + "/");
 
     return {
       bg: isSpecial
@@ -184,6 +188,18 @@ export function DiaryNavbar({ isOwner, type = "desktop" }) {
           <Button
             key={item.path}
             {...getDesktopStyle(item.path)}
+            aria-current={
+              (
+                item.path === `/diary/${encodedId}`
+                  ? currentPath === item.path
+                  : item.path === `/diary/${encodedId}/board/list`
+                    ? currentPath.startsWith(`/diary/${encodedId}/board/`)
+                    : currentPath === item.path ||
+                      currentPath.startsWith(item.path + "/")
+              )
+                ? "page"
+                : undefined
+            }
             onClick={() => handleButtonClick(item.path)}
             // 🚨 leftIcon 속성 제거! (이게 여백의 원인이었음)
           >
@@ -231,6 +247,18 @@ export function DiaryNavbar({ isOwner, type = "desktop" }) {
         <Button
           key={item.path}
           {...getMobileStyle(item.path)}
+          aria-current={
+            (
+              item.path === `/diary/${encodedId}`
+                ? currentPath === item.path
+                : item.path === `/diary/${encodedId}/board/list`
+                  ? currentPath.startsWith(`/diary/${encodedId}/board/`)
+                  : currentPath === item.path ||
+                    currentPath.startsWith(item.path + "/")
+            )
+              ? "page"
+              : undefined
+          }
           onClick={() => handleButtonClick(item.path)}
         >
           <Icon as={FontAwesomeIcon} icon={item.icon} boxSize={5} mb={1} />

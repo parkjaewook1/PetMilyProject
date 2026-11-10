@@ -2,9 +2,13 @@ package com.backend.controller.member;
 
 import com.backend.domain.member.Member;
 import com.backend.domain.member.Profile;
+import com.backend.dto.member.PublicMemberProfile;
 import com.backend.security.CustomUserDetails;
 import com.backend.service.member.EmailSenderService;
 import com.backend.service.member.MemberService;
+import com.backend.service.member.AdminMemberService;
+import com.backend.dto.member.AdminMemberPage;
+import org.springframework.dao.DataIntegrityViolationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +27,7 @@ import java.util.Map;
 public class MemberController {
 
     private final MemberService service;
+    private final AdminMemberService adminMemberService;
     private final EmailSenderService emailSenderService;
 
     // 회원가입
@@ -72,20 +77,9 @@ public class MemberController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Member> getById(@PathVariable Integer id,
-                                          @AuthenticationPrincipal CustomUserDetails user) {
-        // 로그인 안 한 경우 user가 null
-        if (user != null) {
-            System.out.println("로그인한 사용자 ID: " + user.getId());
-        } else {
-            System.out.println("비로그인 접근");
-        }
-
-        Member member = service.getById(id);
-        if (member == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(member);
+    public ResponseEntity<PublicMemberProfile> getById(@PathVariable Integer id) {
+        PublicMemberProfile profile = service.getProfile(id);
+        return profile == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(profile);
     }
 
     // 회원 수정 (로그인 후)
@@ -146,9 +140,8 @@ public class MemberController {
             response.put("profileImage", imageUrl);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "프로필 이미지 저장 실패: " + e.getMessage()));
+                    .body(Map.of("message", "프로필 이미지 저장에 실패했습니다."));
         }
     }
 
@@ -159,9 +152,8 @@ public class MemberController {
             service.deleteProfileByMemberId(principal.getId());
             return ResponseEntity.ok("프로필 이미지 삭제 성공");
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("프로필 이미지 삭제 실패: " + e.getMessage());
+                    .body("프로필 이미지 삭제에 실패했습니다.");
         }
     }
 
@@ -176,13 +168,23 @@ public class MemberController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    // 회원 목록 (관리자 전용)
+    // Separate from DELETE /api/member (self-service withdrawal).
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteByAdministrator(@PathVariable Integer id) {
+        try {
+            adminMemberService.delete(id);
+            return ResponseEntity.noContent().build();
+        } catch (DataIntegrityViolationException error) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "연관 데이터가 있어 회원을 삭제할 수 없습니다."));
+        }
+    }
+
     @GetMapping("/list")
-    public ResponseEntity<Map<String, Object>> getMemberList(
+    public AdminMemberPage getMemberList(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
-        Map<String, Object> response = service.list(page, pageSize);
-        return ResponseEntity.ok(response);
+        return adminMemberService.list(page, pageSize);
     }
 
     // 비밀번호 찾기 페이지 (로그인 전)
@@ -200,8 +202,8 @@ public class MemberController {
         if (memberEmail == null) {
             return ResponseEntity.notFound().build();
         }
-        String tempPassword = emailSenderService.createMail(username);
-        return ResponseEntity.ok(tempPassword);
+        emailSenderService.createMail(username);
+        return ResponseEntity.ok("안내 메일을 전송했습니다.");
     }
 
     // OAuth 로그인 후 내 정보 조회 (로그인 후)

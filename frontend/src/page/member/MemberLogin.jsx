@@ -1,3 +1,4 @@
+import { accountBoardPageStyle } from "../../design/accountBoardStyles.js";
 import React, { useContext, useState } from "react";
 import {
   Alert,
@@ -61,7 +62,6 @@ export function MemberLogin() {
         const { access, refresh, id, nickname, role } = response.data;
 
         const memberInfo = { access, id, nickname, role };
-        console.log("로그인 데이터:", response.data);
 
         // ⚡️ [핵심 추가] axiosConfig가 사용할 토큰들을 로컬스토리지에 저장합니다.
         // 이 부분이 있어야 재발급(401 -> 400 해결)이 작동합니다.
@@ -85,7 +85,7 @@ export function MemberLogin() {
         setError("로그인에 실패했습니다.");
       }
     } catch (error) {
-      console.error(error);
+      console.error("회원 요청에 실패했습니다.");
       setError("이메일 또는 비밀번호를 다시 확인해주세요.");
     } finally {
       setIsLoading(false);
@@ -104,11 +104,32 @@ export function MemberLogin() {
   }
 
   return (
-    <Center mt={5}>
-      <Box w={500} p={6} boxShadow="lg" borderRadius="md" bg="white">
-        <Box mb={10} fontSize="2xl" fontWeight="bold" textAlign="center">
+    <Center
+      as="main"
+      className="ab-page ab-account ab-memberlogin"
+      sx={accountBoardPageStyle}
+      mt={5}
+    >
+      <Box
+        className="ab-form-panel"
+        w={500}
+        p={6}
+        boxShadow="lg"
+        borderRadius="md"
+        bg="white"
+      >
+        <Text className="ab-eyebrow">PETMILY / ACCOUNT</Text>
+        <Box
+          as="h1"
+          className="ab-heading"
+          mb={10}
+          fontSize="2xl"
+          fontWeight="bold"
+          textAlign="center"
+        >
           로그인
         </Box>
+        <Text className="ab-description">Petmily 계정으로 로그인하세요.</Text>
         {error && (
           <Alert status="error" mb={4}>
             <AlertIcon />
@@ -116,16 +137,22 @@ export function MemberLogin() {
           </Alert>
         )}
         <FormControl mb={4}>
-          <FormLabel>이메일</FormLabel>
+          <FormLabel htmlFor="memberlogin-field-1" variant="journal">
+            이메일
+          </FormLabel>
           <Input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="이메일을 입력하세요"
             onKeyPress={handleKeyPress}
+            id="memberlogin-field-1"
+            variant="journal"
           />
         </FormControl>
         <FormControl mb={4}>
-          <FormLabel>비밀번호</FormLabel>
+          <FormLabel htmlFor="memberlogin-field-2" variant="journal">
+            비밀번호
+          </FormLabel>
           <InputGroup>
             <Input
               type="password"
@@ -133,6 +160,8 @@ export function MemberLogin() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="비밀번호를 입력하세요"
               onKeyPress={handleKeyPress}
+              id="memberlogin-field-2"
+              variant="journal"
             />
           </InputGroup>
         </FormControl>
@@ -159,16 +188,15 @@ export function MemberLogin() {
           <Button
             width={"100%"}
             height={"50px"}
-            bg={"#E6E6FA"}
-            color="purple"
-            _hover={{ bg: "#DCD0FF" }}
             onClick={handleLogin}
             isLoading={isLoading}
             leftIcon={<Img src="/img/favicon.png" boxSize="20px" />}
+            variant="journal"
           >
             {isLoading ? <Spinner size="sm" /> : "펫밀리로 로그인"}
           </Button>
           <Button
+            className="ab-oauth"
             mt={4}
             width={"100%"}
             height={"50px"}

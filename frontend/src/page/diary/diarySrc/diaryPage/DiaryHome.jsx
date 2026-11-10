@@ -1,7 +1,8 @@
+import { fullSurfaceStyle } from "../../../../design/fullAuditStyles.js";
+import { ProfileAvatar } from "../../../../component/ProfileAvatar.jsx";
 import { useContext, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
-  Avatar,
   Box,
   Button,
   Center,
@@ -25,6 +26,7 @@ import { DiaryProvider } from "../diaryComponent/DiaryContext.jsx";
 import { Chart } from "chart.js/auto";
 import { useTheme } from "../diaryComponent/ThemeContext.jsx";
 import { ThemeSwitcher } from "../diaryComponent/ThemeSwitcher.jsx";
+import "./MiniHomeJournal.css";
 import DiaryVisitorCounter from "../diaryComponent/DiaryVisitorCounter.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -257,13 +259,25 @@ export function DiaryHome() {
   // ------------------------------------------------------
   if (isLoading)
     return (
-      <Center minH="100vh" bg={outerBg}>
+      <Center
+        className="full-journal mini-status"
+        data-color-mode={colorMode}
+        sx={fullSurfaceStyle}
+        minH="100vh"
+        bg={outerBg}
+      >
         <Spinner size="xl" />
       </Center>
     );
   if (!isValidDiaryId)
     return (
-      <Center minH="100vh" bg={outerBg}>
+      <Center
+        className="full-journal mini-status"
+        data-color-mode={colorMode}
+        sx={fullSurfaceStyle}
+        minH="100vh"
+        bg={outerBg}
+      >
         <Text>존재하지 않는 미니홈피</Text>
       </Center>
     );
@@ -271,6 +285,9 @@ export function DiaryHome() {
   return (
     <DiaryProvider>
       <Center
+        className={isRootPath ? "mini-journal" : "mini-journal mini-details"}
+        data-journal-skin={theme}
+        data-color-mode={colorMode}
         h={{ base: "auto", md: "100vh" }}
         minH="100vh"
         bg={outerBg}
@@ -284,6 +301,7 @@ export function DiaryHome() {
         overflowX="hidden"
       >
         <Flex
+          className="mini-book"
           w="100%"
           maxW="1280px"
           h={{ base: "auto", md: "720px" }}
@@ -298,6 +316,7 @@ export function DiaryHome() {
         >
           {/* 내부 흰색 종이 영역 */}
           <Box
+            className="mini-paper"
             flex={1}
             bg={skinBg}
             borderRadius="15px"
@@ -309,12 +328,14 @@ export function DiaryHome() {
             h={{ base: "auto", md: "100%" }}
           >
             <Flex
+              className="mini-columns"
               direction={{ base: "column", md: "row" }}
               gap={{ base: 4, md: 6 }}
               h="100%"
             >
               {/* 👈 [좌측] 프로필 영역 */}
               <VStack
+                className="mini-profile"
                 display={{ base: isRootPath ? "flex" : "none", md: "flex" }}
                 w={{ base: "100%", md: "250px" }}
                 h={{ base: "auto", md: "100%" }}
@@ -329,7 +350,13 @@ export function DiaryHome() {
                 flexShrink={0}
                 overflowY={{ base: "visible", md: "auto" }}
               >
+                {isRootPath && (
+                  <Text className="mini-profile-kicker">
+                    반려인의 기록
+                  </Text>
+                )}
                 <Box
+                  className="mini-visits"
                   textAlign="center"
                   fontSize="xs"
                   color="red.400"
@@ -342,6 +369,7 @@ export function DiaryHome() {
                 </Box>
 
                 <Box
+                  className="mini-profile-inner"
                   border="1px solid"
                   borderColor={profileBoxBorder}
                   bg={profileBoxBg}
@@ -352,6 +380,7 @@ export function DiaryHome() {
                   alignItems="center"
                 >
                   <Box
+                    className="mini-profile-photo"
                     w="100%"
                     h="200px"
                     bg="gray.200"
@@ -360,16 +389,16 @@ export function DiaryHome() {
                     position="relative"
                     role="group"
                   >
-                    <Avatar
+                    <ProfileAvatar
                       src={profileImage}
                       name={ownerNickname}
                       w="100%"
                       h="100%"
                       borderRadius="0"
-                      icon={<Icon as={FontAwesomeIcon} icon={faCamera} />}
                     />
                     {Number(memberInfo?.id) === ownerId && (
                       <Flex
+                        className="mini-profile-photo-edit"
                         position="absolute"
                         inset={0}
                         bg="blackAlpha.500"
@@ -398,7 +427,11 @@ export function DiaryHome() {
                     )}
                   </Box>
 
+                  {isRootPath && (
+                    <Text className="mini-owner-name">{ownerNickname}</Text>
+                  )}
                   <Text
+                    className="mini-music"
                     fontSize="xs"
                     color={subTextColor}
                     mb={4}
@@ -409,12 +442,14 @@ export function DiaryHome() {
                     Jeans - Hype Boy
                   </Text>
                   <Divider
+                    className="mini-profile-divider"
                     my={1}
                     borderColor={dashedLineColor}
                     borderStyle="dashed"
                   />
 
                   <Box
+                    className="mini-profile-note"
                     w="100%"
                     p={3}
                     bg={stickyNoteBg}
@@ -492,6 +527,7 @@ export function DiaryHome() {
                           )}
                         </Flex>
                         <Text
+                          className="mini-introduction"
                           fontSize="xs"
                           color={textColor}
                           minH="60px"
@@ -505,6 +541,7 @@ export function DiaryHome() {
                   </Box>
 
                   <Box
+                    className="mini-emotion"
                     w="full"
                     mt="auto"
                     pt={2}
@@ -517,9 +554,14 @@ export function DiaryHome() {
                       mb={1}
                       color={subTextColor}
                     >
-                      Emotion History
+                      마음의 기록
                     </Text>
-                    <Box w="60px" h="60px" mx="auto">
+                    <Box
+                      className="mini-emotion-chart"
+                      w="60px"
+                      h="60px"
+                      mx="auto"
+                    >
                       <canvas ref={chartRef}></canvas>
                     </Box>
                   </Box>
@@ -528,6 +570,7 @@ export function DiaryHome() {
 
               {/* 👉 [우측] 콘텐츠 영역 */}
               <VStack
+                className="mini-content"
                 display="flex"
                 flex={1}
                 h={{ base: "auto", md: "100%" }}
@@ -536,7 +579,18 @@ export function DiaryHome() {
                 overflow="hidden"
                 minH={{ base: "400px", md: "400px" }}
               >
-                <Flex justify="flex-start" align="flex-end" mb={2} px={2}>
+                <Flex
+                  className="mini-titlebar"
+                  justify="flex-start"
+                  align="flex-end"
+                  mb={2}
+                  px={2}
+                >
+                  {isRootPath && (
+                    <Text className="mini-eyebrow">
+                      PETMILY / 나의 기록장
+                    </Text>
+                  )}
                   <Text
                     fontSize="lg"
                     fontWeight="bold"
@@ -548,6 +602,7 @@ export function DiaryHome() {
                 </Flex>
 
                 <Box
+                  className="mini-outlet"
                   flex={1}
                   bg="white"
                   borderRadius="10px"
@@ -574,6 +629,7 @@ export function DiaryHome() {
 
           {/* 🔖 [우측 사이드] 탭 메뉴 (PC용) */}
           <VStack
+            className="mini-desktop-tabs"
             display={{ base: "none", md: "flex" }}
             position="absolute"
             right={{ base: "10px", md: "-38px" }}
@@ -624,6 +680,7 @@ export function DiaryHome() {
 
           {/* 모바일 하단 바 */}
           <Box
+            className="mini-mobile-tabs"
             display={{ base: "block", md: "none" }}
             position="fixed"
             bottom={0}

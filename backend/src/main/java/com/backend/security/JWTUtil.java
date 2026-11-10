@@ -20,7 +20,6 @@ public class JWTUtil {
     public static final long REFRESH_TOKEN_EXP_MS = 1000L * 60 * 60 * 24 * 14; // 14일
 
     public JWTUtil(@Value("${jwt.secret.key}") String secret) {
-        System.out.println("Loaded JWT Secret Key: " + secret);
         this.secretKey = new SecretKeySpec(
                 secret.getBytes(StandardCharsets.UTF_8),
                 Jwts.SIG.HS256.key().build().getAlgorithm()
@@ -97,6 +96,7 @@ public class JWTUtil {
         if (expiredMs == null || expiredMs <= 0) expiredMs = ACCESS_TOKEN_EXP_MS;
 
         return Jwts.builder()
+                .id(java.util.UUID.randomUUID().toString())
                 .claim("category", category)
                 .claim("username", username)
                 .claim("role", role)

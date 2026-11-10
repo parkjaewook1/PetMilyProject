@@ -1,13 +1,13 @@
+import { fullSurfaceStyle } from "../../../../../design/fullAuditStyles.js";
+import { ProfileAvatar } from "../../../../../component/ProfileAvatar.jsx";
 import React, { useContext, useEffect, useState } from "react";
 import {
-  Avatar,
   Box,
   Button,
   Divider,
   Flex,
   HStack,
   Icon,
-  Image,
   Text,
   Textarea,
   useColorModeValue,
@@ -25,7 +25,7 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
   // 내 프로필 사진 상태
   const [myProfileImage, setMyProfileImage] = useState(null);
   // 이미지 로드 에러 상태
-  const [imageError, setImageError] = useState(false);
+  const [, setImageError] = useState(false);
 
   const toast = useToast();
   const { memberInfo } = useContext(LoginContext);
@@ -111,6 +111,8 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
       border="1px solid"
       borderColor={borderColor}
       fontFamily="'Gulim', sans-serif"
+      sx={fullSurfaceStyle}
+      className="full-journal full-diary full-diarycommentwrite"
     >
       {/* 1. 상단 문구 */}
       <HStack mb={2} spacing={2}>
@@ -145,20 +147,16 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
         }}
       >
         {/* ✅ 프로필 사진 렌더링 */}
-        {profileSrc && !imageError ? (
-          <Image
-            src={profileSrc}
-            alt={nickname}
-            boxSize="32px"
-            borderRadius="full"
-            border="1px solid"
-            borderColor="gray.200"
-            objectFit="cover"
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <Avatar name={nickname} size="xs" />
-        )}
+        <ProfileAvatar
+          src={profileSrc}
+          alt={nickname}
+          boxSize="32px"
+          borderRadius="full"
+          border="1px solid"
+          borderColor="gray.200"
+          objectFit="cover"
+          onError={() => setImageError(true)}
+        />
 
         <Divider orientation="vertical" h="20px" borderColor="gray.300" />
 
@@ -183,13 +181,14 @@ export function DiaryCommentWrite({ diaryId, onCommentAdded }) {
                 handleDiaryCommentSubmitClick();
               }
             }}
+            variant="journal"
           />
 
           <Button
             type="button"
             size="xs"
             colorScheme="blue"
-            variant="solid"
+            variant="journal"
             isLoading={loading}
             isDisabled={!comment.trim()}
             onClick={handleDiaryCommentSubmitClick}

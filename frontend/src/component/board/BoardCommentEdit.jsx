@@ -1,3 +1,4 @@
+import { accountBoardPageStyle } from "../../design/accountBoardStyles.js";
 import {
   Box,
   Button,
@@ -51,18 +52,18 @@ export function BoardCommentEdit({
   }
 
   return (
-    <Flex>
+    <Flex className="ab-comment-edit">
       <Box flex={1} mr={3}>
         <Textarea
           value={commentText}
           onChange={(e) => setCommentText(e.target.value)}
+          variant="journal"
         />
       </Box>
       <Stack>
         <Button
           size={"sm"}
-          variant="outline"
-          colorScheme={"gray"}
+          variant="journalOutline"
           onClick={() => setIsEditing(false)}
         >
           <FontAwesomeIcon icon={faXmark} />
@@ -71,22 +72,21 @@ export function BoardCommentEdit({
           size={"sm"}
           isLoading={isProcessing}
           onClick={onOpen}
-          variant="outline"
-          colorScheme={"blue"}
+          variant="journalOutline"
         >
           <FontAwesomeIcon icon={faPaperPlane} />
         </Button>
       </Stack>
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent className="ab-modal" sx={accountBoardPageStyle}>
           <ModalHeader>수정 확인</ModalHeader>
           <ModalBody>댓글을 저장하시겠습니까?</ModalBody>
           <ModalFooter>
-            <Button mr={2} colorScheme={"gray"} onClick={onClose}>
+            <Button mr={2} onClick={onClose} variant="journalOutline">
               취소
             </Button>
-            <Button colorScheme={"blue"} onClick={handleCommentSubmit}>
+            <Button onClick={handleCommentSubmit} variant="journal">
               확인
             </Button>
           </ModalFooter>

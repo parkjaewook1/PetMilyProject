@@ -1,4 +1,7 @@
+import { Box } from "@chakra-ui/react";
+import { fullSurfaceStyle } from "../../../../../design/fullAuditStyles.js";
 import React, { useEffect, useState } from "react";
+import koLocale from "@fullcalendar/core/locales/ko";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -35,24 +38,30 @@ export default function DiaryCalendar() {
   }, [numericDiaryId]);
 
   return (
-    <FullCalendar
-      plugins={[dayGridPlugin, interactionPlugin]}
-      initialView="dayGridMonth"
-      events={events}
-      eventClick={(info) => {
-        console.log("클릭한 event.id:", info.event.id);
-        navigate(`/diary/${encodedId}/board/view/${info.event.id}`);
-      }}
-      dateClick={(info) => {
-        const event = events.find((e) => e.start.slice(0, 10) === info.dateStr);
+    <Box className="full-journal full-calendar" sx={fullSurfaceStyle}>
+      <FullCalendar
+        height="auto"
+        locale={koLocale}
+        plugins={[dayGridPlugin, interactionPlugin]}
+        initialView="dayGridMonth"
+        events={events}
+        eventClick={(info) => {
+          console.log("클릭한 event.id:", info.event.id);
+          navigate(`/diary/${encodedId}/board/view/${info.event.id}`);
+        }}
+        dateClick={(info) => {
+          const event = events.find(
+            (e) => e.start.slice(0, 10) === info.dateStr,
+          );
 
-        if (event) {
-          navigate(`/diary/${encodedId}/board/view/${event.id}`);
-        } else {
-          navigate(`/diary/${encodedId}/board/write?date=${info.dateStr}`);
-        }
-      }}
-    />
+          if (event) {
+            navigate(`/diary/${encodedId}/board/view/${event.id}`);
+          } else {
+            navigate(`/diary/${encodedId}/board/write?date=${info.dateStr}`);
+          }
+        }}
+      />
+    </Box>
   );
 }
 

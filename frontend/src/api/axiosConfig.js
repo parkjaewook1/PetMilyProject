@@ -92,7 +92,7 @@ axiosInstance.interceptors.response.use(
           return axiosInstance(originalRequest);
         }
       } catch (reissueError) {
-        console.error("토큰 재발급 실패:", reissueError);
+        console.error("회원 요청에 실패했습니다.");
 
         // 토큰 삭제 및 로그아웃 처리
         const hadToken = localStorage.getItem("accessToken");

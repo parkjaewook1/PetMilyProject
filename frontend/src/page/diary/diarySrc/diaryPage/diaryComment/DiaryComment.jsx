@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../../../../design/fullAuditStyles.js";
 import {
   Box,
   Button,
@@ -112,14 +113,25 @@ export function DiaryComment() {
 
   if (isLoading || !numericDiaryId || numericDiaryId === 0) {
     return (
-      <Center h="200px">
+      <Center
+        h="200px"
+        sx={fullSurfaceStyle}
+        className="full-journal full-diary full-diarycomment"
+      >
         <Spinner color="blue.400" thickness="4px" />
       </Center>
     );
   }
 
   return (
-    <Box h="100%" display="flex" flexDirection="column" p={1}>
+    <Box
+      h="100%"
+      display="flex"
+      flexDirection="column"
+      p={1}
+      sx={fullSurfaceStyle}
+      className="full-journal full-diary full-diarycomment"
+    >
       {" "}
       <Box mb={1} flexShrink={0}>
         <DiaryCommentWrite
@@ -166,6 +178,7 @@ export function DiaryComment() {
             w="70px"
             bg={searchBg}
             fontSize="xs"
+            variant="journal"
           >
             <option value="all">전체</option>
             <option value="writer">이름</option>
@@ -182,6 +195,7 @@ export function DiaryComment() {
                 if (e.key === "Enter")
                   handleSearch({ type: searchType, keyword: searchKeyword });
               }}
+              variant="journal"
             />
             <InputRightElement width="1.5rem">
               <Button
@@ -190,7 +204,7 @@ export function DiaryComment() {
                 onClick={() =>
                   handleSearch({ type: searchType, keyword: searchKeyword })
                 }
-                variant="ghost"
+                variant="journalOutline"
               >
                 <FontAwesomeIcon icon={faMagnifyingGlass} />
               </Button>
@@ -205,6 +219,7 @@ export function DiaryComment() {
                 setSearchKeyword("");
                 handleSearch({ type: "all", keyword: "" });
               }}
+              variant="journal"
             >
               목록
             </Button>

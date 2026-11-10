@@ -1,6 +1,17 @@
 import React from "react";
-import { Button, Center, Flex, IconButton, useColorModeValue } from "@chakra-ui/react";
-import { ArrowLeftIcon, ArrowRightIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import {
+  Button,
+  Center,
+  Flex,
+  IconButton,
+  useColorModeValue,
+} from "@chakra-ui/react";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@chakra-ui/icons";
 
 const Pagination = ({ pageInfo, pageNumbers, handlePageButtonClick }) => {
   const buttonBg = useColorModeValue("gray.200", "gray.700");
@@ -33,10 +44,12 @@ const Pagination = ({ pageInfo, pageNumbers, handlePageButtonClick }) => {
         {pageNumbers.map((pageNumber) => (
           <Button
             key={pageNumber}
+            aria-label={`${pageNumber}페이지`}
             w={10}
             onClick={() => handlePageButtonClick(pageNumber)}
-            bg={pageNumber === pageInfo.currentPageNumber ? activeButtonBg : buttonBg}
-            color={pageNumber === pageInfo.currentPageNumber ? textColor : "inherit"}
+            {...(pageNumber === pageInfo.currentPageNumber
+              ? { bg: activeButtonBg, color: textColor, "aria-current": "page" }
+              : { bg: buttonBg, color: "inherit" })}
             _hover={{ bg: activeButtonBg }}
             mr={2}
           >

@@ -1,3 +1,4 @@
+import { accountBoardPageStyle } from "../../design/accountBoardStyles.js";
 import React, { useState } from "react";
 import {
   Alert,
@@ -65,11 +66,34 @@ export function MemberFind() {
   };
 
   return (
-    <Center mt={5}>
-      <Box w={500} p={6} boxShadow="lg" borderRadius="md" bg="white">
+    <Center
+      as="main"
+      className="ab-page ab-account ab-memberfind"
+      sx={accountBoardPageStyle}
+      mt={5}
+    >
+      <Box
+        className="ab-form-panel"
+        w={500}
+        p={6}
+        boxShadow="lg"
+        borderRadius="md"
+        bg="white"
+      >
         <VStack spacing={4} align="stretch">
-          <Text fontSize="2xl" fontWeight="bold" textAlign="center" mb={6}>
+          <Text className="ab-eyebrow">PETMILY / ACCOUNT</Text>
+          <Text
+            as="h1"
+            className="ab-heading"
+            fontSize="2xl"
+            fontWeight="bold"
+            textAlign="center"
+            mb={6}
+          >
             비밀번호 찾기
+          </Text>
+          <Text className="ab-description">
+            가입한 이메일로 비밀번호 찾기를 진행하세요.
           </Text>
           {error && (
             <Alert status="error" borderRadius="md">
@@ -84,23 +108,25 @@ export function MemberFind() {
             </Alert>
           )}
           <FormControl>
-            <FormLabel>이메일</FormLabel>
+            <FormLabel htmlFor="memberfind-field-1" variant="journal">
+              이메일
+            </FormLabel>
             <Input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="이메일을 입력하세요"
               onKeyPress={handleKeyPress}
-              variant="filled"
+              variant="journal"
               focusBorderColor="purple.500"
+              id="memberfind-field-1"
             />
           </FormControl>
           <Button
             mt={4}
-            colorScheme="purple"
             width="full"
             onClick={handleFindPassword}
             isLoading={isLoading}
-            _hover={{ bg: "purple.400" }}
+            variant="journal"
           >
             {isLoading ? <Spinner size="sm" /> : "비밀번호 찾기"}
           </Button>

@@ -2,6 +2,10 @@ package com.backend.controller.member;
 
 import com.backend.domain.member.RefreshEntity;
 import com.backend.mapper.member.RefreshMapper;
+import com.backend.mapper.member.MemberMapper;
+import com.backend.domain.member.Member;
+import io.jsonwebtoken.JwtException;
+import org.springframework.transaction.annotation.Transactional;
 import com.backend.security.JWTUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,16 +26,18 @@ public class ReissueController {
 
     private final JWTUtil jwtUtil;
     private final RefreshMapper refreshMapper;
+    private final MemberMapper memberMapper;
 
-    public ReissueController(JWTUtil jwtUtil, RefreshMapper refreshMapper) {
+    public ReissueController(JWTUtil jwtUtil, RefreshMapper refreshMapper, MemberMapper memberMapper) {
         this.jwtUtil = jwtUtil;
         this.refreshMapper = refreshMapper;
+        this.memberMapper = memberMapper;
     }
 
+    @Transactional
     @PostMapping("/reissue")
     public ResponseEntity<?> reissue(HttpServletRequest request, HttpServletResponse response) {
 
-        System.out.println("=== /api/member/reissue 호출됨 ===");
 
         // 1) Refresh token 추출 (쿠키 우선)
         String refresh = null;
@@ -48,7 +54,6 @@ public class ReissueController {
         // 쿠키에 없으면 헤더(Refresh-Token)에서도 확인
         if (refresh == null) {
             refresh = request.getHeader("Refresh-Token");
-            System.out.println("헤더에서 찾은 refresh: " + refresh);
         }
 
         // refresh 자체가 없으면 400
@@ -56,33 +61,29 @@ public class ReissueController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("refresh token null");
         }
 
-        // 2) 만료 확인 -> 만료면 401
-        if (jwtUtil.isExpired(refresh)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("refresh token expired");
+        String username;
+        Integer userId;
+        try {
+            if (jwtUtil.isExpired(refresh) || !"refresh".equals(jwtUtil.getCategory(refresh))) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            username = jwtUtil.getUsername(refresh);
+            userId = jwtUtil.getUserId(refresh);
+        } catch (JwtException | IllegalArgumentException | NullPointerException error) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
-        // 3) category 확인 (refresh 토큰인지) -> 아니면 401
-        String category = jwtUtil.getCategory(refresh);
-        if (!"refresh".equals(category)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("invalid refresh token");
+        RefreshEntity stored = refreshMapper.findByRefresh(refresh);
+        Member current = userId == null ? null : memberMapper.selectAuthorizationById(userId);
+        if (stored == null || current == null || username == null ||
+                !username.equals(current.getUsername()) || !username.equals(stored.getUsername()) ||
+                stored.getExpiration() == null || stored.getExpiration().before(new Timestamp(System.currentTimeMillis()))) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
-        // 4) DB 존재 여부 확인 -> 없으면 401
-        if (!refreshMapper.existsByRefresh(refresh)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("invalid refresh token");
-        }
-
-        // 5) 토큰 정보 추출
-        String username = jwtUtil.getUsername(refresh);
-        String role = jwtUtil.getRole(refresh);
-        Integer userId = jwtUtil.getUserId(refresh);
-
-        // 6) JWT 신규 발급 (✅ 표준화된 API 사용)
+        // Rotate only once, and derive privileges from the current DB record, never the old refresh claim.
+        if (refreshMapper.deleteByRefresh(refresh) < 1) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        String role = current.getTokenRole();
         String newAccess = jwtUtil.createAccessToken(username, role, userId);
         String newRefresh = jwtUtil.createRefreshToken(username, role, userId);
-
-        // 7) Refresh 토큰 DB 갱신 (✅ 만료시간 14일 통일)
-        refreshMapper.deleteByRefresh(refresh);
         addRefreshEntity(username, newRefresh, JWTUtil.REFRESH_TOKEN_EXP_MS);
 
         // 8) 응답 설정

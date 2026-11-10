@@ -18,11 +18,6 @@ export function LoginProvider({ children }) {
       }
     : null;
 
-  useEffect(() => {
-    console.log("memberInfo:", memberInfo);
-    console.log("memberInfo.role:", memberInfo?.role);
-  }, [memberInfo]);
-
   // 공통 로그아웃 처리
   const logout = () => {
     localStorage.removeItem("memberInfo");
@@ -52,7 +47,6 @@ export function LoginProvider({ children }) {
         const msUntilExpire = exp * 1000 - Date.now();
         if (msUntilExpire > 0) {
           const timer = setTimeout(() => {
-            console.log("⏰ 토큰 만료 → 자동 로그아웃");
             logout();
           }, msUntilExpire);
           return () => clearTimeout(timer);
@@ -60,7 +54,7 @@ export function LoginProvider({ children }) {
           setTimeout(() => logout(), 0);
         }
       } catch (e) {
-        console.error("토큰 디코딩 실패", e);
+        console.error("토큰 디코딩에 실패했습니다.");
         setTimeout(() => logout(), 0);
       }
     } else {

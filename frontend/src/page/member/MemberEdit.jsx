@@ -1,3 +1,4 @@
+import { accountBoardPageStyle } from "../../design/accountBoardStyles.js";
 import React, { useContext, useEffect, useState } from "react";
 import {
   Alert,
@@ -7,7 +8,9 @@ import {
   Center,
   Flex,
   FormControl,
+  FormLabel,
   Input,
+  Text,
   InputGroup,
   InputRightElement,
   useToast,
@@ -309,13 +312,39 @@ export function MemberEdit(props) {
   }
 
   return (
-    <Center mt={5}>
-      <Box w={500} p={6} boxShadow="lg" borderRadius="md" bg="white">
-        <Box mb={10} fontSize="2xl" fontWeight="bold" textAlign="center">
+    <Center
+      as="main"
+      className="ab-page ab-account ab-memberedit"
+      sx={accountBoardPageStyle}
+      mt={5}
+    >
+      <Box
+        className="ab-form-panel"
+        w={500}
+        p={6}
+        boxShadow="lg"
+        borderRadius="md"
+        bg="white"
+      >
+        <Text className="ab-eyebrow">PETMILY / ACCOUNT</Text>
+        <Box
+          as="h1"
+          className="ab-heading"
+          mb={10}
+          fontSize="2xl"
+          fontWeight="bold"
+          textAlign="center"
+        >
           회원 정보 수정
         </Box>
+        <Text className="ab-description">
+          변경할 정보를 확인한 뒤 저장해 주세요.
+        </Text>
         <form onSubmit={handleSubmit}>
           <FormControl isRequired>
+            <FormLabel variant="journal" htmlFor="memberedit-field-1">
+              이메일
+            </FormLabel>
             <InputGroup>
               <Input
                 mb={2}
@@ -323,10 +352,15 @@ export function MemberEdit(props) {
                 value={username}
                 readOnly
                 backgroundColor={"gray.200"}
+                id="memberedit-field-1"
+                variant="journal"
               />
             </InputGroup>
           </FormControl>
           <FormControl isRequired>
+            <FormLabel variant="journal" htmlFor="memberedit-field-2">
+              닉네임
+            </FormLabel>
             <InputGroup>
               <Input
                 mb={2}
@@ -338,14 +372,17 @@ export function MemberEdit(props) {
                   validateNickname(e.target.value.trim());
                 }}
                 backgroundColor={isNicknameConfirmed ? "gray.200" : "white"}
+                id="memberedit-field-2"
+                variant="journal"
               />
               <InputRightElement w={"100px"} mr={1}>
                 {isNicknameConfirmed ? (
                   <Button
                     size={"sm"}
-                    variant="ghost"
+                    variant="journalOutline"
                     onClick={handleReenterNickname}
-                    _hover={{ color: "red.500 " }}
+                    className="ab-inline-action"
+                    aria-label="닉네임 다시 입력"
                   >
                     <FontAwesomeIcon icon={faHammer} />
                   </Button>
@@ -355,11 +392,8 @@ export function MemberEdit(props) {
                     onClick={handleCheckNickname}
                     isDisabled={!isNicknameValid}
                     cursor={!isNicknameValid ? "not-allowed" : "pointer"}
-                    _hover={
-                      !isNicknameValid
-                        ? { bgColor: "gray.100" }
-                        : { bgColor: "purple.500 ", color: "white" }
-                    }
+                    variant="journalOutline"
+                    className="ab-inline-action"
                   >
                     중복확인
                   </Button>
@@ -374,6 +408,9 @@ export function MemberEdit(props) {
             )}
           </FormControl>
           <FormControl>
+            <FormLabel variant="journal" htmlFor="memberedit-field-3">
+              비밀번호
+            </FormLabel>
             <InputGroup>
               <Input
                 mb={2}
@@ -384,17 +421,28 @@ export function MemberEdit(props) {
                   setPassword(e.target.value.trim());
                   validatePassword(e.target.value);
                 }}
+                id="memberedit-field-3"
+                variant="journal"
               />
               <InputRightElement width="4.5rem">
                 {password && (
-                  <Button h="1.75rem" size="sm" onClick={handleClickPassword}>
+                  <Button
+                    h="1.75rem"
+                    size="sm"
+                    onClick={handleClickPassword}
+                    variant="journalOutline"
+                    className="ab-inline-action"
+                  >
                     {showPassword ? "숨기기" : "보기"}
                   </Button>
                 )}
               </InputRightElement>
             </InputGroup>
           </FormControl>
-          <FormControl>
+          <FormControl className="ab-confirm-field">
+            <FormLabel variant="journal" htmlFor="memberedit-field-4">
+              비밀번호 확인
+            </FormLabel>
             <InputGroup>
               {password && (
                 <Input
@@ -404,6 +452,8 @@ export function MemberEdit(props) {
                   onChange={(e) => {
                     setConfirmPassword(e.target.value.trim());
                   }}
+                  id="memberedit-field-4"
+                  variant="journal"
                 />
               )}
             </InputGroup>
@@ -425,17 +475,24 @@ export function MemberEdit(props) {
             )}
           </FormControl>
           <Flex>
-            <FormControl isRequired>
+            <FormControl isRequired className="ab-choice-control">
+              <FormLabel variant="journal">성별</FormLabel>
+
               <Flex justifyContent={"space-around"} mt={4} mb={4}>
                 <Button
                   w="100px"
                   h="40px"
                   border="1px solid"
-                  borderColor={gender === "male" ? "blue" : "gray"}
-                  bg={gender === "male" ? "blue.100" : "white"}
+                  borderColor={
+                    gender === "male" ? "journal.brand" : "journal.line"
+                  }
+                  bg={gender === "male" ? "journal.hover" : "transparent"}
                   onClick={() => handleGenderSelect("male")}
                   cursor="pointer"
-                  _hover={{ bg: "blue.200" }}
+                  _hover={{ bg: "journal.hover" }}
+                  aria-pressed={gender === "male"}
+                  color="journal.brand"
+                  variant="journalOutline"
                 >
                   남성
                 </Button>
@@ -443,27 +500,41 @@ export function MemberEdit(props) {
                   w="100px"
                   h="40px"
                   border="1px solid"
-                  borderColor={gender === "female" ? "red" : "gray"}
-                  bg={gender === "female" ? "red.100" : "white"}
+                  borderColor={
+                    gender === "female" ? "journal.brand" : "journal.line"
+                  }
+                  bg={gender === "female" ? "journal.hover" : "transparent"}
                   onClick={() => handleGenderSelect("female")}
                   cursor="pointer"
-                  _hover={{ bg: "red.200" }}
+                  _hover={{ bg: "journal.hover" }}
+                  aria-pressed={gender === "female"}
+                  color="journal.brand"
+                  variant="journalOutline"
                 >
                   여성
                 </Button>
               </Flex>
             </FormControl>
-            <FormControl isRequired>
+            <FormControl isRequired className="ab-choice-control">
+              <FormLabel variant="journal">국적</FormLabel>
+
               <Flex justifyContent={"space-around"} mt={4} mb={4}>
                 <Button
                   w="100px"
                   h="40px"
                   border="1px solid"
-                  borderColor={nationality === "korean" ? "green" : "gray"}
-                  bg={nationality === "korean" ? "green.100" : "white"}
+                  borderColor={
+                    nationality === "korean" ? "journal.brand" : "journal.line"
+                  }
+                  bg={
+                    nationality === "korean" ? "journal.hover" : "transparent"
+                  }
                   onClick={() => handleNationalitySelect("korean")}
                   cursor="pointer"
-                  _hover={{ bg: "green.200" }}
+                  _hover={{ bg: "journal.hover" }}
+                  aria-pressed={nationality === "korean"}
+                  color="journal.brand"
+                  variant="journalOutline"
                 >
                   내국인
                 </Button>
@@ -471,11 +542,22 @@ export function MemberEdit(props) {
                   w="100px"
                   h="40px"
                   border="1px solid"
-                  borderColor={nationality === "foreigner" ? "orange" : "gray"}
-                  bg={nationality === "foreigner" ? "orange.100" : "white"}
+                  borderColor={
+                    nationality === "foreigner"
+                      ? "journal.brand"
+                      : "journal.line"
+                  }
+                  bg={
+                    nationality === "foreigner"
+                      ? "journal.hover"
+                      : "transparent"
+                  }
                   onClick={() => handleNationalitySelect("foreigner")}
                   cursor="pointer"
-                  _hover={{ bg: "orange.200" }}
+                  _hover={{ bg: "journal.hover" }}
+                  aria-pressed={nationality === "foreigner"}
+                  color="journal.brand"
+                  variant="journalOutline"
                 >
                   외국인
                 </Button>
@@ -483,11 +565,16 @@ export function MemberEdit(props) {
             </FormControl>
           </Flex>
           <FormControl isRequired>
+            <FormLabel variant="journal" htmlFor="memberedit-field-5">
+              이름
+            </FormLabel>
             <Input
               mb={2}
               placeholder="이름"
               value={name}
               onChange={handleNameChange}
+              id="memberedit-field-5"
+              variant="journal"
             />
             {!isNameValid && name && (
               <Alert status="error" mt={2}>
@@ -497,11 +584,16 @@ export function MemberEdit(props) {
             )}
           </FormControl>
           <FormControl isRequired>
+            <FormLabel variant="journal" htmlFor="memberedit-field-6">
+              생년월일
+            </FormLabel>
             <Input
               mb={2}
               placeholder="생년월일 8자리 ( YYYYMMDD )"
               value={birthDate}
               onChange={handleBirthDateChange}
+              id="memberedit-field-6"
+              variant="journal"
             />
             {!isBirthDateValid && birthDate && (
               <Alert status="error" mt={2}>
@@ -511,6 +603,9 @@ export function MemberEdit(props) {
             )}
           </FormControl>
           <FormControl isRequired>
+            <FormLabel variant="journal" htmlFor="memberedit-field-7">
+              연락처
+            </FormLabel>
             <Input
               mb={2}
               placeholder="연락처 ( '-' 제외하고 입력 )"
@@ -518,6 +613,8 @@ export function MemberEdit(props) {
               value={phoneNumber}
               maxLength={13}
               onChange={handlePhoneNumberChange}
+              id="memberedit-field-7"
+              variant="journal"
             />
             {!isPhoneNumberValid && phoneNumber && (
               <Alert status="error" mt={2}>
@@ -526,7 +623,10 @@ export function MemberEdit(props) {
               </Alert>
             )}
           </FormControl>
-          <FormControl isRequired>
+          <FormControl isRequired className="ab-address-field">
+            <FormLabel variant="journal" htmlFor="memberedit-field-8">
+              주소
+            </FormLabel>
             <Flex>
               <Flex width={"80%"} direction={"column"}>
                 <Input
@@ -534,14 +634,24 @@ export function MemberEdit(props) {
                   readOnly
                   value={postcode}
                   placeholder="우편번호"
+                  id="memberedit-field-8"
+                  variant="journal"
                 />
-                <Input mb={2} readOnly value={mainAddress} placeholder="주소" />
+                <Input
+                  mb={2}
+                  readOnly
+                  value={mainAddress}
+                  placeholder="주소"
+                  id="memberedit-field-8-0"
+                  aria-label="주소"
+                  variant="journal"
+                />
               </Flex>
               <Box>
                 <Button
-                  _hover={{ bgColor: "purple.500 ", color: "white" }}
                   height={"90%"}
                   onClick={openPostcodePopup}
+                  variant="journalOutline"
                 >
                   주소 검색
                 </Button>
@@ -549,12 +659,17 @@ export function MemberEdit(props) {
             </Flex>
           </FormControl>
           <FormControl>
+            <FormLabel variant="journal" htmlFor="memberedit-field-9">
+              상세주소
+            </FormLabel>
             <Input
               value={detailedAddress}
               onChange={(e) => {
                 setDetailedAddress(e.target.value);
               }}
               placeholder="상세주소를 입력하세요."
+              id="memberedit-field-9"
+              variant="journal"
             />
           </FormControl>
           <Button
@@ -563,11 +678,7 @@ export function MemberEdit(props) {
             type="submit" // 제출 버튼을 폼의 제출 버튼으로 설정
             isDisabled={!isFormValid}
             cursor={!isFormValid ? "not-allowed" : "pointer"}
-            _hover={
-              !isFormValid
-                ? { bgColor: "gray.100" }
-                : { bgColor: "purple.500 ", color: "white" }
-            }
+            variant="journal"
           >
             수정
           </Button>

@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../../../../design/fullAuditStyles.js";
 import axios from "@api/axiosConfig";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
 import { useContext, useState } from "react";
@@ -47,6 +48,8 @@ export function ReplyWrite({ diaryId, replyCommentId, onReplyAdded }) {
       mt={2}
       border="1px solid"
       borderColor="gray.200"
+      sx={fullSurfaceStyle}
+      className="full-journal full-diary full-replywrite"
     >
       <Flex gap={2} align="center">
         <Input
@@ -62,6 +65,7 @@ export function ReplyWrite({ diaryId, replyCommentId, onReplyAdded }) {
               handleReplySubmit();
             }
           }}
+          variant="journal"
         />
         <Button
           size="sm"
@@ -71,6 +75,7 @@ export function ReplyWrite({ diaryId, replyCommentId, onReplyAdded }) {
           onClick={handleReplySubmit}
           fontSize="xs"
           px={4}
+          variant="journal"
         >
           확인
         </Button>

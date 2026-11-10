@@ -5,6 +5,9 @@ import com.backend.domain.diary.Diary;
 import com.backend.domain.member.Member;
 import com.backend.domain.member.Profile;
 import com.backend.domain.member.Role;
+import com.backend.dto.member.PublicMemberProfile;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import com.backend.mapper.board.BoardCommentMapper;
 import com.backend.mapper.board.BoardMapper;
 import com.backend.mapper.diary.DiaryBoardMapper;
@@ -31,6 +34,7 @@ import java.util.Map;
 public class MemberService {
 
     private final MemberMapper memberMapper;
+    private final MemberAccessService access;
     private final RefreshMapper refreshMapper;
     private final ProfileMapper profileMapper;
     private final DiaryBoardMapper diaryBoardMapper;
@@ -91,11 +95,30 @@ public class MemberService {
         return member;
     }
 
-    // 회원 수정
+    public PublicMemberProfile getProfile(Integer id) {
+        Member current = access.authenticatedMemberIfPresent();
+        boolean privateView = current != null && (current.getId().equals(id) || access.isCurrentAdministrator(current));
+        PublicMemberProfile profile = privateView ? memberMapper.selectPrivateProfileById(id)
+                : memberMapper.selectPublicProfileById(id);
+        if (profile != null) {
+            Profile image = profileMapper.selectProfileByMemberId(id);
+            if (image != null) profile.setImageUrl(srcPrefix + image.getFileName());
+        }
+        return profile;
+    }
+
+    // Null/empty means unchanged, matching the existing optional frontend password field.
     public boolean update(Integer id, Member member) {
+        access.requireOwnerOrAdministrator(id);
         member.setId(id);
-        if (member.getPassword() != null && !member.getPassword().isEmpty()) {
-            member.setPassword(passwordEncoder.encode(member.getPassword()));
+        String password = member.getPassword();
+        if (password == null || password.isEmpty()) {
+            member.setPassword(null);
+        } else {
+            if (!password.matches("^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[@$!%*#?&])[A-Za-z0-9@$!%*#?&]{8,16}$")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid new password format");
+            }
+            member.setPassword(passwordEncoder.encode(password));
         }
         return memberMapper.update(member) > 0;
     }
@@ -200,24 +223,9 @@ public class MemberService {
         return dbMember != null && passwordEncoder.matches(password, dbMember.getPassword());
     }
 
-    // 회원 목록
-    public Map<String, Object> list(int page, int pageSize) {
-        int totalMembers = memberMapper.countAllMembers();
-        int totalPages = (int) Math.ceil((double) totalMembers / pageSize);
-        int offset = (page - 1) * pageSize;
-
-        List<Member> members = memberMapper.selectAll(pageSize, offset);
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("members", members);
-        result.put("totalPages", totalPages);
-        result.put("currentPage", page);
-
-        return result;
-    }
-
     public Map<String, Object> getMemberInfoById(Integer id) {
-        Member member = memberMapper.selectByMemberId(id);
+        access.requireOwnerOrAdministrator(id);
+        Member member = memberMapper.selectAuthorizationById(id);
         Map<String, Object> map = new HashMap<>();
         if (member != null) {
             map.put("id", member.getId());

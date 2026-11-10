@@ -11,12 +11,7 @@ const SearchMap = () => {
   const infowindow = useRef(null);
 
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=d5b3cb3d230c4f406001bbfad60ef4d4&libraries=services,clusterer,drawing`;
-    script.async = true;
-    document.head.appendChild(script);
-
-    script.onload = () => {
+    const initializeMap = () => {
       const kakao = window.kakao;
       const container = mapRef.current;
       const options = {
@@ -28,10 +23,22 @@ const SearchMap = () => {
       setMap(map);
       infowindow.current = new kakao.maps.InfoWindow({ zIndex: 1 });
     };
+    if (window.kakao?.maps?.services) {
+      window.kakao.maps.load(initializeMap);
+      return;
+    }
+    if (!import.meta.env.VITE_KAKAO_MAP_JAVASCRIPT_KEY) return;
+    const script = document.createElement("script");
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(import.meta.env.VITE_KAKAO_MAP_JAVASCRIPT_KEY)}&libraries=services,clusterer,drawing&autoload=false`;
+    script.async = true;
+    script.onload = () => window.kakao.maps.load(initializeMap);
+    document.head.appendChild(script);
+
   }, []);
 
   const searchPlaces = (keyword) => {
     const kakao = window.kakao;
+    if (!map || !kakao?.maps?.services) return;
     const ps = new kakao.maps.services.Places();
 
     if (!keyword.replace(/^\s+|\s+$/g, "")) {
@@ -51,9 +58,17 @@ const SearchMap = () => {
     } else if (status === kakao.maps.services.Status.ZERO_RESULT) {
       alert("검색 결과가 존재하지 않습니다.");
       setPlaces([]);
+      markers.forEach((marker) => marker.setMap(null));
+      setMarkers([]);
+      setPagination(null);
+      infowindow.current?.close();
     } else if (status === kakao.maps.services.Status.ERROR) {
       alert("검색 결과 중 오류가 발생했습니다.");
       setPlaces([]);
+      markers.forEach((marker) => marker.setMap(null));
+      setMarkers([]);
+      setPagination(null);
+      infowindow.current?.close();
     }
   };
 
@@ -118,7 +133,7 @@ const SearchMap = () => {
 
   return (
     <Box>
-      <SearchBox onSearch={searchPlaces} />
+      <SearchBox onSearch={searchPlaces} isDisabled={!map} />
       <Box id="map" ref={mapRef} width="100%" height="500px" />
       <Box id="menu_wrap">
         <List id="placesList">
@@ -146,7 +161,7 @@ const SearchMap = () => {
               <a
                 key={i + 1}
                 href="#"
-                onClick={() => pagination.gotoPage(i + 1)}
+                onClick={(event) => { event.preventDefault(); pagination.gotoPage(i + 1); }}
                 className={pagination.current === i + 1 ? "on" : ""}
               >
                 {i + 1}

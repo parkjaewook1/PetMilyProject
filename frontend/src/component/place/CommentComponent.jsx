@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../design/fullAuditStyles.js";
 import { Box, Button, Tooltip } from "@chakra-ui/react";
 import { CommentList } from "./CommentList.jsx";
 import { CommentWrite } from "./CommentWrite.jsx";
@@ -17,7 +18,10 @@ export function CommentComponent({ hospitalId }) {
   };
 
   return (
-    <Box>
+    <Box
+      sx={fullSurfaceStyle}
+      className="full-journal full-place-comment full-commentcomponent"
+    >
       <Tooltip
         isDisabled={!!memberInfo}
         hasArrow
@@ -29,6 +33,7 @@ export function CommentComponent({ hospitalId }) {
           mb={4}
           colorScheme="blue"
           isDisabled={!memberInfo}
+          variant="journal"
         >
           {showCommentWrite ? "댓글 취소" : "댓글 달기"}
         </Button>

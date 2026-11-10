@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../../../../design/fullAuditStyles.js";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import axios from "@api/axiosConfig";
 import { LoginContext } from "../../../../../component/LoginProvider.jsx";
@@ -94,7 +95,11 @@ export function DiaryCommentView() {
 
   if (diaryComment === null) {
     return (
-      <Center h="300px">
+      <Center
+        h="300px"
+        sx={fullSurfaceStyle}
+        className="full-journal full-diary full-diarycommentview"
+      >
         <Spinner size="xl" color="blue.400" />
       </Center>
     );
@@ -104,7 +109,14 @@ export function DiaryCommentView() {
   const isDiaryOwner = Number(diaryComment?.ownerId) === Number(memberInfo?.id);
 
   return (
-    <Box h="100%" p={4} display="flex" flexDirection="column">
+    <Box
+      h="100%"
+      p={4}
+      display="flex"
+      flexDirection="column"
+      sx={fullSurfaceStyle}
+      className="full-journal full-diary full-diarycommentview"
+    >
       {/* 1. 헤더 영역 */}
       <Flex
         justify="space-between"
@@ -140,7 +152,7 @@ export function DiaryCommentView() {
         </HStack>
         <Button
           size="xs"
-          variant="outline"
+          variant="journalOutline"
           leftIcon={<FontAwesomeIcon icon={faArrowLeft} />}
           onClick={() => navigate(-1)}
         >
@@ -205,7 +217,7 @@ export function DiaryCommentView() {
           {isWriter && (
             <Button
               size="xs" // ✅ 작게
-              variant="outline" // ✅ 깔끔하게
+              variant="journalOutline" // ✅ 깔끔하게
               colorScheme="blue"
               leftIcon={<FontAwesomeIcon icon={faPen} />}
               onClick={handleCommentEdit}
@@ -221,6 +233,7 @@ export function DiaryCommentView() {
               colorScheme="red"
               leftIcon={<FontAwesomeIcon icon={faTrash} />}
               onClick={onOpen}
+              className="full-danger"
             >
               삭제
             </Button>
@@ -237,7 +250,11 @@ export function DiaryCommentView() {
         size="sm"
       >
         <AlertDialogOverlay>
-          <AlertDialogContent fontFamily="'Gulim', sans-serif">
+          <AlertDialogContent
+            fontFamily="'Gulim', sans-serif"
+            sx={fullSurfaceStyle}
+            className="full-journal full-overlay"
+          >
             <AlertDialogHeader fontSize="md" fontWeight="bold">
               댓글 삭제
             </AlertDialogHeader>
@@ -247,7 +264,12 @@ export function DiaryCommentView() {
             </AlertDialogBody>
 
             <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onClose} size="sm">
+              <Button
+                ref={cancelRef}
+                onClick={onClose}
+                size="sm"
+                variant="journal"
+              >
                 취소
               </Button>
               <Button
@@ -255,6 +277,7 @@ export function DiaryCommentView() {
                 onClick={handleClickRemove}
                 ml={3}
                 size="sm"
+                className="full-danger"
               >
                 삭제
               </Button>

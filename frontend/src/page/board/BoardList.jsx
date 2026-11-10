@@ -1,3 +1,4 @@
+import { accountBoardPageStyle } from "../../design/accountBoardStyles.js";
 import React, { useEffect, useState } from "react";
 import {
   Badge,
@@ -34,6 +35,8 @@ import {
   faImage,
   faMagnifyingGlass,
 } from "@fortawesome/free-solid-svg-icons";
+import BoardMenu from "../../component/BoardMenu.jsx";
+import { Link as RouterLink } from "react-router-dom";
 import Pagination from "../../component/Pagination.jsx";
 import axios from "@api/axiosConfig";
 
@@ -141,21 +144,74 @@ export function BoardList() {
   }
 
   return (
-    <Container maxW="container.xl" py={10}>
-      <Center mt={10}>
+    <Container
+      as="main"
+      className="ab-page ab-board ab-boardlist"
+      sx={accountBoardPageStyle}
+      maxW="container.xl"
+      py={10}
+    >
+      <Text className="ab-eyebrow">PETMILY / COMMUNITY</Text>
+      <Center className="ab-board-header" mt={10}>
         <Flex p={4} borderRadius="md" alignItems="center">
-          <FontAwesomeIcon icon={faBookOpen} size="2x" />
+          <FontAwesomeIcon icon={faBookOpen} size="lg" />
           <Heading as="h1" size="xl" ml={2}>
             {boardType} 게시판
           </Heading>
         </Flex>
+        <Button as={RouterLink} to="/board/write" variant="journal">
+          글쓰기
+        </Button>
       </Center>
-      <Box textAlign="center" mt={5} mb={10}>
+      <Box className="ab-list-description" textAlign="center" mt={5} mb={10}>
         <Text fontSize="lg" color="gray.600">
           여기에서 최신 게시물을 확인하세요.
         </Text>
       </Box>
-      <Center mt={10}>
+      <Flex className="ab-list-tools">
+        <Box className="ab-category-menu">
+          <BoardMenu />
+        </Box>
+        <Center className="ab-search" mb={10}>
+          <Flex className="ab-search-fields" gap={1} alignItems="center">
+            <Box>
+              <Select
+                aria-label="검색 범위"
+                value={searchType}
+                onChange={(e) => setSearchType(e.target.value)}
+                bg={bg}
+                variant="journal"
+              >
+                <option value="전체">전체</option>
+                <option value="글">글</option>
+                <option value="작성자">작성자</option>
+              </Select>
+            </Box>
+            <Box>
+              <Input
+                aria-label="검색어"
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                placeholder="검색어"
+                onKeyPress={(e) => {
+                  if (e.key === "Enter") handleSearchClick();
+                }}
+                variant="journal"
+              />
+            </Box>
+            <Box>
+              <Button
+                aria-label="검색"
+                onClick={handleSearchClick}
+                variant="journalOutline"
+              >
+                <FontAwesomeIcon icon={faMagnifyingGlass} />
+              </Button>
+            </Box>
+          </Flex>
+        </Center>
+      </Flex>
+      <Center className="ab-list-content" mt={10}>
         <Box mb={10} w="100%" px={5}>
           {boardType === "반려동물 정보" ? (
             <SimpleGrid columns={[1, 2, 3]} spacing={10}>
@@ -211,6 +267,7 @@ export function BoardList() {
             </SimpleGrid>
           ) : (
             <Table
+              className="ab-table"
               variant="simple"
               borderWidth="1px"
               borderRadius="lg"
@@ -246,8 +303,17 @@ export function BoardList() {
               </Thead>
               <Tbody>
                 {boardList.map((board) => (
-                  <Tr key={board.id} _hover={{ bg: hoverBg }}>
-                    <Td textAlign="center" py={3}>
+                  <Tr
+                    className="ab-list-row"
+                    key={board.id}
+                    _hover={{ bg: hoverBg }}
+                  >
+                    <Td
+                      className="ab-category-cell"
+                      data-column="category"
+                      textAlign="center"
+                      py={3}
+                    >
                       <span
                         onClick={() =>
                           handleClickBoardTypeButton(board.boardType)
@@ -257,10 +323,17 @@ export function BoardList() {
                         {board.boardType}
                       </span>
                     </Td>
-                    <Td textAlign="center" py={3}>
+                    <Td
+                      className="ab-number-cell"
+                      data-column="number"
+                      textAlign="center"
+                      py={3}
+                    >
                       {board.id}
                     </Td>
                     <Td
+                      className="ab-title-cell"
+                      data-column="title"
                       onClick={() => handleBoardClick(board.id)}
                       cursor="pointer"
                       _hover={{ bg: "gray.200" }}
@@ -279,13 +352,28 @@ export function BoardList() {
                         <span> [{board.numberOfComments}]</span>
                       )}
                     </Td>
-                    <Td textAlign="center" py={3}>
+                    <Td
+                      className="ab-writer-cell"
+                      data-column="writer"
+                      textAlign="center"
+                      py={3}
+                    >
                       {board.writer}
                     </Td>
-                    <Td textAlign="center" py={3}>
+                    <Td
+                      className="ab-likes-cell"
+                      data-column="likes"
+                      textAlign="center"
+                      py={3}
+                    >
                       {board.numberOfLikes}
                     </Td>
-                    <Td textAlign="center" py={3}>
+                    <Td
+                      className="ab-views-cell"
+                      data-column="views"
+                      textAlign="center"
+                      py={3}
+                    >
                       {board.views}
                     </Td>
                   </Tr>
@@ -295,43 +383,15 @@ export function BoardList() {
           )}
         </Box>
       </Center>
-      <Pagination
-        pageInfo={pageInfo}
-        pageNumbers={pageNumbers}
-        handlePageButtonClick={handlePageButtonClick}
-      />
-      <Center mb={10}>
-        <Flex gap={1} alignItems="center">
-          <Box>
-            <Select
-              value={searchType}
-              onChange={(e) => setSearchType(e.target.value)}
-              bg={bg}
-            >
-              <option value="전체">전체</option>
-              <option value="글">글</option>
-              <option value="작성자">작성자</option>
-            </Select>
-          </Box>
-          <Box>
-            <Input
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              placeholder="검색어"
-              onKeyPress={(e) => {
-                if (e.key === "Enter") handleSearchClick();
-              }}
-            />
-          </Box>
-          <Box>
-            <Button onClick={handleSearchClick}>
-              <FontAwesomeIcon icon={faMagnifyingGlass} />
-            </Button>
-          </Box>
-        </Flex>
-      </Center>
+      <Box className="ab-pagination">
+        <Pagination
+          pageInfo={pageInfo}
+          pageNumbers={pageNumbers}
+          handlePageButtonClick={handlePageButtonClick}
+        />
+      </Box>
 
-      <Center>
+      <Center className="ab-page-size">
         <Flex
           maxW={"500px"}
           flexDirection={"column"}
@@ -347,12 +407,12 @@ export function BoardList() {
                     rightIcon={
                       isOpen ? <ChevronDownIcon /> : <ChevronDownIcon />
                     }
-                    colorScheme={"blue"}
                     size={"md"}
+                    variant="journalOutline"
                   >
                     {`게시글 (${pageAmount})개씩 보기`}
                   </MenuButton>
-                  <MenuList>
+                  <MenuList className="ab-menu" sx={accountBoardPageStyle}>
                     <MenuItem onClick={() => handlePageSizeChange(10)}>
                       10개씩 보기
                     </MenuItem>

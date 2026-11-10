@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "./design/fullAuditStyles.js";
 import React, { useEffect, useState } from "react";
 import { Box } from "@chakra-ui/react";
 import axios from "@api/axiosConfig";
@@ -25,8 +26,9 @@ const KakaoMap = ({ onPolygonSelect }) => {
     if (window.kakao && window.kakao.maps) {
       initializeMap();
     } else {
-      const script = document.createElement("script");
-      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=d5b3cb3d230c4f406001bbfad60ef4d4&libraries=services,clusterer,drawing`;
+    if (!import.meta.env.VITE_KAKAO_MAP_JAVASCRIPT_KEY) return;
+    const script = document.createElement("script");
+      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(import.meta.env.VITE_KAKAO_MAP_JAVASCRIPT_KEY || "")}&libraries=services,clusterer,drawing`;
       script.async = true;
       document.head.appendChild(script);
 
@@ -62,12 +64,9 @@ const KakaoMap = ({ onPolygonSelect }) => {
       const lat = center.getLat();
       const lng = center.getLng();
 
-      if (lat < minLat) {
-        map.setCenter(new kakao.maps.LatLng(minLat, fixedLng));
-      } else if (lat > maxLat) {
-        map.setCenter(new kakao.maps.LatLng(maxLat, fixedLng));
-      } else {
-        map.setCenter(new kakao.maps.LatLng(lat, fixedLng));
+      const constrainedLat = Math.max(minLat, Math.min(maxLat, lat));
+      if (Math.abs(lat - constrainedLat) > 1e-9 || Math.abs(lng - fixedLng) > 1e-9) {
+        map.setCenter(new kakao.maps.LatLng(constrainedLat, fixedLng));
       }
     });
 
@@ -128,7 +127,15 @@ const KakaoMap = ({ onPolygonSelect }) => {
     });
   };
 
-  return <Box id="pollution-map" width="100%" height="500px" />;
+  return (
+    <Box
+      id="pollution-map"
+      width="100%"
+      height="500px"
+      sx={fullSurfaceStyle}
+      className="full-journal full-map-viewport"
+    />
+  );
 };
 
 export default KakaoMap;

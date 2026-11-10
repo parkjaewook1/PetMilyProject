@@ -1,3 +1,4 @@
+import "../../design/accountBoardStyles.js";
 import React, { useContext, useState } from "react";
 import { Box, Button, Tooltip, Avatar, Flex, Textarea } from "@chakra-ui/react";
 import { BoardCommentWrite } from "./BoardCommentWrite.jsx";
@@ -27,8 +28,8 @@ export function BoardCommentComponent({ boardId }) {
         <Button
           onClick={handleCommentButtonClick}
           mb={4}
-          colorScheme="blue"
           isDisabled={!memberInfo}
+          variant="journalOutline"
         >
           {showCommentWrite ? "댓글 취소" : "댓글 달기"}
         </Button>

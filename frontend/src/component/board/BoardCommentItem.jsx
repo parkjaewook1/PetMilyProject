@@ -1,10 +1,10 @@
+import { accountBoardPageStyle } from "../../design/accountBoardStyles.js";
+import { ProfileAvatar } from "../ProfileAvatar.jsx";
 import React, { useContext, useEffect, useState } from "react";
 import {
-  Avatar,
   Box,
   Button,
   Flex,
-  Image,
   Modal,
   ModalBody,
   ModalContent,
@@ -79,26 +79,22 @@ export function BoardCommentItem({ comment, isProcessing, setIsProcessing }) {
   }
 
   return (
-    <Box p={4} borderWidth="1px" borderRadius="md" mb={4} bg="white">
+    <Box
+      className="ab-comment"
+      p={4}
+      borderWidth="1px"
+      borderRadius="md"
+      mb={4}
+      bg="white"
+    >
       <Flex align="center" mb={3}>
-        {profileImage ? (
-          <Image
-            src={profileImage}
-            boxSize="40px"
-            borderRadius="full"
-            mr={2}
-            sx={{ cursor: "pointer" }}
-            onClick={handleDiaryView}
-          />
-        ) : (
-          <Avatar
-            name={comment.writer}
-            size="sm"
-            mr={2}
-            sx={{ cursor: "pointer" }}
-            onClick={handleDiaryView}
-          />
-        )}
+        <ProfileAvatar
+          src={profileImage}
+          boxSize={profileImage ? "40px" : "32px"}
+          mr={2}
+          sx={{ cursor: "pointer" }}
+          onClick={handleDiaryView}
+        />
         <Box>
           <Text
             fontWeight="bold"
@@ -116,7 +112,7 @@ export function BoardCommentItem({ comment, isProcessing, setIsProcessing }) {
           <Flex>
             <Button
               size="sm"
-              variant="ghost"
+              variant="journalOutline"
               onClick={() => setIsEditing(true)}
               mr={2}
             >
@@ -128,6 +124,7 @@ export function BoardCommentItem({ comment, isProcessing, setIsProcessing }) {
               colorScheme="red"
               onClick={onOpen}
               isLoading={isProcessing}
+              className="ab-danger"
             >
               <FontAwesomeIcon icon={faTrashAlt} />
             </Button>
@@ -147,14 +144,18 @@ export function BoardCommentItem({ comment, isProcessing, setIsProcessing }) {
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent className="ab-modal" sx={accountBoardPageStyle}>
           <ModalHeader>삭제 확인</ModalHeader>
           <ModalBody>댓글을 삭제하시겠습니까?</ModalBody>
           <ModalFooter>
-            <Button mr={2} onClick={onClose}>
+            <Button mr={2} onClick={onClose} variant="journalOutline">
               취소
             </Button>
-            <Button colorScheme="red" onClick={handleRemoveClick}>
+            <Button
+              colorScheme="red"
+              onClick={handleRemoveClick}
+              className="ab-danger"
+            >
               삭제
             </Button>
           </ModalFooter>

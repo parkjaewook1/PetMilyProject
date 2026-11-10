@@ -1,5 +1,6 @@
+import { fullSurfaceStyle } from "../../design/fullAuditStyles.js";
+import { ProfileAvatar } from "../ProfileAvatar.jsx";
 import {
-  Avatar,
   Box,
   Button,
   Flex,
@@ -57,9 +58,17 @@ export function CommentItem({ comment, isProcessing, setIsProcessing }) {
   }
 
   return (
-    <Box p={4} borderWidth="1px" borderRadius="md" mb={4} bg="white">
+    <Box
+      p={4}
+      borderWidth="1px"
+      borderRadius="md"
+      mb={4}
+      bg="white"
+      sx={fullSurfaceStyle}
+      className="full-journal full-place-comment full-commentitem"
+    >
       <Flex align="center" mb={3}>
-        <Avatar name={comment.nickname} size="sm" mr={2} />
+        <ProfileAvatar name={comment.nickname} size="sm" mr={2} />
         <Box flex="1">
           <Text fontWeight="bold">{comment.nickname}</Text>
           <Flex align="center">
@@ -77,7 +86,7 @@ export function CommentItem({ comment, isProcessing, setIsProcessing }) {
           <Flex>
             <Button
               size="sm"
-              variant="ghost"
+              variant="journalOutline"
               onClick={() => setIsEditing(true)}
               mr={2}
             >
@@ -89,6 +98,7 @@ export function CommentItem({ comment, isProcessing, setIsProcessing }) {
               colorScheme="red"
               onClick={onOpen}
               isLoading={isProcessing}
+              className="full-danger"
             >
               <FontAwesomeIcon icon={faTrashAlt} />
             </Button>
@@ -108,14 +118,21 @@ export function CommentItem({ comment, isProcessing, setIsProcessing }) {
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent
+          sx={fullSurfaceStyle}
+          className="full-journal full-overlay"
+        >
           <ModalHeader>삭제 확인</ModalHeader>
           <ModalBody>댓글을 삭제하시겠습니까?</ModalBody>
           <ModalFooter>
-            <Button mr={2} onClick={onClose}>
+            <Button mr={2} onClick={onClose} variant="journal">
               취소
             </Button>
-            <Button colorScheme="red" onClick={handleRemoveClick}>
+            <Button
+              colorScheme="red"
+              onClick={handleRemoveClick}
+              className="full-danger"
+            >
               삭제
             </Button>
           </ModalFooter>

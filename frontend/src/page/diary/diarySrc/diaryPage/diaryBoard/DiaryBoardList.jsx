@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../../../../design/fullAuditStyles.js";
 import {
   Box,
   Button,
@@ -158,14 +159,25 @@ export function DiaryBoardList() {
   // -------------------------------------------------------
   if (isLoading) {
     return (
-      <Center h="300px">
+      <Center
+        h="300px"
+        sx={fullSurfaceStyle}
+        className="full-journal full-diary full-diaryboardlist"
+      >
         <Spinner color="blue.400" thickness="4px" />
       </Center>
     );
   }
 
   return (
-    <Box h="100%" display="flex" flexDirection="column" p={2}>
+    <Box
+      h="100%"
+      display="flex"
+      flexDirection="column"
+      p={2}
+      sx={fullSurfaceStyle}
+      className="full-journal full-diary full-diaryboardlist"
+    >
       {/* 1. 헤더 영역 */}
       <Flex
         justify="space-between"
@@ -180,9 +192,8 @@ export function DiaryBoardList() {
           <Heading
             size="md"
             color={titleColor}
-            fontFamily="'Gulim', sans-serif"
           >
-            How was my day?
+            하루의 기록
           </Heading>
         </HStack>
         {isOwner && (
@@ -190,7 +201,7 @@ export function DiaryBoardList() {
             size="xs"
             leftIcon={<FontAwesomeIcon icon={faPenNib} />}
             colorScheme="blue"
-            variant="outline"
+            variant="journalOutline"
             onClick={handleWriteClick}
           >
             일기쓰기
@@ -208,16 +219,16 @@ export function DiaryBoardList() {
           <Table size="sm" variant="simple">
             <Thead bg={tableHeadBg}>
               <Tr>
-                <Th w="10%" textAlign="center" fontFamily="'Gulim', sans-serif">
+                <Th w="10%" textAlign="center" fontFamily="inherit">
                   No
                 </Th>
-                <Th w="50%" textAlign="center" fontFamily="'Gulim', sans-serif">
+                <Th w="50%" textAlign="center" fontFamily="inherit">
                   제목
                 </Th>
-                <Th w="15%" textAlign="center" fontFamily="'Gulim', sans-serif">
+                <Th w="15%" textAlign="center" fontFamily="inherit">
                   기분
                 </Th>
-                <Th w="25%" textAlign="center" fontFamily="'Gulim', sans-serif">
+                <Th w="25%" textAlign="center" fontFamily="inherit">
                   날짜
                 </Th>
               </Tr>
@@ -248,7 +259,6 @@ export function DiaryBoardList() {
                     textAlign="center"
                     fontSize="xs"
                     color={dateColor}
-                    fontFamily="'Gulim', sans-serif"
                   >
                     {format(new Date(diaryBoard.inserted), "yyyy.MM.dd")}
                   </Td>
@@ -279,17 +289,20 @@ export function DiaryBoardList() {
         <Center mt={2}>
           <HStack spacing={1}>
             <Select
+              aria-label="일기 검색 범위"
               value={searchType}
               onChange={(e) => setSearchType(e.target.value)}
               size="xs"
               w="80px"
               bg="white"
+              variant="journal"
             >
               <option value="all">전체</option>
               <option value="text">제목</option>
             </Select>
             <InputGroup size="xs" w="150px">
               <Input
+                aria-label="일기 검색어"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 placeholder="검색어"
@@ -297,9 +310,15 @@ export function DiaryBoardList() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSearchClick();
                 }}
+                variant="journal"
               />
               <InputRightElement>
-                <Button size="xs" variant="ghost" onClick={handleSearchClick}>
+                <Button
+                  aria-label="일기 검색"
+                  size="xs"
+                  variant="journalOutline"
+                  onClick={handleSearchClick}
+                >
                   <FontAwesomeIcon icon={faMagnifyingGlass} />
                 </Button>
               </InputRightElement>

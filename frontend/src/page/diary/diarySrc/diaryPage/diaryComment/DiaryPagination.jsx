@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../../../../design/fullAuditStyles.js";
 import React from "react";
 import { Button, HStack, IconButton } from "@chakra-ui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -30,7 +31,13 @@ const DiaryPagination = ({
   const buttonVariant = "ghost"; // 평소엔 투명하게
 
   return (
-    <HStack spacing={1} justifyContent="center" mt={2}>
+    <HStack
+      spacing={1}
+      justifyContent="center"
+      mt={2}
+      sx={fullSurfaceStyle}
+      className="full-journal full-diary full-diarypagination"
+    >
       {/* 1. 처음으로 (<<) */}
       <IconButton
         icon={<FontAwesomeIcon icon={faAnglesLeft} />}
@@ -59,10 +66,12 @@ const DiaryPagination = ({
         .map((pageNumber) => (
           <Button
             key={pageNumber}
+            aria-current={pageNumber === currentPageNumber ? "page" : undefined}
+            aria-label={`${pageNumber}페이지`}
             onClick={() => handlePageButtonClick(pageNumber)}
             size={buttonSize}
             // 현재 페이지는 solid(채움), 나머지는 ghost(투명)
-            variant={pageNumber === currentPageNumber ? "solid" : "ghost"}
+            variant="journal"
             colorScheme={pageNumber === currentPageNumber ? "blue" : "gray"}
             color={pageNumber === currentPageNumber ? "white" : "gray.600"}
             fontWeight={pageNumber === currentPageNumber ? "bold" : "normal"}

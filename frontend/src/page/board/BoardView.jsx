@@ -1,5 +1,6 @@
+import { accountBoardPageStyle } from "../../design/accountBoardStyles.js";
+import { ProfileAvatar } from "../../component/ProfileAvatar.jsx";
 import {
-  Avatar,
   Box,
   Button,
   Container,
@@ -14,6 +15,7 @@ import {
   Spacer,
   Spinner,
   Tooltip,
+  Text,
   useDisclosure,
   useToast,
 } from "@chakra-ui/react";
@@ -162,7 +164,14 @@ export function BoardView() {
   }
 
   return (
-    <Container maxW="container.xl" py={10}>
+    <Container
+      as="main"
+      className="ab-page ab-board ab-boardview"
+      sx={accountBoardPageStyle}
+      maxW="container.xl"
+      py={10}
+    >
+      <Text className="ab-eyebrow">PETMILY / COMMUNITY</Text>
       <Button
         mb={4}
         onClick={() =>
@@ -170,12 +179,30 @@ export function BoardView() {
             `/board/list?boardType=${localStorage.getItem("currentBoardType")}`,
           )
         }
+        variant="journalOutline"
       >
         게시판으로 돌아가기
       </Button>
-      <Box p={6} borderWidth="1px" borderRadius="md" bg="white" mb={6}>
-        <Flex justify="space-between" align="center" mb={4}>
-          <Box fontWeight="bold" fontSize="2xl">
+      <Box
+        className="ab-post-heading"
+        p={6}
+        borderWidth="1px"
+        borderRadius="md"
+        bg="white"
+        mb={6}
+      >
+        <Flex
+          className="ab-post-title-row"
+          justify="space-between"
+          align="center"
+          mb={4}
+        >
+          <Box
+            as="h1"
+            className="ab-post-title"
+            fontWeight="bold"
+            fontSize="2xl"
+          >
             {board.title}
           </Box>
           <Flex align="center">
@@ -185,29 +212,20 @@ export function BoardView() {
             <Popover>
               <PopoverTrigger>
                 <Box display="flex" alignItems="center">
-                  {profileImage ? (
-                    <Image
-                      src={profileImage}
-                      boxSize="40px"
-                      borderRadius="full"
-                      mr={2}
-                      sx={{ cursor: "pointer" }}
-                    />
-                  ) : (
-                    <Avatar
-                      name={board.writer}
-                      size="sm"
-                      mr={2}
-                      sx={{ cursor: "pointer" }}
-                    />
-                  )}
+                  <Text className="ab-post-author">{board.writer}</Text>
+                  <ProfileAvatar
+                    src={profileImage}
+                    boxSize={profileImage ? "40px" : "32px"}
+                    mr={2}
+                    sx={{ cursor: "pointer" }}
+                  />
                 </Box>
               </PopoverTrigger>
               <PopoverContent width="fit-content" maxWidth="200px">
                 <PopoverArrow />
                 <PopoverCloseButton />
                 <PopoverBody display="flex" justifyContent="center">
-                  <Button colorScheme="blue" onClick={handleDiaryView}>
+                  <Button onClick={handleDiaryView} variant="journalOutline">
                     작성자 다이어리 보기
                   </Button>
                 </PopoverBody>
@@ -219,7 +237,13 @@ export function BoardView() {
           <Box>추천수: {like.count}</Box>
         </Flex>
       </Box>
-      <Box p={6} borderWidth="1px" borderRadius="md" bg="white">
+      <Box
+        className="ab-article"
+        p={6}
+        borderWidth="1px"
+        borderRadius="md"
+        bg="white"
+      >
         {board.fileList &&
           board.fileList.map((file) => (
             <Box key={file.name} mb={3}>
@@ -232,7 +256,7 @@ export function BoardView() {
           }}
         />
       </Box>
-      <Flex mt={4} mb={4} align="center">
+      <Flex className="ab-post-actions" mt={4} mb={4} align="center">
         <Tooltip isDisabled={memberInfo} hasArrow label="로그인 해주세요.">
           <HeartIcon
             icon={like.like ? fullHeart : emptyHeart}
@@ -250,13 +274,18 @@ export function BoardView() {
           {(memberId === board.memberId || memberId === 1) && (
             <>
               <Button
-                colorScheme="purple"
                 onClick={() => navigate(`/board/edit/${id}`)}
                 mr={2}
+                variant="journalOutline"
               >
                 수정
               </Button>
-              <Button mr={2} colorScheme="red" onClick={onOpenDelete}>
+              <Button
+                mr={2}
+                colorScheme="red"
+                onClick={onOpenDelete}
+                className="ab-danger"
+              >
                 삭제
               </Button>
             </>
@@ -275,6 +304,7 @@ export function BoardView() {
                 onOpenReport();
               }
             }}
+            variant="journalOutline"
           >
             신고
           </Button>
@@ -288,7 +318,7 @@ export function BoardView() {
       <Box fontSize={"large"} color="gray.500">
         조회수: {board.views}
       </Box>
-      <Box mt={4}>
+      <Box className="ab-comments" mt={4}>
         <BoardCommentComponent boardId={board.id} />
       </Box>
 

@@ -1,3 +1,4 @@
+import { accountBoardPageStyle } from "../../design/accountBoardStyles.js";
 import {
   Badge,
   Box,
@@ -157,6 +158,9 @@ export function BoardEdit() {
 
   return (
     <Box
+      as="main"
+      className="ab-page ab-board ab-editor ab-edit"
+      sx={accountBoardPageStyle}
       maxW="1000px"
       m="auto"
       p={6}
@@ -165,22 +169,44 @@ export function BoardEdit() {
       mt={10}
       bg="white"
     >
-      <Box p={4} bg="white" borderRadius="md" boxShadow="md" mb={4}>
-        <Text fontSize="2xl" fontWeight="bold" mb={6}>
+      <Box
+        className="ab-editor-sheet"
+        p={4}
+        bg="white"
+        borderRadius="md"
+        boxShadow="md"
+        mb={4}
+      >
+        <Text className="ab-eyebrow">COMMUNITY / EDIT</Text>
+        <Text
+          as="h1"
+          className="ab-heading"
+          fontSize="2xl"
+          fontWeight="bold"
+          mb={6}
+        >
           {id}번 게시물 수정
         </Text>
         <FormControl mb={4}>
-          <FormLabel>제목</FormLabel>
+          <FormLabel htmlFor="boardedit-field-1" variant="journal">
+            제목
+          </FormLabel>
           <Input
             defaultValue={board.title}
             onChange={(e) => setBoard({ ...board, title: e.target.value })}
+            id="boardedit-field-1"
+            variant="journal"
           />
         </FormControl>
         <FormControl mb={4}>
-          <FormLabel>본문</FormLabel>
+          <FormLabel htmlFor="boardedit-field-2" variant="journal">
+            본문
+          </FormLabel>
           <Textarea
             defaultValue={board.content}
             onChange={(e) => setBoard({ ...board, content: e.target.value })}
+            id="boardedit-field-2"
+            variant="journal"
           />
         </FormControl>
         <Box mb={4}>
@@ -225,12 +251,16 @@ export function BoardEdit() {
             ))}
         </Box>
         <FormControl mb={4}>
-          <FormLabel>파일</FormLabel>
+          <FormLabel htmlFor="boardedit-field-3" variant="journal">
+            파일
+          </FormLabel>
           <Input
             multiple
             type="file"
             accept="image/*"
             onChange={handleChange}
+            id="boardedit-field-3"
+            variant="journal"
           />
           {!invisibledText && (
             <FormHelperText color="red.500">
@@ -243,9 +273,9 @@ export function BoardEdit() {
         </Box>
         <Flex justify="flex-end" gap={3}>
           <Button
-            colorScheme="blue"
             onClick={onOpen}
             isDisabled={disableSaveButton}
+            variant="journalOutline"
           >
             수정
           </Button>
@@ -253,13 +283,15 @@ export function BoardEdit() {
       </Box>
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent className="ab-modal" sx={accountBoardPageStyle}>
           <ModalHeader>게시물 수정</ModalHeader>
           <ModalCloseButton />
           <ModalBody>정말로 수정하시겠습니까?</ModalBody>
           <ModalFooter>
-            <Button onClick={onClose}>취소</Button>
-            <Button onClick={handleClickSave} colorScheme="blue">
+            <Button onClick={onClose} variant="journalOutline">
+              취소
+            </Button>
+            <Button onClick={handleClickSave} variant="journal">
               확인
             </Button>
           </ModalFooter>

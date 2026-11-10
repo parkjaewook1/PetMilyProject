@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../design/fullAuditStyles.js";
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -40,7 +41,11 @@ export function BoardReportListContents() {
 
   if (isLoading) {
     return (
-      <Center mt={10}>
+      <Center
+        mt={10}
+        sx={fullSurfaceStyle}
+        className="full-journal full-report-content"
+      >
         <Spinner size="xl" />
       </Center>
     );
@@ -50,7 +55,12 @@ export function BoardReportListContents() {
   const borderColor = useColorModeValue("gray.200", "gray.700");
 
   return (
-    <Container maxW="container.md" py={5}>
+    <Container
+      maxW="container.md"
+      py={5}
+      sx={fullSurfaceStyle}
+      className="full-journal full-report-content"
+    >
       <VStack spacing={6} align="stretch">
         <Box
           borderWidth="1px"

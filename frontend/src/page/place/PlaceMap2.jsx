@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../design/fullAuditStyles.js";
 import React, { useEffect, useState } from "react";
 import { Box, Button, Spacer } from "@chakra-ui/react";
 import SelectComponent from "../../SelectCompoent.jsx";
@@ -11,12 +12,17 @@ export const PlaceMap2 = ({ ctprvnCd }) => {
 
   useEffect(() => {
     const loadKakaoMapScript = () => {
+      if (!import.meta.env.VITE_KAKAO_MAP_JAVASCRIPT_KEY) return;
+      if (window.kakao?.maps?.services) {
+        window.kakao.maps.load(initializeMap);
+        return;
+      }
       const existingScript = document.getElementById("kakao-map-script");
       if (!existingScript) {
         const script = document.createElement("script");
         script.id = "kakao-map-script";
         script.src =
-          "//dapi.kakao.com/v2/maps/sdk.js?appkey=d5b3cb3d230c4f406001bbfad60ef4d4&libraries=services,clusterer,drawing&autoload=false";
+          `//dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(import.meta.env.VITE_KAKAO_MAP_JAVASCRIPT_KEY || "")}&libraries=services,clusterer,drawing&autoload=false`;
         script.async = true;
         document.head.appendChild(script);
         script.onload = () => {
@@ -67,6 +73,7 @@ export const PlaceMap2 = ({ ctprvnCd }) => {
         }
       }
 
+      map.relayout();
       searchByCategory(map); // 기본 카테고리로 검색
     };
 
@@ -83,7 +90,9 @@ export const PlaceMap2 = ({ ctprvnCd }) => {
       return;
     }
 
-    const ps = new kakao.maps.services.Places();
+    markers.forEach((marker) => marker.setMap(null));
+    setMarkers([]);
+    const ps = new kakao.maps.services.Places(map);
     const bounds = new kakao.maps.LatLngBounds();
 
     selectedCategories.forEach((category) => {
@@ -129,7 +138,13 @@ export const PlaceMap2 = ({ ctprvnCd }) => {
   }
 
   return (
-    <Box position="relative" width="100%" height="500px">
+    <Box
+      position="relative"
+      width="100%"
+      height="500px"
+      sx={fullSurfaceStyle}
+      className="full-journal full-map full-placemap2"
+    >
       <Box
         position="absolute"
         top="50%"
@@ -146,11 +161,13 @@ export const PlaceMap2 = ({ ctprvnCd }) => {
           selectedCategories={selectedCategories}
           onCategoryChange={handleCategoryChange}
         />
-        <Button mt={2} onClick={() => searchByCategory(map)}>
+        <Button mt={2} onClick={() => searchByCategory(map)} variant="journal">
           카테고리 검색
         </Button>
         <Spacer />
-        <Button onClick={GotoHospitalHandler}>추천 병원 바로 가기</Button>
+        <Button onClick={GotoHospitalHandler} variant="journal">
+          추천 병원 바로 가기
+        </Button>
       </Box>
       <Box id="place-map" width="100%" height="100%" />
     </Box>

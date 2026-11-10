@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../../../../design/fullAuditStyles.js";
 import { useNavigate, useParams } from "react-router-dom";
 import React, { useContext, useEffect, useState } from "react";
 import axios from "@api/axiosConfig";
@@ -99,7 +100,13 @@ export function DiaryBoardView() {
 
   if (diaryBoard === null) {
     return (
-      <Flex h="300px" justify="center" align="center">
+      <Flex
+        h="300px"
+        justify="center"
+        align="center"
+        sx={fullSurfaceStyle}
+        className="full-journal full-diary full-diaryboardview"
+      >
         <Spinner color="blue.400" thickness="4px" />
       </Flex>
     );
@@ -129,7 +136,15 @@ export function DiaryBoardView() {
   };
 
   return (
-    <Box h="100%" p={4} display="flex" flexDirection="column" overflowY="auto">
+    <Box
+      h="100%"
+      p={4}
+      display="flex"
+      flexDirection="column"
+      overflowY="auto"
+      sx={fullSurfaceStyle}
+      className="full-journal full-diary full-diaryboardview"
+    >
       {/* 1. 헤더 영역 */}
       <Flex
         justifyContent="space-between"
@@ -144,7 +159,6 @@ export function DiaryBoardView() {
           <Text
             fontSize="lg"
             fontWeight="bold"
-            fontFamily="'Gulim', sans-serif"
             color="#333"
           >
             {diaryNumber}번째 일기
@@ -156,7 +170,7 @@ export function DiaryBoardView() {
               <Button
                 size="xs"
                 colorScheme="blue"
-                variant="ghost"
+                variant="journalOutline"
                 leftIcon={<FontAwesomeIcon icon={faPen} />}
                 onClick={handleDiaryEdit}
               >
@@ -168,6 +182,7 @@ export function DiaryBoardView() {
                 variant="ghost"
                 leftIcon={<FontAwesomeIcon icon={faTrash} />}
                 onClick={onOpen}
+                className="full-danger"
               >
                 삭제
               </Button>
@@ -175,7 +190,7 @@ export function DiaryBoardView() {
           )}
           <Button
             size="xs"
-            variant="outline"
+            variant="journalOutline"
             leftIcon={<FontAwesomeIcon icon={faArrowLeft} />}
             onClick={() => navigate(-1)}
           >
@@ -185,10 +200,10 @@ export function DiaryBoardView() {
       </Flex>
 
       {/* 2. 본문 내용 영역 */}
-      <Box fontFamily="'Gulim', sans-serif">
+      <Box>
         {/* 제목 & 기분 & 날짜 */}
         <Box mb={6}>
-          <Flex justify="space-between" align="center" mb={2}>
+          <Flex className="diary-entry-heading" justify="space-between" align="center" mb={2}>
             <Text fontSize="xl" fontWeight="bold" color="gray.700">
               {diaryBoard.title}
             </Text>
@@ -211,6 +226,7 @@ export function DiaryBoardView() {
 
         {/* 본문 텍스트 */}
         <Box
+          className="diary-entry-body"
           bg={contentBg}
           p={6}
           borderRadius="md"
@@ -264,14 +280,22 @@ export function DiaryBoardView() {
       {/* 삭제 확인 모달 */}
       <Modal isOpen={isOpen} onClose={onClose} size="sm" isCentered>
         <ModalOverlay />
-        <ModalContent fontFamily="'Gulim', sans-serif">
+        <ModalContent
+          sx={fullSurfaceStyle}
+          className="full-journal full-overlay"
+        >
           <ModalHeader fontSize="md">게시물 삭제</ModalHeader>
           <ModalBody fontSize="sm">정말 삭제하시겠습니까? 😢</ModalBody>
           <ModalFooter>
-            <Button size="sm" onClick={onClose} mr={2}>
+            <Button size="sm" onClick={onClose} mr={2} variant="journal">
               취소
             </Button>
-            <Button size="sm" colorScheme="red" onClick={handleClickRemove}>
+            <Button
+              size="sm"
+              colorScheme="red"
+              onClick={handleClickRemove}
+              className="full-danger"
+            >
               확인
             </Button>
           </ModalFooter>

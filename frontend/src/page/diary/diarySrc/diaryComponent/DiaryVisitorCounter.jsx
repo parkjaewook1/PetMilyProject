@@ -24,13 +24,13 @@ function DiaryVisitorCounter({ diaryId }) {
       <Box display="flex" alignItems="center" gap={1}>
         <FaCalendarDay color="#3182CE" size="0.9em" />
         <Badge colorScheme="blue" fontSize="0.7em" borderRadius="full" px={2}>
-          Today {counts.today}
+          오늘 {counts.today}
         </Badge>
       </Box>
       <Box display="flex" alignItems="center" gap={1}>
         <FaUsers color="#38A169" size="0.9em" />
         <Badge colorScheme="green" fontSize="0.7em" borderRadius="full" px={2}>
-          Total {counts.total}
+          전체 {counts.total}
         </Badge>
       </Box>
     </HStack>

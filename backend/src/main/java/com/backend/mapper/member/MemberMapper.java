@@ -1,6 +1,8 @@
 package com.backend.mapper.member;
 
 import com.backend.domain.member.Member;
+import com.backend.dto.member.PublicMemberProfile;
+import com.backend.dto.member.PrivateMemberProfile;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -31,21 +33,6 @@ public interface MemberMapper {
             """)
     Member selectByNickname(String nickname);
 
-    // 회원 목록
-    @Select("""
-            SELECT id, name, username, nickname, password, gender, nationality, birth_date, phone_number, postcode, main_address, detailed_address, inserted_at AS inserted, role
-            FROM member
-            ORDER BY id ASC
-            LIMIT #{limit} OFFSET #{offset}
-            """)
-    List<Member> selectAll(@Param("limit") int limit, @Param("offset") int offset);
-
-    @Select("""
-            SELECT COUNT(*)
-            FROM member
-            """)
-    int countAllMembers();
-
     // 회원 단건 조회 (id 기반)
     @Select("""
             SELECT id, name, username, nickname, password, gender, nationality, birth_date,
@@ -55,11 +42,26 @@ public interface MemberMapper {
             """)
     Member selectByMemberId(Integer id);
 
+    @Select("SELECT id, username, nickname, role FROM member WHERE id = #{id}")
+    Member selectAuthorizationById(Integer id);
+
+    @Select("SELECT id, nickname FROM member WHERE id = #{id}")
+    PublicMemberProfile selectPublicProfileById(Integer id);
+
+    @Select("""
+        SELECT id, username, nickname, name, gender, nationality, birth_date AS birthDate,
+               phone_number AS phoneNumber, postcode, main_address AS mainAddress,
+               detailed_address AS detailedAddress, inserted_at AS inserted
+        FROM member WHERE id = #{id}
+        """)
+    PrivateMemberProfile selectPrivateProfileById(Integer id);
+
     // 회원 수정
     @Update("""
+            <script>
             UPDATE member
             SET nickname = #{nickname},
-                password = #{password},
+                <if test="password != null and password != ''">password = #{password},</if>
                 gender = #{gender},
                 nationality = #{nationality},
                 name = #{name},
@@ -69,6 +71,7 @@ public interface MemberMapper {
                 main_address = #{mainAddress},
                 detailed_address = #{detailedAddress}
             WHERE id = #{id}
+            </script>
             """)
     int update(Member member);
 

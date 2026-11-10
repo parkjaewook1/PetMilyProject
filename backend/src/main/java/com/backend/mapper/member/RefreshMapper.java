@@ -42,6 +42,7 @@ public interface RefreshMapper {
             SELECT id, username, refresh, expiration
             FROM refresh_token
             WHERE refresh = #{refresh}
+            LIMIT 1
             """)
     RefreshEntity findByRefresh(@Param("refresh") String refresh);
 

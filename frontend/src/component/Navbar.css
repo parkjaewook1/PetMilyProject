@@ -1,0 +1,153 @@
+/* Shared navigation: original Petmily ink on journal paper. */
+.petmily-nav {
+  --nav-ink: #3b124b;
+  --nav-paper: #faf8f4;
+  --nav-line: #e3dce3;
+  font-family: "Noto Sans KR", sans-serif;
+}
+.petmily-nav .petmily-nav-inner {
+  max-width: 1160px;
+}
+.petmily-nav .petmily-nav-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: 2px;
+}
+.petmily-nav .petmily-nav-link,
+.petmily-nav .petmily-nav-account {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 3px;
+  color: var(--nav-ink);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  background: transparent;
+}
+.petmily-nav .petmily-nav-link svg {
+  width: 12px;
+  color: #80688b;
+}
+.petmily-nav .petmily-nav-link:hover,
+.petmily-nav .petmily-nav-link[aria-expanded="true"],
+.petmily-nav .petmily-nav-account:hover,
+.petmily-nav .petmily-nav-account[aria-expanded="true"] {
+  background: #eee7ef;
+  color: var(--nav-ink);
+  box-shadow: none;
+  transform: none;
+}
+.petmily-nav .petmily-nav-action {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.petmily-nav .petmily-nav-write {
+  background: var(--nav-ink);
+  color: #fff;
+}
+.petmily-nav .petmily-nav-write:hover {
+  background: #51235f;
+  transform: none;
+  box-shadow: none;
+}
+.petmily-nav .petmily-nav-login {
+  color: var(--nav-ink);
+  border: 1px solid #cdbed2;
+  background: transparent;
+}
+.petmily-nav .petmily-nav-login:hover {
+  color: var(--nav-ink);
+  background: #eee7ef;
+  border-color: #9c82a7;
+}
+.petmily-nav .petmily-nav-mobile-button {
+  color: var(--nav-ink);
+  border-radius: 3px;
+}
+.petmily-nav .petmily-nav-mobile-button:hover,
+.petmily-nav .petmily-nav-mobile-button[aria-expanded="true"] {
+  background: #eee7ef;
+}
+.petmily-nav .petmily-nav-account .chakra-avatar {
+  width: 28px;
+  height: 28px;
+}
+.petmily-nav .petmily-nav-account p {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--nav-ink);
+}
+.petmily-nav-menu.chakra-menu__menu-list {
+  font-family: "Noto Sans KR", sans-serif;
+  color: #3b124b;
+  background: #faf8f4;
+  padding: 6px;
+  border: 1px solid #dfd5e1;
+  border-radius: 4px;
+  box-shadow: 0 5px 16px rgb(49 25 58 / 8%);
+}
+.petmily-nav-menu .chakra-menu__menuitem {
+  min-height: 40px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 2px;
+  background: transparent;
+}
+.petmily-nav-menu .chakra-menu__menuitem:hover,
+.petmily-nav-menu .chakra-menu__menuitem:focus {
+  background: #eee7ef;
+}
+.petmily-nav-menu .chakra-menu__menuitem p {
+  font-weight: 500;
+  font-size: 12px;
+}
+.petmily-nav-menu .petmily-menu-category {
+  background: transparent;
+  border-radius: 2px;
+}
+.petmily-nav :is(button, [role="button"]):focus-visible {
+  outline: 2px solid var(--nav-ink);
+  outline-offset: 3px;
+}
+@media (min-width: 768px) and (max-width: 1000px) {
+  .petmily-nav .petmily-nav-inner {
+    gap: 8px;
+  }
+  .petmily-nav .petmily-nav-brand-group {
+    gap: 12px;
+  }
+  .petmily-nav .petmily-nav-logo {
+    width: 96px;
+  }
+  .petmily-nav .petmily-nav-link {
+    padding: 0 9px;
+    font-size: 12px;
+  }
+  .petmily-nav .petmily-nav-action {
+    padding: 0 10px;
+  }
+  .petmily-nav .petmily-nav-account {
+    padding: 0 6px;
+  }
+}
+@media (max-width: 767px) {
+  .petmily-nav .petmily-nav-mobile-button {
+    width: 40px;
+    height: 40px;
+  }
+  .petmily-nav-menu.chakra-menu__menu-list {
+    max-width: calc(100vw - 32px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .petmily-nav * {
+    transition: none;
+  }
+}

@@ -1,6 +1,6 @@
+import { ProfileAvatar } from "../../../../component/ProfileAvatar.jsx";
 import React, { useContext, useEffect, useState } from "react";
 import {
-  Avatar,
   Box,
   Button,
   Card,
@@ -145,9 +145,15 @@ export function DiaryHomeMain() {
   const itemHeight = "72px"; // 리스트 아이템 높이 통일
 
   return (
-    <Box minH="100vh" bgGradient={bgGradient} pb={20}>
+    <Box
+      className="mini-home-content"
+      minH="100vh"
+      bgGradient={bgGradient}
+      pb={20}
+    >
       {/* 🌟 1. 커버 화면 */}
       <Box
+        className="mini-cover"
         position="relative"
         w="100%"
         h={{ base: "280px", md: "380px" }}
@@ -172,6 +178,7 @@ export function DiaryHomeMain() {
         />
         {Number(memberInfo?.id) === ownerId && (
           <Button
+            className="mini-cover-edit"
             position="absolute"
             top={4}
             right={4}
@@ -188,18 +195,35 @@ export function DiaryHomeMain() {
         )}
       </Box>
 
+      <div className="mini-cover-caption">
+        <span>우리의 작은 방</span>
+        <span>작은 방에 모아 둔, 소중한 하루.</span>
+      </div>
+
       {/* 📜 2. 메인 콘텐츠 */}
-      <Box maxW="1200px" mx="auto" px={{ base: 4, md: 8 }} mt={10}>
+      <Box
+        className="mini-recents"
+        maxW="1200px"
+        mx="auto"
+        px={{ base: 4, md: 8 }}
+        mt={10}
+      >
         <Fade in={true}>
-          <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
+          <SimpleGrid
+            className="mini-recent-grid"
+            columns={{ base: 1, lg: 2 }}
+            spacing={8}
+          >
             {/* 🟦 2-1. 일기장 (변경 없음) */}
             <Card
+              className="mini-recent-section"
               bg={cardBg}
               borderRadius="2xl"
               boxShadow="xl"
               overflow="hidden"
             >
               <CardHeader
+                className="mini-section-heading"
                 borderBottom="1px solid"
                 borderColor={borderColor}
                 py={5}
@@ -207,6 +231,7 @@ export function DiaryHomeMain() {
                 <Flex justify="space-between" align="center">
                   <HStack spacing={3}>
                     <Center
+                      className="mini-section-icon"
                       w="40px"
                       h="40px"
                       bg="purple.50"
@@ -216,6 +241,7 @@ export function DiaryHomeMain() {
                       <Icon as={FontAwesomeIcon} icon={faBookOpen} />
                     </Center>
                     <VStack align="start" spacing={0}>
+                      <Text className="mini-section-kicker">최근 기록</Text>
                       <Heading size="md" color="gray.700">
                         일기
                       </Heading>
@@ -250,8 +276,15 @@ export function DiaryHomeMain() {
               </CardHeader>
               <CardBody p={0}>
                 <VStack spacing={0} align="stretch">
+                  {diaryBoardList.length === 0 && (
+                    <Box className="mini-empty">
+                      <Text>아직 쓰지 않은 첫 페이지</Text>
+                      <Text>함께한 하루를 일기로 남겨보세요.</Text>
+                    </Box>
+                  )}
                   {normalizedBoards.map((board, idx) => (
                     <Box
+                      className="mini-entry"
                       key={idx}
                       h={itemHeight}
                       borderBottom={idx < 4 ? "1px solid" : "none"}
@@ -267,6 +300,7 @@ export function DiaryHomeMain() {
                           onClick={() => handleBoardClick(board.id)}
                         >
                           <VStack
+                            className="mini-entry-date"
                             spacing={0}
                             mr={5}
                             bg="gray.50"
@@ -312,7 +346,7 @@ export function DiaryHomeMain() {
                           </VStack>
                         </Flex>
                       ) : (
-                        <Box w="100%" h="100%" />
+                        <Box className="mini-placeholder" w="100%" h="100%" />
                       )}
                     </Box>
                   ))}
@@ -322,12 +356,14 @@ export function DiaryHomeMain() {
 
             {/* 🟩 2-2. 방명록 (수정됨) */}
             <Card
+              className="mini-recent-section"
               bg={cardBg}
               borderRadius="2xl"
               boxShadow="xl"
               overflow="hidden"
             >
               <CardHeader
+                className="mini-section-heading"
                 borderBottom="1px solid"
                 borderColor={borderColor}
                 py={5}
@@ -335,6 +371,7 @@ export function DiaryHomeMain() {
                 <Flex justify="space-between" align="center">
                   <HStack spacing={3}>
                     <Center
+                      className="mini-section-icon"
                       w="40px"
                       h="40px"
                       bg="teal.50"
@@ -344,6 +381,7 @@ export function DiaryHomeMain() {
                       <Icon as={FontAwesomeIcon} icon={faComments} />
                     </Center>
                     <VStack align="start" spacing={0}>
+                      <Text className="mini-section-kicker">함께 남긴 인사</Text>
                       <Heading size="md" color="gray.700">
                         방명록
                       </Heading>
@@ -361,8 +399,15 @@ export function DiaryHomeMain() {
               </CardHeader>
               <CardBody p={0}>
                 <VStack spacing={0} align="stretch">
+                  {diaryCommentList.length === 0 && (
+                    <Box className="mini-empty">
+                      <Text>반가운 발자국을 기다려요</Text>
+                      <Text>이웃이 남겨준 이야기가 모이는 곳이에요.</Text>
+                    </Box>
+                  )}
                   {normalizedComments.map((comment, idx) => (
                     <Box
+                      className="mini-entry"
                       key={idx}
                       h={itemHeight}
                       borderBottom={idx < 4 ? "1px solid" : "none"}
@@ -378,7 +423,7 @@ export function DiaryHomeMain() {
                           onClick={() => handleCommentClick(comment.id)}
                         >
                           {/* ✅ [적용] getProfileUrl 사용 */}
-                          <Avatar
+                          <ProfileAvatar
                             size="sm"
                             src={getProfileUrl(comment.profileImage)}
                             name={comment.nickname}
@@ -414,7 +459,7 @@ export function DiaryHomeMain() {
                           </VStack>
                         </Flex>
                       ) : (
-                        <Box w="100%" h="100%" />
+                        <Box className="mini-placeholder" w="100%" h="100%" />
                       )}
                     </Box>
                   ))}

@@ -1,10 +1,10 @@
+import { fullSurfaceStyle } from "../../../../../design/fullAuditStyles.js";
+import { ProfileAvatar } from "../../../../../component/ProfileAvatar.jsx";
 import {
-  Avatar,
   Box,
   Button,
   Flex,
   IconButton,
-  Image,
   Menu,
   MenuButton,
   MenuItem,
@@ -48,7 +48,7 @@ export function DiaryCommentItem({
   const [showAllReplies, setShowAllReplies] = useState(false);
 
   // ✅ 이미지 로드 에러 상태
-  const [imageError, setImageError] = useState(false);
+  const [, setImageError] = useState(false);
 
   const REPLY_LIMIT = depth === 0 ? 3 : 0;
 
@@ -124,7 +124,15 @@ export function DiaryCommentItem({
     if (childComments.length === 0) return null;
 
     return (
-      <Box mt={2} pl={3} ml={2} borderLeft="2px solid" borderColor={lineColor}>
+      <Box
+        mt={2}
+        pl={3}
+        ml={2}
+        borderLeft="2px solid"
+        borderColor={lineColor}
+        sx={fullSurfaceStyle}
+        className="full-journal full-diary full-diarycommentitem"
+      >
         {visibleChildren.map((child, index) => (
           <DiaryCommentItem
             key={child.id}
@@ -139,7 +147,7 @@ export function DiaryCommentItem({
         {childComments.length > REPLY_LIMIT && (
           <Button
             size="xs"
-            variant="ghost"
+            variant="journalOutline"
             color="gray.500"
             h="28px"
             mt={1}
@@ -162,21 +170,21 @@ export function DiaryCommentItem({
   // ✅ 대댓글 UI
   if (comment.replyCommentId) {
     return (
-      <Box mt={3}>
+      <Box
+        mt={3}
+        sx={fullSurfaceStyle}
+        className="full-journal full-diary full-diarycommentitem"
+      >
         <Flex align="flex-start">
-          {profileUrl && !imageError ? (
-            <Image
-              src={profileUrl}
-              alt={comment.nickname}
-              boxSize="24px"
-              borderRadius="full"
-              mr={2}
-              objectFit="cover"
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            <Avatar name={comment.nickname} size="xs" mr={2} />
-          )}
+          <ProfileAvatar
+            src={profileUrl}
+            alt={comment.nickname}
+            boxSize="24px"
+            borderRadius="full"
+            mr={2}
+            objectFit="cover"
+            onError={() => setImageError(true)}
+          />
 
           <Box w="100%">
             <Text fontSize="sm">
@@ -241,21 +249,19 @@ export function DiaryCommentItem({
         transform: "translateY(-2px)",
         transition: "0.2s",
       }}
+      sx={fullSurfaceStyle}
+      className="full-journal full-diary full-diarycommentitem"
     >
       <Flex justify="space-between" align="center" mb={2}>
         <Flex gap={2} align="center">
-          {profileUrl && !imageError ? (
-            <Image
-              src={profileUrl}
-              alt={comment.nickname}
-              boxSize="32px"
-              borderRadius="full"
-              objectFit="cover"
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            <Avatar name={comment.nickname} size="sm" />
-          )}
+          <ProfileAvatar
+            src={profileUrl}
+            alt={comment.nickname}
+            boxSize="32px"
+            borderRadius="full"
+            objectFit="cover"
+            onError={() => setImageError(true)}
+          />
 
           <Text fontWeight="bold">{comment.nickname}</Text>
 
@@ -276,7 +282,7 @@ export function DiaryCommentItem({
             size="sm"
             variant="ghost"
           />
-          <MenuList>
+          <MenuList sx={fullSurfaceStyle} className="full-journal full-overlay">
             <MenuItem
               icon={<FontAwesomeIcon icon={faHouseUser} />}
               onClick={() => goToMiniHome(comment.memberId)}

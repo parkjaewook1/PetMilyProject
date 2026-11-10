@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../design/fullAuditStyles.js";
 import { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "@api/axiosConfig";
@@ -28,7 +29,6 @@ export function OAuthLogin(props) {
             id: "" + response.data.member.id,
             nickname: response.data.member.nickname,
           };
-          console.log(memberInfo);
           setMemberInfo(memberInfo);
 
           // 토큰을 로컬 스토리지에 저장
@@ -41,7 +41,7 @@ export function OAuthLogin(props) {
   }, [location, navigate]);
 
   return (
-    <Center mt={10}>
+    <Center mt={10} sx={fullSurfaceStyle} className="full-journal full-oauth">
       <Box w={500} p={10} boxShadow="lg" borderRadius="md" bg="white">
         <Alert
           status="info"

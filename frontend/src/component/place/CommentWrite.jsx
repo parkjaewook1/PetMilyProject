@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../design/fullAuditStyles.js";
 import { Box, Button, Textarea, Tooltip, useToast } from "@chakra-ui/react";
 import { useContext, useState } from "react";
 import axios from "@api/axiosConfig";
@@ -51,7 +52,10 @@ export function CommentWrite({ hospitalId, isProcessing, setIsProcessing }) {
   }
 
   return (
-    <Box>
+    <Box
+      sx={fullSurfaceStyle}
+      className="full-journal full-place-comment full-commentwrite"
+    >
       <StarRating ratingIndex={ratingIndex} setRatingIndex={setRatingIndex} />
       <Textarea
         isDisabled={!isLoggedIn}
@@ -62,6 +66,7 @@ export function CommentWrite({ hospitalId, isProcessing, setIsProcessing }) {
         }
         value={comment}
         onChange={(e) => setComment(e.target.value)}
+        variant="journal"
       />
       <Tooltip label="로그인 하세요" isDisabled={isLoggedIn} placement="top">
         <Button
@@ -69,6 +74,7 @@ export function CommentWrite({ hospitalId, isProcessing, setIsProcessing }) {
           isLoading={isProcessing}
           onClick={handleCommentSubmitClick}
           colorScheme="blue"
+          variant="journal"
         >
           <FontAwesomeIcon icon={faPaperPlane} />
         </Button>

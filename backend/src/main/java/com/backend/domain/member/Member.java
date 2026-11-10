@@ -2,16 +2,21 @@ package com.backend.domain.member;
 
 import jakarta.persistence.Column;
 import lombok.Data;
+import lombok.ToString;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
+@ToString(onlyExplicitlyIncluded = true)
 public class Member {
+    @ToString.Include
     private Integer id;
     private String name;
     private String username;
     private String nickname;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     private String gender;
     private String nationality;

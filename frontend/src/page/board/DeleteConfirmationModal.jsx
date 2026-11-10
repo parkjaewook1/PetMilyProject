@@ -1,3 +1,4 @@
+import { accountBoardPageStyle } from "../../design/accountBoardStyles.js";
 import React from "react";
 import {
   Button,
@@ -24,6 +25,8 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onClickRemove }) => {
         boxShadow="xl"
         borderRadius="lg"
         maxW="400px"
+        className="ab-modal"
+        sx={accountBoardPageStyle}
       >
         <ModalHeader textAlign="center">
           <VStack spacing={4}>
@@ -41,10 +44,14 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onClickRemove }) => {
           </Text>
         </ModalBody>
         <ModalFooter justifyContent="center">
-          <Button onClick={onClose} mr={3}>
+          <Button onClick={onClose} mr={3} variant="journalOutline">
             취소
           </Button>
-          <Button colorScheme="red" onClick={onClickRemove}>
+          <Button
+            colorScheme="red"
+            onClick={onClickRemove}
+            className="ab-danger"
+          >
             확인
           </Button>
         </ModalFooter>

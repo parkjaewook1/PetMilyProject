@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../../../../design/fullAuditStyles.js";
 import {
   Badge,
   Box,
@@ -37,7 +38,14 @@ export function DiaryCommentList({
     : [];
 
   return (
-    <Box h="100%" display="flex" flexDirection="column" p={0}>
+    <Box
+      h="100%"
+      display="flex"
+      flexDirection="column"
+      p={0}
+      sx={fullSurfaceStyle}
+      className="full-journal full-diary full-diarycommentlist"
+    >
       {" "}
       {/* 패딩 제거 */}
       {/* ✂️ 헤더 높이 축소 (p={1}, mb={2}) */}

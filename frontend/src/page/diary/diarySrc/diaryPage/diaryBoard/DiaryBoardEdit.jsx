@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../../../../design/fullAuditStyles.js";
 import React, { useContext, useEffect, useState } from "react";
 import axios from "@api/axiosConfig";
 import {
@@ -107,7 +108,11 @@ export function DiaryBoardEdit() {
 
   if (diaryBoard === null) {
     return (
-      <Center mt={10}>
+      <Center
+        mt={10}
+        sx={fullSurfaceStyle}
+        className="full-journal full-diary full-diaryboardedit"
+      >
         <Spinner size="xl" color="blue.400" />
       </Center>
     );
@@ -117,14 +122,26 @@ export function DiaryBoardEdit() {
 
   if (!isOwner) {
     return (
-      <Center mt={10} fontFamily="'Gulim', sans-serif">
+      <Center
+        mt={10}
+        sx={fullSurfaceStyle}
+        className="full-journal full-diary full-diaryboardedit"
+      >
         수정 권한이 없습니다. 🚫
       </Center>
     );
   }
 
   return (
-    <Box h="100%" p={4} display="flex" flexDirection="column" overflowY="auto">
+    <Box
+      h="100%"
+      p={4}
+      display="flex"
+      flexDirection="column"
+      overflowY="auto"
+      sx={fullSurfaceStyle}
+      className="full-journal full-diary full-diaryboardedit"
+    >
       {/* 1. 헤더 영역 */}
       <Flex
         align="center"
@@ -134,7 +151,7 @@ export function DiaryBoardEdit() {
         borderColor={titleColor}
       >
         <Icon as={FontAwesomeIcon} icon={faPen} color={titleColor} mr={2} />
-        <Heading size="md" fontFamily="'Gulim', sans-serif" color="#333">
+        <Heading size="md" color="#333">
           일기 수정
         </Heading>
       </Flex>
@@ -144,12 +161,17 @@ export function DiaryBoardEdit() {
         spacing={4}
         align="stretch"
         flex={1}
-        fontFamily="'Gulim', sans-serif"
       >
         {/* 제목 & 기분 */}
         <Flex gap={2}>
           <FormControl flex={1}>
-            <FormLabel fontSize="sm" mb={1} fontWeight="bold" color="gray.600">
+            <FormLabel
+              fontSize="sm"
+              mb={1}
+              fontWeight="bold"
+              color="gray.600"
+              variant="journal"
+            >
               제목
             </FormLabel>
             <Input
@@ -159,11 +181,18 @@ export function DiaryBoardEdit() {
               }
               bg={inputBg}
               borderColor={borderColor}
+              variant="journal"
             />
           </FormControl>
 
           <FormControl w="150px">
-            <FormLabel fontSize="sm" mb={1} fontWeight="bold" color="gray.600">
+            <FormLabel
+              fontSize="sm"
+              mb={1}
+              fontWeight="bold"
+              color="gray.600"
+              variant="journal"
+            >
               기분
             </FormLabel>
             <Select
@@ -173,6 +202,7 @@ export function DiaryBoardEdit() {
               }
               bg={inputBg}
               borderColor={borderColor}
+              variant="journal"
             >
               <option value="HAPPY">😊 행복</option>
               <option value="SAD">😢 슬픔</option>
@@ -184,7 +214,13 @@ export function DiaryBoardEdit() {
 
         {/* 본문 */}
         <FormControl>
-          <FormLabel fontSize="sm" mb={1} fontWeight="bold" color="gray.600">
+          <FormLabel
+            fontSize="sm"
+            mb={1}
+            fontWeight="bold"
+            color="gray.600"
+            variant="journal"
+          >
             내용
           </FormLabel>
           <Textarea
@@ -197,13 +233,19 @@ export function DiaryBoardEdit() {
             bg={inputBg}
             borderColor={borderColor}
             lineHeight="1.8"
+            variant="journal"
           />
         </FormControl>
 
         {/* 기존 파일 목록 (삭제 선택) */}
         {diaryBoard.fileList && diaryBoard.fileList.length > 0 && (
           <FormControl>
-            <FormLabel fontSize="sm" fontWeight="bold" color="gray.600">
+            <FormLabel
+              fontSize="sm"
+              fontWeight="bold"
+              color="gray.600"
+              variant="journal"
+            >
               기존 파일 삭제
             </FormLabel>
             <VStack
@@ -249,7 +291,12 @@ export function DiaryBoardEdit() {
 
         {/* 새 파일 추가 */}
         <FormControl>
-          <FormLabel fontSize="sm" fontWeight="bold" color="gray.600">
+          <FormLabel
+            fontSize="sm"
+            fontWeight="bold"
+            color="gray.600"
+            variant="journal"
+          >
             파일 추가
           </FormLabel>
           <Input
@@ -260,11 +307,17 @@ export function DiaryBoardEdit() {
             pt={1}
             fontSize="sm"
             bg={inputBg}
+            variant="journal"
           />
         </FormControl>
 
         <FormControl>
-          <FormLabel fontSize="sm" fontWeight="bold" color="gray.600">
+          <FormLabel
+            fontSize="sm"
+            fontWeight="bold"
+            color="gray.600"
+            variant="journal"
+          >
             작성자
           </FormLabel>
           <Input
@@ -272,6 +325,7 @@ export function DiaryBoardEdit() {
             readOnly
             bg="gray.100"
             border="none"
+            variant="journal"
           />
         </FormControl>
       </VStack>
@@ -281,7 +335,7 @@ export function DiaryBoardEdit() {
         <Button
           leftIcon={<FontAwesomeIcon icon={faXmark} />}
           onClick={() => navigate(-1)}
-          variant="ghost"
+          variant="journalOutline"
           colorScheme="gray"
           size="sm"
         >
@@ -293,6 +347,7 @@ export function DiaryBoardEdit() {
           colorScheme="blue"
           size="sm"
           boxShadow="md"
+          variant="journal"
         >
           저장
         </Button>
@@ -301,14 +356,22 @@ export function DiaryBoardEdit() {
       {/* 저장 확인 모달 */}
       <Modal isOpen={isOpen} onClose={onClose} isCentered size="sm">
         <ModalOverlay />
-        <ModalContent fontFamily="'Gulim', sans-serif">
+        <ModalContent
+          sx={fullSurfaceStyle}
+          className="full-journal full-overlay"
+        >
           <ModalHeader fontSize="md">수정 확인</ModalHeader>
           <ModalBody fontSize="sm">정말 수정하시겠습니까?</ModalBody>
           <ModalFooter>
-            <Button size="sm" onClick={onClose} mr={2}>
+            <Button size="sm" onClick={onClose} mr={2} variant="journal">
               취소
             </Button>
-            <Button size="sm" onClick={handleClickSave} colorScheme="blue">
+            <Button
+              size="sm"
+              onClick={handleClickSave}
+              colorScheme="blue"
+              variant="journal"
+            >
               확인
             </Button>
           </ModalFooter>

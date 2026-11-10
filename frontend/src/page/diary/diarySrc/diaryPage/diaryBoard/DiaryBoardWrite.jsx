@@ -1,3 +1,4 @@
+import { fullSurfaceStyle } from "../../../../../design/fullAuditStyles.js";
 import React, { useContext, useState } from "react";
 import {
   Box,
@@ -122,7 +123,11 @@ export function DiaryBoardWrite() {
   // 🚫 접근 제한 처리
   if (!isLoggedIn || ownerId === null) {
     return (
-      <Center mt={10}>
+      <Center
+        mt={10}
+        sx={fullSurfaceStyle}
+        className="full-journal full-diary full-diaryboardwrite"
+      >
         <Spinner size="xl" color="blue.400" />
       </Center>
     );
@@ -130,14 +135,25 @@ export function DiaryBoardWrite() {
 
   if (!isOwner) {
     return (
-      <Center mt={10} fontFamily="'Gulim', sans-serif">
+      <Center
+        mt={10}
+        sx={fullSurfaceStyle}
+        className="full-journal full-diary full-diaryboardwrite"
+      >
         주인장만 작성할 수 있습니다. 🚫
       </Center>
     );
   }
 
   return (
-    <Box h="100%" p={4} display="flex" flexDirection="column">
+    <Box
+      h="100%"
+      p={4}
+      display="flex"
+      flexDirection="column"
+      sx={fullSurfaceStyle}
+      className="full-journal full-diary full-diaryboardwrite"
+    >
       {/* 1. 헤더 영역 */}
       <Flex
         align="center"
@@ -147,7 +163,7 @@ export function DiaryBoardWrite() {
         borderColor={titleColor}
       >
         <Icon as={FontAwesomeIcon} icon={faPenNib} color={titleColor} mr={2} />
-        <Heading size="md" fontFamily="'Gulim', sans-serif" color="#333">
+        <Heading size="md" color="#333">
           일기 쓰기
         </Heading>
       </Flex>
@@ -157,13 +173,13 @@ export function DiaryBoardWrite() {
         spacing={4}
         align="stretch"
         flex={1}
-        fontFamily="'Gulim', sans-serif"
       >
         {/* 제목 & 기분 선택 */}
         <Flex gap={2}>
           <FormControl flex={1}>
             <Input
-              variant="flushed" // 밑줄 스타일
+              variant="journal" // 밑줄 스타일
+              aria-label="일기 제목"
               placeholder="제목을 입력하세요..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -176,11 +192,13 @@ export function DiaryBoardWrite() {
 
           <FormControl w="150px">
             <Select
+              aria-label="오늘의 기분"
               value={selectedMood}
               onChange={(e) => setSelectedMood(e.target.value)}
               size="sm"
               borderRadius="md"
               bg={inputBg}
+              variant="journal"
             >
               <option value="HAPPY">🥰 행복</option>
               <option value="SAD">😭 슬픔</option>
@@ -195,6 +213,7 @@ export function DiaryBoardWrite() {
           <Textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            aria-label="일기 내용"
             placeholder="오늘 하루는 어땠나요?"
             resize="none"
             flex={1} // 남은 높이 꽉 채우기
@@ -206,6 +225,7 @@ export function DiaryBoardWrite() {
             focusBorderColor={titleColor}
             sx={scrollbarStyle}
             lineHeight="1.8" // 줄간격 넓게
+            variant="journal"
           />
         </FormControl>
 
@@ -226,6 +246,7 @@ export function DiaryBoardWrite() {
               mr={3}
             />
             <Input
+              aria-label="일기 사진 첨부"
               type="file"
               multiple
               onChange={handleFileChange}
@@ -249,7 +270,7 @@ export function DiaryBoardWrite() {
         <Button
           leftIcon={<FontAwesomeIcon icon={faXmark} />}
           onClick={handleCancel}
-          variant="ghost"
+          variant="journalOutline"
           colorScheme="gray"
           size="sm"
         >
@@ -263,6 +284,7 @@ export function DiaryBoardWrite() {
           onClick={handleSaveClick}
           size="sm"
           boxShadow="md"
+          variant="journal"
         >
           저장하기
         </Button>

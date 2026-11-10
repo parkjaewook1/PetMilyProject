@@ -18,3 +18,72 @@ backend/.gradle/
 # Logs
 *.log
 nohup.out
+
+# Local credentials and environment overrides (keep public templates)
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.cer
+/backend/src/main/resources/secret/
+
+# Generated archives; retain the Gradle wrapper required for builds
+*.jar
+!**/gradle/wrapper/gradle-wrapper.jar
+*.war
+*.class
+coverage/
+.vscode/
+*.tmp
+*.temp
+*.swp
+*~
+
+# Backups only: public SQL schemas under backend/sql remain visible
+*_backup.sql
+backup.sql
+*.sql.gz
+*.sql.zip
+*.bak
+*.dump
+/backups/
+/backend/backups/
+
+# Personal drafts and local verification data
+/docs/PETMILY_PORTFOLIO_CONTENT_DRAFT.md
+/test-results/
+/playwright-report/
+/backend/integration-results/
+
+# Raw browser evidence and local filesystem metadata; publish reviewed summaries
+/docs/redesign/**/before/
+/docs/redesign/**/after/
+/docs/redesign/**/account-dialog.json
+/docs/redesign/**/baseline.json
+/docs/publication/preservation.json
+/docs/publication/local-environment-review.json
+/docs/publication/portfolio/target.json
+
+# Preserved original configuration and developer-only external settings
+/backend/config/private/
+
+# Publication scope: preserve locally, exclude SQL data and internal evidence.
+/backend/sql/
+/docs/redesign/
+/docs/publication/*
+!/docs/publication/RELEASE_READY.md
+!/docs/publication/VERIFICATION.md
+!/docs/publication/PORTFOLIO.md
+!/docs/publication/config/
+/docs/publication/config/*
+!/docs/publication/config/application.example.properties
+
+# Frontend generated output (Vite default and custom output)
+/frontend/dist/
