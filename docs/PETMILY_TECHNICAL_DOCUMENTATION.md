@@ -1,6 +1,6 @@
 # Petmily 기술문서
 
-Petmily의 구현 설명은 주제별 문서에서 읽을 수 있다. [전체 문서 목차](README.md) · [이전 문서와 현재 위치](DOCUMENT_MAP.md)
+Petmily의 구현 내용을 주제별로 정리했습니다. [전체 문서 목차](README.md) · [이전 문서와 현재 위치](DOCUMENT_MAP.md)
 
 ## 목차
 

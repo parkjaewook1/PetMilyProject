@@ -1,8 +1,8 @@
 # Petmily 프런트엔드
 
-React와 Vite로 구성했다. 개발 서버는 `/api`와 `/ws` 요청을 로컬 Spring Boot로 전달한다.
+React와 Vite로 구성했습니다. 개발 서버는 `/api`와 `/ws` 요청을 로컬 Spring Boot 서버에 전달합니다.
 
-백엔드와 개발용 MariaDB를 준비한 뒤 저장소 루트에서 실행한다.
+백엔드와 개발용 MariaDB를 준비한 뒤 저장소 루트에서 아래 명령을 실행합니다.
 
 ```sh
 cd frontend
