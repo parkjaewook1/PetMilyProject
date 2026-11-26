@@ -1,12 +1,15 @@
-# React + Vite
+# Petmily 프런트엔드
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React와 Vite로 구성했다. 개발 서버는 `/api`와 `/ws` 요청을 로컬 Spring Boot로 전달한다.
 
-Currently, two official plugins are available:
+백엔드와 개발용 MariaDB를 준비한 뒤 저장소 루트에서 실행한다.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [`Babel`](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```sh
+cd frontend
+npm ci
+npm run start:local
+```
 
-## Petmily 기술문서
-
-[Petmily 기술문서](../docs/PETMILY_TECHNICAL_DOCUMENTATION.md)에서 실제 코드 기반 아키텍처, 인증·다이어리 구조, 팀 기여와 개인 변경 이력 및 검증 범위를 확인할 수 있습니다.
+- [백엔드와 개발 DB 준비](../docs/LOCAL_DEVELOPMENT.md)
+- [요청 흐름과 배포 구성](../docs/ARCHITECTURE.md)
+- [개발 문서 목차](../docs/README.md)
