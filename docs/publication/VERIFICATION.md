@@ -8,8 +8,8 @@
 
 - 기존 default/local/prod H2·MockMvc 각 28개: 84개 통과.
 - 새 보안 단위 검사: 13개 통과. 합계 97개.
-- MariaDB 12.0.2/InnoDB, 실제 Spring Boot HTTP: JUnit 8개/내부 상태 검사 55개 통과.
-- 실제 Chrome + 실제 React 화면: 검사 17개 통과.
+- MariaDB 12.0.2/InnoDB, 실제 Spring Boot HTTP: JUnit 8개/내부 상태 검사 55개 통과. 임시 DB, 가상 계정, 메모리에서 생성한 JWT 키를 사용했다.
+- 실제 Chrome + 실제 React 화면: 검사 17개 통과, 런타임 예외 0건.
 - source와 별도로 구성한 최소 fixture DB이며 운영 스키마 동일성은 미검증.
 - 관련 프론트 린트는 기존 12 errors/2 warnings가 남고, 기준선 대비 새 메시지는 0.
 
@@ -27,3 +27,5 @@
 운영 DB/실데이터, HTTPS·cross-site 쿠키·proxy, 외부 OAuth·실제 메일·파일 업로드/탈퇴, 모든 동시 Refresh/권한 변경, 전체 UI·모든 외부 지도/AI/채팅 상태. 기존 전체 BackendApplicationTests.contextLoads는 실제 설정/DB를 읽을 수 있어 실행하지 않았다.
 
 전체 앱 외부 설정 예시는 placeholder 문서이며 실제 외부 서비스로 시작해 본 설정이 아니다. 비밀값 정리 전에는 기존 환경 설정으로 운영 연결이나 공개 배포를 수행하지 않는다.
+
+일부 기존 UI 오류 로그가 남아 있다. 과거 DB·JWT·AWS 값의 실제 사용 여부와 폐기 상태, Kakao 지도 키 제한, 공개 제외 자료의 범위는 [공개 준비 기록](RELEASE_READY.md)에서 확인할 수 있다. SMTP 설정은 사용자 확인 기준 개발용 더미이며, JAR에서 개인 키와 백업을 제외하도록 패키징을 수정했다.

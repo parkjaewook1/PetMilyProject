@@ -1,130 +1,131 @@
 # Petmily
 
-반려동물의 일상을 기록하고 다른 사용자와 소통하는 커뮤니티 웹 서비스입니다. **2024년 5인 팀 프로젝트**와 **프로젝트 종료 후 개인 개선 작업**을 구분해 기록합니다.
+반려동물과 함께한 일상을 미니홈피에 기록하고, 다른 반려인과 이야기를 나누는 웹 서비스입니다.
 
-> 공개 준비 상태: 현재 작업 트리의 최신 개선 사항은 아직 커밋·푸시하지 않았습니다. SMTP 설정은 사용자 확인상 개발용 더미입니다. 현재 설정의 비밀값은 외부화했으며 과거 DB/JWT/AWS 값의 실제 사용·폐기와 카카오 콘솔 제한을 확인 중입니다. SQL 전체·키·백업·내부 검토 자료는 이번 공개 대상에서 제외합니다. [최신 반영 준비](docs/publication/RELEASE_READY.md)
+**2024년 6~7월 · 5인 팀 프로젝트**
 
-## 담당 범위
+![Petmily 메인 화면](docs/screenshots/main-1440.png)
 
-| 구분 | 담당·개선 내용 |
+[웹 포트폴리오](https://parkjaewook1.github.io/portfolio/) · [포트폴리오 소스](https://github.com/parkjaewook1/portfolio)
+
+## 프로젝트 소개
+
+산책이나 함께 보낸 하루를 다이어리에 남기고, 캘린더에서 날짜별로 다시 볼 수 있습니다. 다른 반려인의 미니홈피를 방문해 방명록에 인사를 남기거나, 커뮤니티에서 반려생활에 관한 이야기와 정보를 나눌 수 있습니다.
+
+## 주요 기능
+
+화면은 2024년 팀 프로젝트가 끝난 뒤 로컬에서 캡처했습니다. 메인과 포트폴리오의 기능 화면은 2026년 11월 10일 기록이며, 회원가입과 관리자 화면은 각각 11월 5일과 9일의 UI 점검 기록입니다. 화면 예시에는 가상 콘텐츠를 사용했습니다.
+
+### 회원가입 및 로그인
+
+이메일과 비밀번호로 계정을 만들고 로그인할 수 있습니다.
+
+| 회원가입 | 로그인 |
 | --- | --- |
-| 2024년 6–7월 · 5인 팀 프로젝트 | 미니홈피 다이어리·방명록 중심. 일기 CRUD, 댓글·답글·페이징, 캘린더 연동과 Spring Boot API–React 연결에 참여 |
-| 이후 개인 리팩토링 | 팀의 기존 인증 기반을 분석해 JWT Role 표현·Axios 재요청·댓글 SQL 매핑·이미지 저장/배포 연결을 정리 |
-| 현재 개인 후속 작업 | UI 디자인 통일·반응형 개선, 회원/관리자 API 보안 결함 재현·수정, H2·MariaDB·실제 HTTP·브라우저 회귀 검사 |
+| ![회원가입 폼](docs/screenshots/signup-1440.png) | ![로그인 폼](docs/screenshots/member-login-1440.png) |
 
-초기 인증·JWT·Refresh Rotation 전체를 혼자 설계한 것으로 소개하지 않습니다. 팀 담당 범위는 기존 기술문서와 포트폴리오의 기록을 따릅니다. [이력서·면접용 설명](docs/publication/PORTFOLIO.md)
+### 미니홈피
 
-## 기능과 기술 스택
+사용자별 공간에서 프로필과 최근 일기·방명록을 보고, 탭으로 일기와 캘린더를 오갈 수 있습니다.
 
-- 회원 가입·로그인·프로필, 일반 게시판과 댓글
-- 사용자별 미니홈피의 일기·방명록·캘린더
-- 관리자 회원 목록과 제한 삭제
-- 병원/지도·친구 채팅·AI 상담 관련 코드도 포함되어 있으나 외부 연동과 전체 대화 흐름의 검증 완료를 의미하지 않습니다.
+![미니홈피 첫 화면](docs/screenshots/mini-1440.png)
 
-| 영역 | 실제 사용 기술 |
+### 다이어리 및 캘린더
+
+일기를 작성·수정·삭제할 수 있고, 캘린더에서 기록한 날짜를 찾아볼 수 있습니다.
+
+| 다이어리 | 캘린더 |
 | --- | --- |
-| Backend | Java 21, Spring Boot 3.2.6, Spring Security, JWT, MyBatis, BCrypt |
-| Database | MariaDB, 테스트용 H2 |
-| Frontend | React 18, Vite 5, React Router, Axios, Chakra UI |
-| 화면·통신 | FullCalendar, Chart.js, Kakao Maps SDK, SockJS/STOMP |
-| 파일·배포 구성 | 서버 로컬 파일 저장, Vite proxy/Vercel rewrite, VM 대상 설정 |
+| ![다이어리 일기 목록](docs/screenshots/diary-1440.png) | ![미니홈피 월간 캘린더](docs/screenshots/calendar-1440.png) |
+
+### 방명록
+
+다른 사용자의 미니홈피에 인사를 남기고, 방명록 글에 답글을 달 수 있습니다.
+
+![미니홈피 방명록](docs/screenshots/guestbook-1440.png)
+
+### 커뮤니티 및 댓글
+
+게시판에서 반려생활 정보를 나누고, 게시글에 댓글을 달 수 있습니다.
+
+![커뮤니티 게시글 상세와 댓글 영역](docs/screenshots/board-detail-1440.png)
+
+### 관리자 기능
+
+관리자는 회원 목록을 조회하고, 삭제 조건을 충족하는 일반 회원을 삭제할 수 있습니다.
+
+![테스트 데이터가 비어 있는 관리자 회원 관리 화면](docs/screenshots/admin-empty-1440.png)
+
+## 기술 스택
+
+| 영역 | 기술 |
+| --- | --- |
+| 백엔드 | ![Java 21](https://img.shields.io/badge/Java-21-334155) ![Spring Boot 3.2.6](https://img.shields.io/badge/Spring_Boot-3.2.6-334155) · Spring Security, JWT, MyBatis, BCrypt |
+| 프론트엔드 | ![React 18](https://img.shields.io/badge/React-18-334155) ![Vite 5](https://img.shields.io/badge/Vite-5-334155) · React Router, Axios, Chakra UI, FullCalendar, Chart.js |
+| 데이터베이스 | ![MariaDB](https://img.shields.io/badge/MariaDB-334155) |
+| 배포 구성 | ![Oracle Cloud VM](https://img.shields.io/badge/Oracle_Cloud_VM-334155) ![Vercel](https://img.shields.io/badge/Vercel-334155) · 서버 로컬 파일 저장 |
+| 테스트 | ![JUnit](https://img.shields.io/badge/JUnit-334155) · MockMvc, H2, MariaDB 통합 테스트, Chrome 브라우저 검사 |
+
+## 시스템 아키텍처 및 ERD
+
+팀 프로젝트에서 React 화면과 Spring Boot API를 연결하고 MariaDB에 데이터를 저장했습니다. 다음 구성은 프로젝트 종료 후 정리한 API 연결과 로컬 이미지 저장 방식을 보여 줍니다.
 
 ```mermaid
 flowchart LR
-  R[React / Axios] --> P[Vite proxy 또는 Vercel rewrite]
-  P --> S[Spring Security / JWT]
-  S --> C[Controller / Service]
-  C --> M[MyBatis]
+  R["React · Axios"] --> P["Vite 프록시 또는 Vercel rewrite"]
+  P --> S["Spring Security · JWT"]
+  S --> C["Controller · Service"]
+  C --> M["MyBatis"]
   M --> D[(MariaDB)]
-  C --> F[로컬 업로드 파일]
+  C --> F["서버 로컬 파일"]
 ```
 
-배포 설정이 있다는 사실과 현재 운영 서버의 가용성·배포 검증은 구분합니다. 스토리지 사용 이력, 비용 절감률·성능 향상 수치는 추가 증빙 없이 주장하지 않습니다.
+[핵심 테이블 ERD](docs/PETMILY_TECHNICAL_DOCUMENTATION.md#5-데이터베이스와-mybatis)는 저장소 SQL을 바탕으로 회원, 미니홈피, 일기, 프로필의 관계를 보여 줍니다. [배포 및 이미지 저장 구조](docs/PETMILY_TECHNICAL_DOCUMENTATION.md#6-배포-및-이미지-저장-구조)
 
-## 회원·관리자 보안 개선
+## 팀 구성 및 담당 역할
 
-### 개인정보 응답 분리
+5인 팀에서 미니홈피의 다이어리와 방명록을 중심으로 개발했습니다.
 
-기존 전체 Member 조회·직렬화에서 타인의 비밀번호 해시와 주소가 반환되는 문제를 격리 환경의 실제 HTTP로 재현했습니다. 공개/비공개 DTO와 SQL 프로젝션을 분리하고, Member 비밀번호의 JSON 출력도 차단했습니다.
+- **다이어리** — 일기 작성·조회·수정·삭제와 캘린더 연동을 담당했습니다.
+- **방명록** — 글과 답글, 목록 페이징을 구현했습니다.
+- **화면 연동** — 담당 기능의 Spring Boot API 구현과 React 화면 연결에 참여했습니다.
 
-| 응답 | 허용 범위 |
-| --- | --- |
-| 타인 프로필 | `id`, `nickname`, `imageUrl` |
-| 본인 또는 현재 관리자 상세 | 수정 폼에 필요한 이메일·이름·주소·전화 등. 비밀번호·인증/복구 비밀값 제외 |
-| 관리자 목록 | `id`, `username`, `nickname`, `gender`, `birthDate`, `inserted`, `role` |
+## 프로젝트 종료 후 개인 개선
 
-공개 프로필은 필드 등급을 뜻하며, 기존 인증이 필요한 URL을 새로 익명 공개했다는 의미가 아닙니다.
+로그인과 JWT 발급, 초기 Refresh Token 교체는 팀에서 구현했습니다. 프로젝트 종료 후 기존 코드에서 다음 문제를 개선했습니다.
 
-### 권한 변경과 Refresh
+### 회원 조회 API의 개인정보 노출
 
-관리자 API는 URL의 JWT 권한 검사와 서비스의 **현재 DB 관리자 권한** 검사를 함께 적용합니다. 강등이 커밋된 후의 요청에서 기존 관리자 JWT도 403으로 차단합니다. Refresh 재발급 역시 현재 DB 권한을 사용하고, 삭제된 계정과 구 Refresh 재사용을 거부합니다. Access Token 전역 denylist를 구현한 것은 아닙니다.
+타인 프로필 조회 응답에 비밀번호 해시와 주소가 포함됐습니다. 공개 프로필과 본인·관리자 상세에 쓰는 DTO와 SQL 조회 범위를 분리해, 타인 프로필에는 ID, 닉네임, 프로필 이미지처럼 공개에 필요한 필드만 반환하도록 수정했습니다.
 
-### 선택적 비밀번호 수정
+### 관리자 권한 검증
 
-필드 생략·null·빈 문자열은 변경 없음으로 처리합니다. 비어 있지 않은 새 비밀번호만 검증하고 BCrypt를 한 번 적용하며, MyBatis UPDATE에서 미변경 비밀번호를 제외합니다. 기존 해시 보존, 기존 비밀번호 로그인, 정상 변경 후 구 비밀번호 거부·새 비밀번호 허용을 검사했습니다.
+관리자 권한을 JWT 발급 시점의 값으로만 판단하면, 권한이 회수된 뒤에도 기존 토큰으로 관리자 API를 호출할 수 있었습니다. 요청의 JWT 권한과 DB에 저장된 현재 권한을 함께 확인해, 관리자 권한이 회수된 뒤 들어온 요청을 차단했습니다.
 
-### 관리자 삭제 정책
+### 회원 삭제 정책과 트랜잭션
 
-`DELETE /api/member/{id}`는 현재 관리자만 호출할 수 있습니다. 없는 대상은 404, 관리자 계정 또는 연관 데이터가 있는 회원은 409, 연관 데이터 없는 일반 회원의 삭제는 204입니다. 인증 행 정리와 삭제는 하나의 DB 트랜잭션이며 FK 실패 시 롤백합니다. 자동 생성된 다이어리도 연관 데이터이므로 현재는 많은 기존 계정의 삭제가 제한될 수 있습니다. 무리한 연쇄삭제나 운영 회원 삭제를 수행하지 않았습니다.
+연관 기록이 있는 회원을 삭제하면 기록을 보존하면서 계정만 정리하기 어렵습니다. 관리자 계정과 연관 기록이 있는 회원은 삭제를 제한하고, 삭제 가능한 일반 회원의 인증 데이터 정리와 계정 삭제를 한 트랜잭션으로 묶었습니다. 삭제에 실패하면 인증 데이터 정리도 롤백합니다.
 
-## 디자인·반응형 개선
+그 밖에 JWT 권한 값과 Axios 재요청 처리, 비밀번호를 변경하지 않을 때의 해시 보존, 화면 디자인과 반응형 UI를 개선했습니다. 회원 조회·권한·비밀번호 수정·삭제는 격리 환경에서 회귀 검사했습니다.
 
-기존 메인·Navbar와 연결되는 Modern Pet Journal 토큰/선택형 컴포넌트를 정리했습니다. 회원·게시판·미니홈피·관리자 목록·친구 위젯을 종이색, 브랜드 잉크, 얇은 구분선 중심으로 맞췄습니다. 대표 화면은 320/375/768/1440px에서 확인했고, 모바일 회원 표는 라벨이 있는 세로 정보로 표시합니다. 친구 패널·채팅창은 접힘·포커스·스크롤·화면 경계를 보완했습니다.
+[인증 흐름](docs/PETMILY_TECHNICAL_DOCUMENTATION.md#3-spring-security-및-jwt-인증) · [회원·관리자 처리 정책](docs/PETMILY_TECHNICAL_DOCUMENTATION.md#회원관리자-보안-개선) · [디자인·반응형 개선](docs/PETMILY_TECHNICAL_DOCUMENTATION.md#디자인반응형-개선)
 
-모든 경로·외부 SDK·상태의 리디자인/기능 검증이 완료됐다는 뜻은 아닙니다. [검증 범위](docs/publication/VERIFICATION.md)
+## 테스트 및 검증
 
-## 검증 결과
+| 검증 시점 | 범위 | 기록 |
+| --- | --- | --- |
+| 회원·관리자 개선 당시 | H2·MockMvc 및 보안 단위 회귀 | 97개 통과 |
+| 회원·관리자 개선 당시 | MariaDB 12.0.2 / InnoDB, 실제 HTTP | JUnit 시나리오 8개와 내부 HTTP 상태 검사 55개 통과 |
+| 회원·관리자 개선 당시 | Chrome에서 React 화면 확인 | 검사 17개 통과, 런타임 예외 0건 |
+| 2026년 11월 10일 | Gradle 선택 테스트·빌드 확인 | 태스크 재실행 없이 기존 결과 확인, 103개 통과·MariaDB 검사 8개 건너뜀 |
+| 2026년 11월 10일 | React 빌드 | 성공, 기존 청크 크기 경고 유지 |
 
-| 구분 | 기록된 결과 |
-| --- | --- |
-| H2·MockMvc·보안 단위 회귀 | 97개 통과: 기존 84개 + 신규 13개 |
-| MariaDB 12.0.2 / InnoDB / 실제 HTTP | JUnit 시나리오 8개, 내부 HTTP 상태 검사 55개 통과 |
-| 실제 Chrome / 실제 프론트 | 검사 17개 통과, 런타임 예외 0 |
-| Spring Boot·React 빌드 | 성공 |
-| 관련 프론트 린트 | 기존 12 errors / 2 warnings 잔존, 시작 소스 대비 새 메시지 0 |
+운영 스키마와 외부 연동은 별도 검증이 필요합니다. 공개 배포 전에는 과거 자격 증명의 사용·폐기 상태와 Kakao 지도 키 제한을 확인해야 합니다. [검증 결과와 범위](docs/publication/VERIFICATION.md) · [공개 준비 기록](docs/publication/RELEASE_READY.md)
 
-MariaDB 검사는 새 임시 DB·가상 계정·메모리 생성 JWT 키를 사용했습니다. 운영 DB, 운영 비밀키·실제 회원 데이터는 사용하지 않았습니다. 테스트 종류를 합쳐 전체 시스템 100% 통과로 표현하지 않습니다.
+## 로컬 실행 및 기술 문서
 
-## 안전한 로컬 실행
+JDK 21, Node.js/npm, 별도의 개발용 MariaDB가 필요합니다. 개발 DB와 외부 설정 파일을 준비한 뒤 백엔드와 프론트엔드를 실행합니다.
 
-필요 환경은 JDK 21, Node/npm, 별도의 개발용 MariaDB입니다. 현재 application 설정은 환경 변수/비공개 외부 파일을 참조합니다. 비공개 원본과 실제 자격증명은 공개 대상에서 제외합니다. 아래 예시는 저장소 밖의 개발용 설정을 명시적으로 지정합니다.
-
-1. [비밀값 없는 외부 설정 예시](docs/publication/config/application.example.properties)를 별도 로컬 파일로 복사합니다.
-2. 사용자 소유 개발 DB·스키마, JWT 키, 필요한 OAuth/메일 환경 변수를 저장소 밖에서 준비합니다. 예시는 placeholder이며 운영 값을 포함하지 않습니다. SQL 예시·백업은 출처가 확인되지 않아 공개본에서 제외하며 자동 DB 초기화를 제공하지 않습니다.
-3. 전체 앱은 외부 설정으로 기존 application 파일을 **대체**해 실행합니다. 예시 경로는 프로젝트 루트 기준입니다.
-
-```sh
-cd backend
-./gradlew bootJar
-cd ..
-java --enable-preview -jar backend/build/libs/backend-0.0.1-SNAPSHOT.jar \
-  --spring.config.location=file:/absolute/path/to/your-local-application.properties
-```
-
-```sh
-cd frontend
-npm ci
-npm run start:local
-```
-
-Vite의 기본 `/api`·`/ws` 프록시는 localhost:8080을 대상으로 합니다. DB·메일·OAuth 값과 스키마를 갖추지 않은 전체 앱의 시작 성공을 보증하지 않습니다. 외부 설정 예시 자체를 실제 외부 서비스에 연결해 검증하지 않았습니다.
-
-운영 설정을 사용하지 않는 기존 격리 회귀는 다음으로 실행합니다.
-
-```sh
-cd backend
-./gradlew test --tests 'com.backend.admin.*' build
-```
-
-MariaDB 통합 검사는 별도로 준비한 표식 있는 loopback 전용 `petmily_integration` DB가 필요합니다. 일반 회귀 실행에서는 live 검사 8개가 의도적으로 skip됩니다. 기존 전체 `contextLoads`는 실제 DB 설정을 읽을 수 있으므로 위 선택 검사와 구분합니다.
-
-```sh
-./gradlew mariaDbIntegrationTest \
-  -Dpetmily.mariadb.url=jdbc:mariadb://127.0.0.1:13317/petmily_integration
-```
-
-## 미검증·공개 제약
-
-운영 DB 스키마/트리거, 배포 HTTPS·cross-site 쿠키·프록시, 실제 OAuth·메일·업로드/탈퇴, 모든 동시 재발급·권한 변경 경쟁 상태는 별도 검증이 필요합니다. 일부 기존 UI 오류 로그와 린트 문제가 남아 있습니다. 실서비스 보안 감사·배포 승인 완료를 의미하지 않습니다.
-
-SMTP 더미를 실제 자격증명 유출로 분류하지 않습니다. 현재 파일 외부화와 과거 이력의 실제 사용·폐기 확인은 구분합니다. JAR의 개인 키·백업 포함 문제는 패키징 제외로 수정했고, SQL 전체·비공개 설정·키·백업 원본은 공개 대상에서 제외합니다. 이번에는 staging·commit·push·이력 재작성을 하지 않았습니다. [현재 파일 목록과 남은 확인](docs/publication/RELEASE_READY.md)
+- [로컬 실행 명령과 테스트 환경](docs/LOCAL_DEVELOPMENT.md)
+- [개발용 외부 설정 예시](docs/publication/config/application.example.properties)
+- [Petmily 기술 문서](docs/PETMILY_TECHNICAL_DOCUMENTATION.md)
